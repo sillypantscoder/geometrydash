@@ -55,7 +55,7 @@ class Player extends SceneItem {
 		// Move forwards
 		this.x += 0.1
 		// Fall
-		this.vy -= 0.025
+		this.vy -= 0.028
 		this.y += this.vy
 		this.onGround = false
 		// Check for collision with stage
@@ -82,7 +82,7 @@ class Player extends SceneItem {
 		if (this.x > 20) this.destroy()
 	}
 	cubeJump() {
-		this.vy += 0.4
+		this.vy += 0.35
 	}
 	destroy() {
 		this.alive = false
@@ -182,6 +182,14 @@ class Rect {
 	centerY() {
 		return this.y + (this.h / 2)
 	}
+	relative(x, y, w, h) {
+		return new Rect(
+			this.x + (this.w * x),
+			this.y + (this.h * y),
+			this.w * w,
+			this.h * h
+		)
+	}
 }
 class Tile extends SceneItem {
 	constructor(x, y, type) {
@@ -197,38 +205,43 @@ class Tile extends SceneItem {
 	}
 	collide() {}
 }
-class BasicBlock extends Tile {
-	constructor(x, y) {
-		super(x, y, "basic-block")
-	}
+class TileBlock extends Tile {
 	collide() {
 		var playerRect = player.getRect()
 		var thisRect = this.getRect()
-		var prevPlayerRect = playerRect.move(0, player.vy * -1)
 		if (playerRect.colliderect(thisRect)) {
-			if (prevPlayerRect.colliderect(thisRect)) {
-				// Player dies!
-				player.destroy()
-			} else {
+			var yIncrease = (thisRect.y + 1) - player.y
+			if (yIncrease < 0.5) {
 				// Player is fine
-				player.y = this.y + 1
+				player.y += yIncrease
 				player.onGround = true
+			} else {
+				player.destroy()
 			}
 		}
 	}
 }
-class BasicSpike extends Tile {
+class TileDeath extends Tile {
+	collide() {
+		var playerRect = player.getRect()
+		var thisRect = this.getRect()
+		if (playerRect.colliderect(thisRect)) {
+			// Player dies!
+			player.destroy()
+		}
+	}
+}
+class BasicBlock extends TileBlock {
+	constructor(x, y) {
+		super(x, y, "basic-block")
+	}
+}
+class BasicSpike extends TileDeath {
 	constructor(x, y) {
 		super(x, y, "basic-spike")
 	}
 	getRect() {
-		return new Rect(this.x + 0.2, this.y + 0.2, 0.6, 0.8);
-	}
-	collide() {
-		if (player.getRect().colliderect(this.getRect())) {
-			// Player dies!
-			player.destroy()
-		}
+		return super.getRect().relative(0.2, 0.2, 0.6, 0.8);
 	}
 }
 var player = new Player()
@@ -240,20 +253,33 @@ var tiles = [
 	new BasicBlock(12, 0),
 	new BasicBlock(13, 0),
 	new BasicBlock(13, 1),
-	new BasicSpike(12, 1)
+	new BasicSpike(12, 1),
+	new BasicBlock(9, 0),
+	new BasicBlock(9, 1),
+	new BasicBlock(9, 3)
 ]
 /** @type {Particle[]} */
 var particles = []
 var isPressing = false
 
-function keydown(e) {
+document.addEventListener("keydown", (e) => {
 	if (e.key == " ") isPressing = true
-}
-function keyup(e) {
+})
+document.addEventListener("keyup", (e) => {
 	if (e.key == " ") isPressing = false
-}
-document.addEventListener("keydown", keydown)
-document.addEventListener("keyup", keyup)
+})
+document.addEventListener("mousedown", (e) => {
+	isPressing = true
+})
+document.addEventListener("mouseup", (e) => {
+	isPressing = false
+})
+document.addEventListener("touchstart", (e) => {
+	isPressing = true
+})
+document.addEventListener("touchend", (e) => {
+	isPressing = false
+})
 
 function frame() {
 	stage.tick()
