@@ -215,7 +215,7 @@ class Rect {
 class Tile extends SceneItem {
 	constructor(x, y, type) {
 		super(x, y)
-		this.extraStyles[0] = `background: url(assets/tile-${type}.svg);`
+		this.extraStyles[0] = `background: url(../assets/tile-${type}.svg);`
 		// RectDisplay.create(this)
 	}
 	getRect() {

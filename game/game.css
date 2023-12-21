@@ -15,7 +15,7 @@ body {
 	height: 100%;
 	--tile-size: 5vmin;
 	/* background */
-	background: url(assets/Background.png), #007dff;
+	background: url(../assets/Background.png), #007dff;
 	background-size: cover;
 }
 #scene > div {
@@ -35,10 +35,10 @@ body {
 	top: unset !important;
 	bottom: 0;
 	/* img */
-	background: url(assets/Ground_Main.svg), #007dff;
+	background: url(../assets/Ground_Main.svg), #007dff;
 }
 .player {
-	background: url(assets/Playerfs.svg);
+	background: url(../assets/Playerfs.svg);
 }
 .particle {
 	--real-size: calc(var(--tile-size) * var(--size));
