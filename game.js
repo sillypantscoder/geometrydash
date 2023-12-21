@@ -1,3 +1,9 @@
+Number.prototype.map = function (in_min, in_max, out_min, out_max) {
+	return (this - in_min) * (out_max - out_min) / (in_max - in_min) + out_min;
+}
+
+
+
 class SceneItem {
 	/**
 	 * @param {number} x The starting X position.
@@ -65,6 +71,7 @@ class Player extends SceneItem {
 		if (this.onGround) {
 			this.vy = 0
 			this.rotation = 0
+			particles.push(new SlideParticle(this.x, this.y))
 			// Jump
 			if (isPressing) {
 				this.cubeJump()
@@ -96,6 +103,29 @@ class Particle extends SceneItem {
 		this.extraStyles[2] = `--size: 0.2;`
 	}
 }
+class SlideParticle extends Particle {
+	constructor(x, y) {
+		super(x, y)
+		this.oy = y
+		this.vx = Math.random() / -20
+		this.vy = Math.random() / 10
+		this.time = 0
+		this.extraStyles[2] = `--size: 0.1;`
+	}
+	tick() {
+		this.time += 1
+		this.vy -= 0.005
+		this.x += this.vx
+		this.y += this.vy
+		if (this.y <= this.oy) {
+			this.y = this.oy
+			this.vy = 0
+		}
+		this.extraStyles[1] = `opacity: ${this.time.map(0, 15, 1, 0)};`
+		super.tick()
+		if (this.time >= 15) this.destroy()
+	}
+}
 class DeathParticleMain extends Particle {
 	constructor(x, y) {
 		super(x, y)
@@ -104,7 +134,7 @@ class DeathParticleMain extends Particle {
 	tick() {
 		this.size += 0.2
 		this.extraStyles[2] = `--size: ${this.size};`
-		this.extraStyles[3] = `opacity: ${1 - ((this.size - 1) / 4)};`
+		this.extraStyles[3] = `opacity: ${this.size.map(1, 5, 1, 0)};`
 		super.tick()
 		if (this.size >= 5) this.destroy()
 	}
@@ -120,7 +150,7 @@ class DeathParticleExtra extends Particle {
 		this.size += 0.2
 		this.x += this.vx
 		this.y += this.vy
-		this.extraStyles[1] = `opacity: ${1 - ((this.size - 1) / 4)};`
+		this.extraStyles[1] = `opacity: ${this.size.map(1, 5, 1, 0)};`
 		super.tick()
 		if (this.size >= 5) this.destroy()
 	}
