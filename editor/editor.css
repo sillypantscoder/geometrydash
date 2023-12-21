@@ -1,0 +1,49 @@
+html, body {
+	height: 100%;
+}
+body {
+	margin: 0;
+}
+
+#scene {
+	/* positioning */
+	position: absolute;
+	overflow: hidden;
+	top: 0;
+	left: 0;
+	width: 100%;
+	height: 100%;
+	--tile-size: 20px;
+	/* background */
+	background: url(../assets/grid.png), url(../assets/Background.png), #007dff;
+	background-size: var(--tile-size), cover, auto;
+	background-position: 0px 75vh;
+}
+.stage {
+	/* positioning */
+	position: absolute;
+	width: 100%;
+	height: 25%;
+	bottom: 0;
+	/* img */
+	background: url(../assets/Ground_Main.svg), #007dff;
+}
+#editor {
+	/* positioning */
+	position: absolute;
+	width: 100%;
+	height: 20%;
+	bottom: 0;
+	box-sizing: border-box;
+	/* img */
+	background: white;
+	padding: 1em;
+}
+#scene > div.regularPos {
+	position: absolute;
+	/*             Invert                         Y * tileSize */
+	top: calc(calc(75% - var(--tile-size)) - calc(var(--y) * var(--tile-size)));
+	left: calc(var(--x) * var(--tile-size));
+	width: var(--tile-size);
+	height: var(--tile-size);
+}

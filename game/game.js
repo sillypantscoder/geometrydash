@@ -80,7 +80,7 @@ class Player extends SceneItem {
 			this.rotation += 5
 		}
 		if (this.x > 20) this.destroy()
-		// RectDisplay.create(this)
+		if (url_info.debug) RectDisplay.create(this)
 	}
 	cubeJump() {
 		this.vy += 0.35
@@ -158,10 +158,11 @@ class DeathParticleExtra extends Particle {
 }
 class RectDisplay extends Particle {
 	/** @param {Rect} rect */
-	constructor(rect) {
+	constructor(rect, color) {
 		super(rect.x, rect.y)
 		this.elm.classList.remove("particle")
 		this.elm.classList.add(`rect-${rect.x}-${rect.y}-${rect.w}-${rect.h}`)
+		this.extraStyles[0] = `background: ${color};`
 		this.extraStyles[2] = `bottom: calc(25% + calc(${rect.y} * var(--tile-size))); left: calc(${rect.x} * var(--tile-size)); width: calc(${rect.w} * var(--tile-size)); height: calc(${rect.h} * var(--tile-size));`
 		this.time = 0
 	}
@@ -171,9 +172,12 @@ class RectDisplay extends Particle {
 		super.tick()
 		if (this.time >= 5) this.destroy()
 	}
-	/** @param {Tile} item */
+	/** @param {Tile | Player} item */
 	static create(item) {
-		particles.push(new RectDisplay(item.getRect()))
+		var color = "lime"
+		if (item instanceof Player) color = "yellow"
+		if (item instanceof TileDeath) color = "red"
+		particles.push(new RectDisplay(item.getRect(), color))
 	}
 }
 class Rect {
@@ -216,7 +220,7 @@ class Tile extends SceneItem {
 	constructor(x, y, type) {
 		super(x, y)
 		this.extraStyles[0] = `background: url(../assets/tile-${type}.svg);`
-		// RectDisplay.create(this)
+		if (url_info.debug) RectDisplay.create(this)
 	}
 	getRect() {
 		return new Rect(this.x, this.y, 1, 1)
@@ -233,12 +237,17 @@ class TileBlock extends Tile {
 		var playerRect = player.getRect()
 		var thisRect = this.getRect()
 		if (playerRect.colliderect(thisRect)) {
-			var yIncrease = (thisRect.y + 1) - player.getRect().y
+			var yIncrease = (thisRect.y + thisRect.h) - playerRect.y
 			if (yIncrease < 0.5) {
 				// Player is fine
 				player.y += yIncrease
 				player.onGround = true
 			} else {
+				if (url_info.debug) {
+					setTimeout((thisRect, playerRect, yIncrease) => {
+						particles.push(new RectDisplay(new Rect(thisRect.x, playerRect.y, thisRect.w, yIncrease), "pink"))
+					}, 100, thisRect, playerRect, yIncrease)
+				}
 				player.destroy()
 			}
 		}
@@ -251,6 +260,11 @@ class TileDeath extends Tile {
 		if (playerRect.colliderect(thisRect)) {
 			// Player dies!
 			player.destroy()
+			if (url_info.debug) {
+				setTimeout(() => {
+					particles.push(new RectDisplay(player.getRect(), "orange"))
+				}, 100)
+			}
 		}
 	}
 }
@@ -272,7 +286,7 @@ class BasicSpike extends TileDeath {
 		super(x, y, "basic-spike")
 	}
 	getRect() {
-		return super.getRect().relative(0.2, 0, 0.6, 0.5);
+		return super.getRect().relative(0.2, 0, 0.6, 0.8);
 	}
 }
 class HalfSpike extends TileDeath {
@@ -288,20 +302,7 @@ var stage = new Stage()
 /** @type {Particle[]} */
 var particles = []
 /** @type {Tile[]} */
-var tiles = [
-	new BasicBlock(10, 0),
-	new BasicBlock(11, 0),
-	new BasicBlock(12, 0),
-	new BasicBlock(13, 0),
-	new BasicBlock(13, 1),
-	new BasicSpike(12, 1),
-	new BasicBlock(9, 0),
-	new BasicBlock(9, 1),
-	new BasicBlock(9, 3),
-	new HalfBlock(14, 1),
-	new HalfBlock(15, 1),
-	new HalfSpike(15, 2)
-]
+var tiles = []
 var isPressing = false
 
 document.addEventListener("keydown", (e) => {
@@ -322,6 +323,37 @@ document.addEventListener("touchstart", (e) => {
 document.addEventListener("touchend", (e) => {
 	isPressing = false
 })
+
+var blockTypes = {
+	"Basic Block": BasicBlock,
+	"Basic Spike": BasicSpike,
+	"Half Block": HalfBlock,
+	"Half Spike": HalfSpike
+}
+/** @param {{ type: string, x: number, y: number }[]} o */
+function importObjects(o) {
+	for (var i = 0; i < o.length; i++) {
+		var obj = o[i]
+		var c = new blockTypes[obj.type](obj.x, obj.y)
+		tiles.push(c)
+	}
+}
+// importObjects([
+// 	{type: "Basic Block", x: 10, y: 0},
+// 	{type: "Basic Block", x: 11, y: 0},
+// 	{type: "Basic Block", x: 12, y: 0},
+// 	{type: "Basic Block", x: 13, y: 0},
+// 	{type: "Basic Block", x: 13, y: 1},
+// 	{type: "Basic Spike", x: 12, y: 1},
+// 	{type: "Basic Block", x: 9, y: 0},
+// 	{type: "Basic Block", x: 9, y: 1},
+// 	{type: "Basic Block", x: 9, y: 3},
+// 	{type: "Half Block", x: 14, y: 1},
+// 	{type: "Half Block", x: 15, y: 1},
+// 	{type: "Half Spike", x: 15, y: 2}
+// ])
+var url_info = JSON.parse(atob(location.search.substring(1)))
+importObjects(url_info.objects)
 
 function frame() {
 	stage.tick()
