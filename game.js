@@ -80,6 +80,7 @@ class Player extends SceneItem {
 			this.rotation += 5
 		}
 		if (this.x > 20) this.destroy()
+		// RectDisplay.create(this)
 	}
 	cubeJump() {
 		this.vy += 0.35
@@ -155,6 +156,26 @@ class DeathParticleExtra extends Particle {
 		if (this.size >= 5) this.destroy()
 	}
 }
+class RectDisplay extends Particle {
+	/** @param {Rect} rect */
+	constructor(rect) {
+		super(rect.x, rect.y)
+		this.elm.classList.remove("particle")
+		this.elm.classList.add(`rect-${rect.x}-${rect.y}-${rect.w}-${rect.h}`)
+		this.extraStyles[2] = `bottom: calc(25% + calc(${rect.y} * var(--tile-size))); left: calc(${rect.x} * var(--tile-size)); width: calc(${rect.w} * var(--tile-size)); height: calc(${rect.h} * var(--tile-size));`
+		this.time = 0
+	}
+	tick() {
+		// this.time += 1
+		this.extraStyles[1] = `opacity: ${this.time.map(0, 5, 1, 0)};`
+		super.tick()
+		if (this.time >= 5) this.destroy()
+	}
+	/** @param {Tile} item */
+	static create(item) {
+		particles.push(new RectDisplay(item.getRect()))
+	}
+}
 class Rect {
 	constructor(x, y, w, h) {
 		/** @type {number} */
@@ -195,6 +216,7 @@ class Tile extends SceneItem {
 	constructor(x, y, type) {
 		super(x, y)
 		this.extraStyles[0] = `background: url(assets/tile-${type}.svg);`
+		// RectDisplay.create(this)
 	}
 	getRect() {
 		return new Rect(this.x, this.y, 1, 1)
@@ -202,6 +224,7 @@ class Tile extends SceneItem {
 	tick() {
 		this.collide()
 		super.tick()
+		// RectDisplay.create(this)
 	}
 	collide() {}
 }
@@ -210,7 +233,7 @@ class TileBlock extends Tile {
 		var playerRect = player.getRect()
 		var thisRect = this.getRect()
 		if (playerRect.colliderect(thisRect)) {
-			var yIncrease = (thisRect.y + 1) - player.y
+			var yIncrease = (thisRect.y + 1) - player.getRect().y
 			if (yIncrease < 0.5) {
 				// Player is fine
 				player.y += yIncrease
@@ -236,16 +259,34 @@ class BasicBlock extends TileBlock {
 		super(x, y, "basic-block")
 	}
 }
+class HalfBlock extends TileBlock {
+	constructor(x, y) {
+		super(x, y, "half-block")
+	}
+	getRect() {
+		return super.getRect().relative(0, 0.5, 1, 0.5);
+	}
+}
 class BasicSpike extends TileDeath {
 	constructor(x, y) {
 		super(x, y, "basic-spike")
 	}
 	getRect() {
-		return super.getRect().relative(0.2, 0.2, 0.6, 0.8);
+		return super.getRect().relative(0.2, 0, 0.6, 0.5);
+	}
+}
+class HalfSpike extends TileDeath {
+	constructor(x, y) {
+		super(x, y, "half-spike")
+	}
+	getRect() {
+		return super.getRect().relative(0.2, 0, 0.6, 0.4);
 	}
 }
 var player = new Player()
 var stage = new Stage()
+/** @type {Particle[]} */
+var particles = []
 /** @type {Tile[]} */
 var tiles = [
 	new BasicBlock(10, 0),
@@ -256,10 +297,11 @@ var tiles = [
 	new BasicSpike(12, 1),
 	new BasicBlock(9, 0),
 	new BasicBlock(9, 1),
-	new BasicBlock(9, 3)
+	new BasicBlock(9, 3),
+	new HalfBlock(14, 1),
+	new HalfBlock(15, 1),
+	new HalfSpike(15, 2)
 ]
-/** @type {Particle[]} */
-var particles = []
 var isPressing = false
 
 document.addEventListener("keydown", (e) => {

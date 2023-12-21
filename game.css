@@ -22,6 +22,7 @@ body {
 	position: absolute;
 }
 #scene > div.regularPos {
+	/*             Invert                         Y * tileSize */
 	top: calc(calc(75% - var(--tile-size)) - calc(var(--y) * var(--tile-size)));
 	left: calc(var(--x) * var(--tile-size));
 	width: var(--tile-size);
@@ -41,6 +42,7 @@ body {
 }
 .particle {
 	--real-size: calc(var(--tile-size) * var(--size));
+	/*        Invert          Y * tileSize                   Center */
 	top: calc(75% - calc(calc(var(--y) * var(--tile-size)) + calc(var(--real-size) / 2)));
 	left: calc(calc(var(--x) * var(--tile-size)) - calc(var(--real-size) / 2));
 	width: var(--real-size);
