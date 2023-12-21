@@ -34,6 +34,10 @@ class Stage extends SceneItem {
 		this.elm.classList.remove("regularPos")
 		this.elm.classList.add("stage")
 	}
+	tick() {
+		this.elm.parentNode.setAttribute("style", `--move-amount: ${Math.max(0, player.x - 3)};`)
+		super.tick()
+	}
 }
 class Player extends SceneItem {
 	constructor() {
@@ -79,7 +83,7 @@ class Player extends SceneItem {
 		} else {
 			this.rotation += 5
 		}
-		if (this.x > 20) this.destroy()
+		if (this.x > stageWidth) this.destroy()
 		if (debugMode) RectDisplay.create(this)
 	}
 	cubeJump() {
@@ -304,6 +308,7 @@ var particles = []
 /** @type {Tile[]} */
 var tiles = []
 var isPressing = false
+var stageWidth = 0
 
 document.addEventListener("keydown", (e) => {
 	if (e.key == " ") isPressing = true
@@ -334,8 +339,10 @@ var blockTypes = {
 function importObjects(o) {
 	for (var i = 0; i < o.length; i++) {
 		var obj = o[i]
+		/** @type {Tile} */
 		var c = new blockTypes[obj.type](obj.x, obj.y)
 		tiles.push(c)
+		stageWidth = Math.max(stageWidth, c.x + 5)
 	}
 }
 // importObjects([
@@ -356,11 +363,11 @@ importObjects(JSON.parse(atob(url_query.objects)))
 var debugMode = url_query.debug == "true"
 
 function frame() {
-	stage.tick()
 	for (var i = 0; i < particles.length; i++) {
 		particles[i].tick()
 	}
 	if (player.alive) {
+		stage.tick()
 		player.tick()
 		for (var i = 0; i < tiles.length; i++) {
 			tiles[i].tick()

@@ -17,6 +17,7 @@ body {
 	/* background */
 	background: url(../assets/Background.png), #007dff;
 	background-size: cover;
+	background-position-x: calc(-0.1 * calc(var(--move-amount) * var(--tile-size)));
 }
 #scene > div {
 	position: absolute;
@@ -24,7 +25,7 @@ body {
 #scene > div.regularPos {
 	/*             Invert                         Y * tileSize */
 	top: calc(calc(75% - var(--tile-size)) - calc(var(--y) * var(--tile-size)));
-	left: calc(var(--x) * var(--tile-size));
+	left: calc(calc(var(--x) * var(--tile-size)) + calc(-1 * calc(var(--move-amount) * var(--tile-size))));
 	width: var(--tile-size);
 	height: var(--tile-size);
 }
@@ -36,6 +37,7 @@ body {
 	bottom: 0;
 	/* img */
 	background: url(../assets/Ground_Main.svg), #007dff;
+	background-position-x: calc(-1 * calc(var(--move-amount) * var(--tile-size)));
 }
 .player {
 	background: url(../assets/Playerfs.svg);
@@ -44,7 +46,7 @@ body {
 	--real-size: calc(var(--tile-size) * var(--size));
 	/*        Invert          Y * tileSize                   Center */
 	top: calc(75% - calc(calc(var(--y) * var(--tile-size)) + calc(var(--real-size) / 2)));
-	left: calc(calc(var(--x) * var(--tile-size)) - calc(var(--real-size) / 2));
+	left: calc(calc(calc(var(--x) * var(--tile-size)) - calc(var(--real-size) / 2)) + calc(-1 * calc(var(--move-amount) * var(--tile-size))));
 	width: var(--real-size);
 	height: var(--real-size);
 }
