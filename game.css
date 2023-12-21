@@ -1,0 +1,48 @@
+html, body {
+	height: 100%;
+}
+body {
+	margin: 0;
+}
+
+#scene {
+	/* positioning */
+	position: absolute;
+	overflow: hidden;
+	top: 0;
+	left: 0;
+	width: 100%;
+	height: 100%;
+	--tile-size: 5vmin;
+	/* background */
+	background: url(assets/Background.png), #007dff;
+	background-size: cover;
+}
+#scene > div {
+	position: absolute;
+}
+#scene > div.regularPos {
+	top: calc(calc(75% - var(--tile-size)) - calc(var(--y) * var(--tile-size)));
+	left: calc(var(--x) * var(--tile-size));
+	width: var(--tile-size);
+	height: var(--tile-size);
+}
+.stage {
+	/* positioning */
+	width: 100%;
+	height: 25%;
+	top: unset !important;
+	bottom: 0;
+	/* img */
+	background: url(assets/Ground_Main.svg), #007dff;
+}
+.player {
+	background: url(assets/Playerfs.svg);
+}
+.particle {
+	--real-size: calc(var(--tile-size) * var(--size));
+	top: calc(75% - calc(calc(var(--y) * var(--tile-size)) + calc(var(--real-size) / 2)));
+	left: calc(calc(var(--x) * var(--tile-size)) - calc(var(--real-size) / 2));
+	width: var(--real-size);
+	height: var(--real-size);
+}

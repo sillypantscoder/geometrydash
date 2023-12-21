@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 10 10">
+	<defs>
+		<linearGradient id="mainGradient" gradientTransform="rotate(90)">
+			<stop offset="0%" stop-color="#000F" />
+			<stop offset="100%" stop-color="#0000" />
+		</linearGradient>
+	</defs>
+	<path d="M 5 0 L 10 10 L 0 10 Z M 5 1.5 L 1 9.4 L 9 9.4 Z" fill="white" />
+	<path d="M 5 1.5 L 1 9.4 L 9 9.4 Z" fill="url(#mainGradient)" />
+</svg>
