@@ -162,11 +162,24 @@ function exportLevel() {
 			y: tiles[i].y
 		})
 	}
-	var data = btoa(JSON.stringify({
-		objects: r,
-		debug
-	}))
-	window.open("../game/index.html?" + data)
+	var data = btoa(JSON.stringify(r))
+	window.open("../game/index.html?objects=" + data)
+}
+function saveLevel() {
+	var r = []
+	var map = Object.entries(blockTypes)
+	var values = map.map((v) => v[1])
+	var keys = map.map((v) => v[0])
+	for (var i = 0; i < tiles.length; i++) {
+		var type = keys[values.findIndex((v) => tiles[i] instanceof v)]
+		r.push({
+			type,
+			x: tiles[i].x,
+			y: tiles[i].y
+		})
+	}
+	var data = btoa(JSON.stringify(r))
+	location.search = "?objects=" + data
 }
 
 (() => {

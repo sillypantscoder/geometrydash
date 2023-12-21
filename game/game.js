@@ -35,7 +35,7 @@ class Stage extends SceneItem {
 		this.elm.classList.add("stage")
 	}
 	tick() {
-		this.elm.parentNode.setAttribute("style", `--move-amount: ${Math.max(0, player.x - 3)};`)
+		this.elm.parentNode.setAttribute("style", `--move-amount: ${Math.max(0, player.x - 5)};`)
 		super.tick()
 	}
 }
@@ -43,19 +43,26 @@ class Player extends SceneItem {
 	constructor() {
 		super(-3, 0)
 		this.elm.classList.add("player")
-		/** @type {boolean} */
-		this.alive = true
 		/** @type {number} */
 		this.rotation = 0
 		/** @type {number} */
 		this.vy = 0
 		/** @type {boolean} */
 		this.onGround = false
+		/** @type {number} */
+		this.deathTime = 0
 	}
 	getRect() {
 		return new Rect(this.x, this.y, 1, 1)
 	}
 	tick() {
+		if (this.deathTime > 0) {
+			if (! debugMode) this.deathTime -= 1
+			if (this.deathTime == 0) {
+				this.respawn()
+			}
+			return
+		}
 		// Move forwards
 		this.x += 0.1
 		// Fall
@@ -72,6 +79,7 @@ class Player extends SceneItem {
 		super.tick()
 	}
 	finishTick() {
+		if (this.deathTime > 0) return
 		if (this.onGround) {
 			this.vy = 0
 			this.rotation = 0
@@ -90,12 +98,18 @@ class Player extends SceneItem {
 		this.vy += 0.35
 	}
 	destroy() {
-		this.alive = false
+		this.deathTime = 40
 		super.destroy()
 		particles.push(new DeathParticleMain(this.x + 0.5, this.y + 0.5))
 		for (var i = 0; i < 20; i++) {
 			particles.push(new DeathParticleExtra(this.x + 0.5, this.y + 0.5))
 		}
+	}
+	respawn() {
+		document.querySelector("#scene").appendChild(this.elm)
+		this.x = -3
+		this.y = 0
+		this.vy = 0
 	}
 }
 class Particle extends SceneItem {
@@ -167,7 +181,7 @@ class RectDisplay extends Particle {
 		this.elm.classList.remove("particle")
 		this.elm.classList.add(`rect-${rect.x}-${rect.y}-${rect.w}-${rect.h}`)
 		this.extraStyles[0] = `background: ${color};`
-		this.extraStyles[2] = `bottom: calc(25% + calc(${rect.y} * var(--tile-size))); left: calc(${rect.x} * var(--tile-size)); width: calc(${rect.w} * var(--tile-size)); height: calc(${rect.h} * var(--tile-size));`
+		this.extraStyles[2] = `bottom: calc(25% + calc(${rect.y} * var(--tile-size))); left: calc(calc(${rect.x} * var(--tile-size)) + calc(-1 * calc(var(--move-amount) * var(--tile-size)))); width: calc(${rect.w} * var(--tile-size)); height: calc(${rect.h} * var(--tile-size));`
 		this.time = 0
 	}
 	tick() {
@@ -359,21 +373,21 @@ function importObjects(o) {
 // 	{type: "Half Block", x: 15, y: 1},
 // 	{type: "Half Spike", x: 15, y: 2}
 // ])
-importObjects(JSON.parse(atob(url_query.objects)))
 var debugMode = url_query.debug == "true"
+importObjects(JSON.parse(atob(url_query.objects)))
 
 function frame() {
 	for (var i = 0; i < particles.length; i++) {
 		particles[i].tick()
 	}
-	if (player.alive) {
-		stage.tick()
-		player.tick()
+	stage.tick()
+	player.tick()
+	if (player.deathTime == 0) {
 		for (var i = 0; i < tiles.length; i++) {
 			tiles[i].tick()
 		}
-		player.finishTick()
 	}
+	player.finishTick()
 }
 async function frameLoop() {
 	while (true) {
