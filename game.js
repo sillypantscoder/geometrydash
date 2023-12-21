@@ -192,13 +192,8 @@ class Tile extends SceneItem {
 		return new Rect(this.x, this.y, 1, 1)
 	}
 	tick() {
-		if (this.doesCollide()) {
-			this.collide()
-		}
+		this.collide()
 		super.tick()
-	}
-	doesCollide() {
-		return false
 	}
 	collide() {}
 }
@@ -206,17 +201,19 @@ class BasicBlock extends Tile {
 	constructor(x, y) {
 		super(x, y, "basic-block")
 	}
-	doesCollide() {
-		return player.getRect().colliderect(this.getRect())
-	}
 	collide() {
-		if (player.getRect().move(0, player.vy * -2).colliderect(this.getRect())) {
-			// Player dies!
-			player.destroy()
-		} else {
-			// Player is fine
-			player.y = this.y + 1
-			player.onGround = true
+		var playerRect = player.getRect()
+		var thisRect = this.getRect()
+		var prevPlayerRect = playerRect.move(0, player.vy * -1)
+		if (playerRect.colliderect(thisRect)) {
+			if (prevPlayerRect.colliderect(thisRect)) {
+				// Player dies!
+				player.destroy()
+			} else {
+				// Player is fine
+				player.y = this.y + 1
+				player.onGround = true
+			}
 		}
 	}
 }
@@ -224,12 +221,14 @@ class BasicSpike extends Tile {
 	constructor(x, y) {
 		super(x, y, "basic-spike")
 	}
-	doesCollide() {
-		return player.getRect().colliderect(this.getRect())
+	getRect() {
+		return new Rect(this.x + 0.2, this.y + 0.2, 0.6, 0.8);
 	}
 	collide() {
-		// Player dies!
-		player.destroy()
+		if (player.getRect().colliderect(this.getRect())) {
+			// Player dies!
+			player.destroy()
+		}
 	}
 }
 var player = new Player()
