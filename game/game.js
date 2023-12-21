@@ -80,7 +80,7 @@ class Player extends SceneItem {
 			this.rotation += 5
 		}
 		if (this.x > 20) this.destroy()
-		if (url_info.debug) RectDisplay.create(this)
+		if (debugMode) RectDisplay.create(this)
 	}
 	cubeJump() {
 		this.vy += 0.35
@@ -220,7 +220,7 @@ class Tile extends SceneItem {
 	constructor(x, y, type) {
 		super(x, y)
 		this.extraStyles[0] = `background: url(../assets/tile-${type}.svg);`
-		if (url_info.debug) RectDisplay.create(this)
+		if (debugMode) RectDisplay.create(this)
 	}
 	getRect() {
 		return new Rect(this.x, this.y, 1, 1)
@@ -243,7 +243,7 @@ class TileBlock extends Tile {
 				player.y += yIncrease
 				player.onGround = true
 			} else {
-				if (url_info.debug) {
+				if (debugMode) {
 					setTimeout((thisRect, playerRect, yIncrease) => {
 						particles.push(new RectDisplay(new Rect(thisRect.x, playerRect.y, thisRect.w, yIncrease), "pink"))
 					}, 100, thisRect, playerRect, yIncrease)
@@ -260,7 +260,7 @@ class TileDeath extends Tile {
 		if (playerRect.colliderect(thisRect)) {
 			// Player dies!
 			player.destroy()
-			if (url_info.debug) {
+			if (debugMode) {
 				setTimeout(() => {
 					particles.push(new RectDisplay(player.getRect(), "orange"))
 				}, 100)
@@ -352,8 +352,8 @@ function importObjects(o) {
 // 	{type: "Half Block", x: 15, y: 1},
 // 	{type: "Half Spike", x: 15, y: 2}
 // ])
-var url_info = JSON.parse(atob(location.search.substring(1)))
-importObjects(url_info.objects)
+importObjects(JSON.parse(atob(url_query.objects)))
+var debugMode = url_query.debug == "true"
 
 function frame() {
 	stage.tick()

@@ -108,26 +108,22 @@ class HalfSpike extends Tile {
 	}
 }
 /** @type {Tile[]} */
-var tiles = [
-	new BasicBlock(10, 0),
-	new BasicBlock(11, 0),
-	new BasicBlock(12, 0),
-	new BasicBlock(13, 0),
-	new BasicBlock(13, 1),
-	new BasicSpike(12, 1),
-	new BasicBlock(9, 0),
-	new BasicBlock(9, 1),
-	new BasicBlock(9, 3),
-	new HalfBlock(14, 1),
-	new HalfBlock(15, 1),
-	new HalfSpike(15, 2)
-]
+var tiles = []
 var blockTypes = {
 	"Basic Block": BasicBlock,
 	"Basic Spike": BasicSpike,
 	"Half Block": HalfBlock,
 	"Half Spike": HalfSpike
 }
+/** @param {{ type: string, x: number, y: number }[]} o */
+function importObjects(o) {
+	for (var i = 0; i < o.length; i++) {
+		var obj = o[i]
+		var c = new blockTypes[obj.type](obj.x, obj.y)
+		tiles.push(c)
+	}
+}
+importObjects(JSON.parse(atob(url_query.objects)))
 
 function onclick(evt) {
 	var pos = [
