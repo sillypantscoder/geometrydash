@@ -18,11 +18,13 @@ class SceneItem {
 		this.x = x
 		/** @type {number} */
 		this.y = y
+		/** @type {number} */
+		this.rotation = 0
 		/** @type {(string | undefined)[]} */
 		this.extraStyles = []
 	}
 	tick() {
-		this.elm.setAttribute("style", `--x: ${this.x}; --y: ${this.y};${this.extraStyles.map((v) => v==undefined ? "" : ` ${v}`).join("")}`)
+		this.elm.setAttribute("style", `--x: ${this.x}; --y: ${this.y}; transform: rotate(${this.rotation}deg);${this.extraStyles.map((v) => v==undefined ? "" : ` ${v}`).join("")}`)
 	}
 	destroy() {
 		this.elm.remove()
@@ -43,8 +45,6 @@ class Player extends SceneItem {
 	constructor() {
 		super(-3, 0)
 		this.elm.classList.add("player")
-		/** @type {number} */
-		this.rotation = 0
 		/** @type {number} */
 		this.vy = 0
 		/** @type {boolean} */
@@ -75,7 +75,6 @@ class Player extends SceneItem {
 			this.onGround = true
 		}
 		// Update styles
-		this.extraStyles[0] = `transform: rotate(${this.rotation}deg);`
 		super.tick()
 	}
 	finishTick() {
@@ -193,9 +192,11 @@ class RectDisplay extends Particle {
 	/** @param {Tile | Player} item */
 	static create(item) {
 		var color = "lime"
+		var r = item.getRect()
 		if (item instanceof Player) color = "yellow"
+		else r = r.rotate(item.rotation, item.x + 0.5, item.y + 0.5)
 		if (item instanceof TileDeath) color = "red"
-		particles.push(new RectDisplay(item.getRect(), color))
+		particles.push(new RectDisplay(r, color))
 	}
 }
 class Rect {
@@ -225,6 +226,9 @@ class Rect {
 	centerY() {
 		return this.y + (this.h / 2)
 	}
+	centerX() {
+		return this.x + (this.w / 2)
+	}
 	relative(x, y, w, h) {
 		return new Rect(
 			this.x + (this.w * x),
@@ -233,11 +237,33 @@ class Rect {
 			this.h * h
 		)
 	}
+	static fromPoints(x1, y1, x2, y2) {
+		return new Rect(
+			Math.min(x1, x2),
+			Math.min(y1, y2),
+			Math.abs(x1 - x2),
+			Math.abs(y1 - y2)
+		)
+	}
+	rotate(amount, centerX, centerY) {
+		function rotate(cx, cy, x, y, angle) {
+			var radians = (Math.PI / 180) * angle,
+				cos = Math.cos(radians),
+				sin = Math.sin(radians),
+				nx = (cos * (x - cx)) + (sin * (y - cy)) + cx,
+				ny = (cos * (y - cy)) - (sin * (x - cx)) + cy;
+			return [nx, ny];
+		}
+		var a = rotate(centerX, centerY, this.x, this.y, amount)
+		var b = rotate(centerX, centerY, this.x + this.w, this.y + this.h, amount)
+		return Rect.fromPoints(a[0], a[1], b[0], b[1])
+	}
 }
 class Tile extends SceneItem {
-	constructor(x, y, type) {
+	constructor(x, y, type, rotation) {
 		super(x, y)
 		this.extraStyles[0] = `background: url(../assets/tile-${type}.svg);`
+		this.rotation = rotation
 		if (debugMode) RectDisplay.create(this)
 	}
 	getRect() {
@@ -253,7 +279,7 @@ class Tile extends SceneItem {
 class TileBlock extends Tile {
 	collide() {
 		var playerRect = player.getRect()
-		var thisRect = this.getRect()
+		var thisRect = this.getRect().rotate(this.rotation, this.x + 0.5, this.y + 0.5)
 		if (playerRect.colliderect(thisRect)) {
 			var yIncrease = (thisRect.y + thisRect.h) - playerRect.y
 			if (yIncrease < 0.5) {
@@ -274,7 +300,7 @@ class TileBlock extends Tile {
 class TileDeath extends Tile {
 	collide() {
 		var playerRect = player.getRect()
-		var thisRect = this.getRect()
+		var thisRect = this.getRect().rotate(this.rotation, this.x + 0.5, this.y + 0.5)
 		if (playerRect.colliderect(thisRect)) {
 			// Player dies!
 			player.destroy()
@@ -287,29 +313,29 @@ class TileDeath extends Tile {
 	}
 }
 class BasicBlock extends TileBlock {
-	constructor(x, y) {
-		super(x, y, "basic-block")
+	constructor(x, y, rotation) {
+		super(x, y, "basic-block", rotation)
 	}
 }
 class HalfBlock extends TileBlock {
-	constructor(x, y) {
-		super(x, y, "half-block")
+	constructor(x, y, rotation) {
+		super(x, y, "half-block", rotation)
 	}
 	getRect() {
 		return super.getRect().relative(0, 0.5, 1, 0.5);
 	}
 }
 class BasicSpike extends TileDeath {
-	constructor(x, y) {
-		super(x, y, "basic-spike")
+	constructor(x, y, rotation) {
+		super(x, y, "basic-spike", rotation)
 	}
 	getRect() {
 		return super.getRect().relative(0.2, 0, 0.6, 0.8);
 	}
 }
 class HalfSpike extends TileDeath {
-	constructor(x, y) {
-		super(x, y, "half-spike")
+	constructor(x, y, rotation) {
+		super(x, y, "half-spike", rotation)
 	}
 	getRect() {
 		return super.getRect().relative(0.2, 0, 0.6, 0.4);
@@ -344,17 +370,17 @@ document.addEventListener("touchend", (e) => {
 })
 
 var blockTypes = {
-	"Basic Block": BasicBlock,
-	"Basic Spike": BasicSpike,
-	"Half Block": HalfBlock,
-	"Half Spike": HalfSpike
+	"basic-block": BasicBlock,
+	"basic-spike": BasicSpike,
+	"half-block": HalfBlock,
+	"half-spike": HalfSpike
 }
-/** @param {{ type: string, x: number, y: number }[]} o */
+/** @param {{ type: string, x: number, y: number, rotation: number }[]} o */
 function importObjects(o) {
 	for (var i = 0; i < o.length; i++) {
 		var obj = o[i]
 		/** @type {Tile} */
-		var c = new blockTypes[obj.type](obj.x, obj.y)
+		var c = new blockTypes[obj.type](obj.x, obj.y, obj.rotation)
 		tiles.push(c)
 		stageWidth = Math.max(stageWidth, c.x + 5)
 	}

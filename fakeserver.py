@@ -40,6 +40,14 @@ class HttpResponse(typing.TypedDict):
 def get(path: str, query: URLQuery) -> HttpResponse:
 	# print(path, query, file=sys.stderr)
 	# print(os.path.abspath("."+path), file=sys.stderr)
+	if path == "/":
+		return {
+			"status": 200,
+			"headers": {
+				"Content-Type": "text/html"
+			},
+			"content": read_file("index.html")
+		}
 	if os.path.isfile("."+path):
 		return {
 			"status": 200,

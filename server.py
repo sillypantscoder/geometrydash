@@ -22,7 +22,7 @@ class HttpResponse(typing.TypedDict):
 	content: str | bytes
 
 def get(path: str) -> HttpResponse:
-	if os.path.isfile("."+path):
+	if os.path.isfile("."+path.split("?")[0]):
 		return {
 			"status": 200,
 			"headers": {
@@ -32,9 +32,9 @@ def get(path: str) -> HttpResponse:
 					"css": "text/css",
 					"svg": "image/svg+xml",
 					"png": "image/png"
-				}[path.split(".")[-1]]
+				}[path.split("?")[0].split(".")[-1]]
 			},
-			"content": read_file(path[1:])
+			"content": read_file(path[1:].split("?")[0])
 		}
 	else: # 404 page
 		return {

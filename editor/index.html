@@ -5,9 +5,10 @@
 	</head>
 	<body>
 		<div id="scene"><div class="stage"></div><div id="editor">
-			<div>Selected block: <select id="currentBlock">
-				<option value="">Erase</option>
-			</select></div>
+			<div>Selected block: <span id="blocks"><!--
+				--><span class="option-element option-element-selected" data-value=".eraser" onclick="this.classList.add('option-element-selected')">Eraser</span><!--
+				--><span class="option-element" data-value=".rotate" onclick="this.classList.add('option-element-selected')">Rotate</span><!--
+			--></span></div>
 			<div><button onclick="saveLevel()">Save</button><button onclick="exportLevel()">Play</button></div>
 		</div></div>
 		<script src="../assets/query.js"></script>
