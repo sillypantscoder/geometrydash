@@ -36,8 +36,9 @@ function onclick(evt) {
 		}
 		// Add new block
 		var type = blockTypes[selectedBlock]
+		var args = type.default(pos)
 		/** @type {Tile} */
-		var newTile = new type(pos[0], pos[1], 0)
+		var newTile = type.load(type, args)
 		view.tiles.push(newTile)
 		newTile.tick()
 	}
@@ -55,9 +56,7 @@ function getExport() {
 		var type = keys[values.findIndex((v) => tile instanceof v)]
 		r.push({
 			type,
-			x: tile.x,
-			y: tile.y,
-			rotation: tile.rotation
+			data: tile.save()
 		})
 	}
 	return r

@@ -30,15 +30,91 @@ class SceneItem {
 		this.elm.remove()
 	}
 }
+class InterpolatedVariable {
+	constructor(initialValue) {
+		/** @type {number} */
+		this.startValue = initialValue
+		/** @type {number} */
+		this.endValue = initialValue
+		/** @type {number} */
+		this.ticks = 0
+		/** @type {number} */
+		this.totalTicks = -1
+	}
+	tick() {
+		if (this.totalTicks == -1) return
+		this.ticks += 1
+		if (this.ticks >= this.totalTicks) {
+			this.ticks = 0
+			this.totalTicks = -1
+			this.startValue = this.endValue
+		}
+	}
+	interpolate(newValue, duration) {
+		this.ticks = 0
+		this.totalTicks = duration
+		this.endValue = newValue
+	}
+	/** @returns {number} */
+	get() {
+		if (this.totalTicks == -1) return this.startValue
+		return (this.ticks / this.totalTicks).map(0, 1, this.startValue, this.endValue)
+	}
+}
+class InterpolatedColor {
+	constructor(r, g, b) {
+		/** @type {InterpolatedVariable} */
+		this.r = new InterpolatedVariable(r)
+		/** @type {InterpolatedVariable} */
+		this.g = new InterpolatedVariable(g)
+		/** @type {InterpolatedVariable} */
+		this.b = new InterpolatedVariable(b)
+	}
+	tick() {
+		this.r.tick()
+		this.g.tick()
+		this.b.tick()
+	}
+	interpolate(r, g, b, duration) {
+		this.r.interpolate(r, duration)
+		this.g.interpolate(g, duration)
+		this.b.interpolate(b, duration)
+	}
+	/** @returns {number[]} */
+	get() {
+		return [
+			this.r.get(),
+			this.g.get(),
+			this.b.get()
+		]
+	}
+	getHex() {
+		return "#" + this.get().map((v) => Math.round(v).toString(16).padStart(2, "0")).join("")
+	}
+}
 class Stage extends SceneItem {
 	constructor() {
 		super(0, 0)
 		this.elm.classList.remove("regularPos")
 		this.elm.classList.add("stage")
+		this.bgColor = new InterpolatedColor(0, 125, 255)
+		this.stageColor = new InterpolatedColor(0, 125, 255)
 	}
 	tick() {
-		this.elm.parentNode.setAttribute("style", `--move-amount: ${Math.max(0, view.player.x - 5)};`)
+		this.bgColor.tick()
+		this.stageColor.tick()
+		this.elm.parentNode.setAttribute("style", `--move-amount: ${Math.max(0, view.player.x - 5)}; --bg-color: ${this.bgColor.getHex()}; --stage-color: ${this.stageColor.getHex()};`)
 		super.tick()
+	}
+	reset() {
+		this.bgColor = new InterpolatedColor(0, 125, 255)
+		this.stageColor = new InterpolatedColor(0, 125, 255)
+		for (var i = 0; i < view.tiles.length; i++) {
+			var t = view.tiles[i]
+			if (t instanceof Trigger) {
+				t.activated = false
+			}
+		}
 	}
 }
 class Player extends SceneItem {
@@ -114,6 +190,7 @@ class Player extends SceneItem {
 		this.x = -3
 		this.y = 0
 		this.vy = 0
+		view.stage.reset()
 	}
 }
 class Particle extends SceneItem {
@@ -271,6 +348,23 @@ class Tile extends SceneItem {
 		this.rotation = rotation
 		if (debugMode) RectDisplay.create(this)
 	}
+	static load(type, info) {
+		return new type(info.x, info.y, info.rotation)
+	}
+	static default(pos) {
+		return {
+			x: pos[0],
+			y: pos[1],
+			rotation: 0
+		}
+	}
+	save() {
+		return {
+			x: this.x,
+			y: this.y,
+			rotation: this.rotation
+		}
+	}
 	getRect() {
 		return new Rect(this.x, this.y, 1, 1)
 	}
@@ -316,6 +410,13 @@ class TileDeath extends Tile {
 				}, 100)
 			}
 		}
+	}
+}
+class TileInvisible extends Tile {
+	constructor(x, y, type, rotation) {
+		super(x, y, type, rotation)
+		if (viewType == "game") this.elm.remove()
+		if (debugMode) RectDisplay.create(this)
 	}
 }
 class BasicBlock extends TileBlock {
@@ -370,6 +471,75 @@ class JumpOrb extends Tile {
 		}
 	}
 }
+class Trigger extends TileInvisible {
+	constructor(x, y, type, needsTouch) {
+		super(x, y, type, 0)
+		/** @type {boolean} */
+		this.needsTouch = needsTouch
+		/** @type {boolean} */
+		this.activated = false
+	}
+	hasCollision() {
+		var playerRect = view.player.getRect()
+		var thisRect = this.getRect()
+		if (this.needsTouch) {
+			return playerRect.colliderect(thisRect)
+		} else {
+			return playerRect.centerX() > thisRect.centerX()
+		}
+	}
+	collide() {
+		if (this.activated) return
+		if (this.hasCollision()) {
+			this.activated = true
+			this.trigger()
+		}
+	}
+	trigger() {}
+}
+class ColorTrigger extends Trigger {
+	constructor(x, y, needsTouch, section, newColor, duration) {
+		super(x, y, "color-trigger", needsTouch)
+		this.section = section
+		this.color = newColor
+		this.duration = duration
+		this.extraStyles[0] = this.extraStyles[0].substring(0, this.extraStyles[0].length - 1) + `, radial-gradient(circle, var(--trigger-color) 50%, transparent 50%);`
+	}
+	static default(pos) {
+		return {
+			x: pos[0],
+			y: pos[1],
+			needsTouch: false,
+			section: "stage",
+			color: [255, 0, 0],
+			duration: 0
+		}
+	}
+	static load(type, info) {
+		return new type(info.x, info.y, info.needsTouch, info.section, info.color, info.duration)
+	}
+	save() {
+		return {
+			x: this.x,
+			y: this.y,
+			needsTouch: this.needsTouch,
+			section: this.section,
+			color: this.color,
+			duration: this.duration
+		}
+	}
+	tick() {
+		this.extraStyles[1] = `--trigger-color: rgb(${this.color.join(", ")});`
+		super.tick()
+	}
+	trigger() {
+		/** @type {InterpolatedColor} */
+		var section = {
+			"stage": view.stage.stageColor
+		}[this.section]
+		section.interpolate(...this.color, this.duration)
+	}
+}
 
 class View {
 	constructor() {
@@ -382,7 +552,7 @@ class View {
 		for (var i = 0; i < o.length; i++) {
 			var obj = o[i]
 			/** @type {Tile} */
-			var c = new blockTypes[obj.type](obj.x, obj.y, obj.rotation)
+			var c = blockTypes[obj.type].load(blockTypes[obj.type], obj.data)
 			this.tiles.push(c)
 			this.stageWidth = Math.max(this.stageWidth, c.x + 5)
 			if (viewType == "editor") c.tick()
@@ -424,7 +594,8 @@ var blockTypes = {
 	"basic-spike": BasicSpike,
 	"half-block": HalfBlock,
 	"half-spike": HalfSpike,
-	"jump-orb": JumpOrb
+	"jump-orb": JumpOrb,
+	"color-trigger": ColorTrigger
 }
 var debugMode = url_query.debug == "true"
 /** @type {GameView} */

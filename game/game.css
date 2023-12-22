@@ -14,8 +14,10 @@ body {
 	width: 100%;
 	height: 100%;
 	--tile-size: 5vmin;
+	--bg-color: #007dff;
+	--stage-color: #007dff;
 	/* background */
-	background: url(../assets/Background.png), #007dff;
+	background: url(../assets/Background.png), var(--bg-color);
 	background-size: cover;
 	background-position-x: calc(-0.1 * calc(var(--move-amount) * var(--tile-size)));
 }
@@ -36,7 +38,7 @@ body {
 	top: unset !important;
 	bottom: 0;
 	/* img */
-	background: url(../assets/Ground_Main.svg), #007dff;
+	background: url(../assets/Ground_Main.svg), var(--stage-color);
 	background-position-x: calc(-1 * calc(var(--move-amount) * var(--tile-size)));
 }
 .player {
