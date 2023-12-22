@@ -49,6 +49,7 @@ body {
 	background: white;
 	padding: 1em;
 	overflow-y: auto;
+	z-index: 10;
 }
 .option-element {
 	display: inline-block;

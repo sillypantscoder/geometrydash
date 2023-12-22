@@ -22,7 +22,15 @@ class HttpResponse(typing.TypedDict):
 	content: str | bytes
 
 def get(path: str) -> HttpResponse:
-	if os.path.isfile("."+path.split("?")[0]):
+	if path == "/":
+		return {
+			"status": 200,
+			"headers": {
+				"Content-Type": "text/html"
+			},
+			"content": read_file("index.html")
+		}
+	elif os.path.isfile("."+path.split("?")[0]):
 		return {
 			"status": 200,
 			"headers": {
