@@ -36,7 +36,10 @@ function onclick(evt) {
 		}
 		// Add new block
 		var type = blockTypes[selectedBlock]
-		view.tiles.push(new type(pos[0], pos[1], 0))
+		/** @type {Tile} */
+		var newTile = new type(pos[0], pos[1], 0)
+		view.tiles.push(newTile)
+		newTile.tick()
 	}
 }
 document.querySelector("#scene").addEventListener("click", onclick);

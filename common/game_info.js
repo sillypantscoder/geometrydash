@@ -49,6 +49,8 @@ class Player extends SceneItem {
 		this.vy = 0
 		/** @type {boolean} */
 		this.onGround = false
+		/** @type {() => boolean} */
+		this.canJump = () => false
 		/** @type {number} */
 		this.deathTime = 0
 	}
@@ -69,10 +71,12 @@ class Player extends SceneItem {
 		this.vy -= 0.028
 		this.y += this.vy
 		this.onGround = false
+		this.canJump = () => false
 		// Check for collision with stage
 		if (this.y < 0) {
 			this.y = 0
 			this.onGround = true
+			this.canJump = () => true
 		}
 		// Update styles
 		super.tick()
@@ -83,18 +87,19 @@ class Player extends SceneItem {
 			this.vy = 0
 			this.rotation = 0
 			view.particles.push(new SlideParticle(this.x, this.y))
-			// Jump
-			if (view.isPressing) {
-				this.cubeJump()
-			}
 		} else {
 			this.rotation += 5
+		}
+		if (view.isPressing) {
+			if (this.canJump()) {
+				this.cubeJump()
+			}
 		}
 		if (this.x > view.stageWidth) this.destroy()
 		if (debugMode) RectDisplay.create(this)
 	}
 	cubeJump() {
-		this.vy += 0.35
+		this.vy = 0.35
 	}
 	destroy() {
 		this.deathTime = 40
@@ -286,6 +291,7 @@ class TileBlock extends Tile {
 				// Player is fine
 				view.player.y += yIncrease
 				view.player.onGround = true
+				view.player.canJump = () => true
 			} else {
 				if (debugMode) {
 					setTimeout((thisRect, playerRect, yIncrease) => {
@@ -341,6 +347,30 @@ class HalfSpike extends TileDeath {
 		return super.getRect().relative(0.2, 0, 0.6, 0.4);
 	}
 }
+class JumpOrb extends Tile {
+	constructor(x, y, rotation) {
+		super(x, y, "jump-orb", rotation)
+		this.timeout = 0
+	}
+	tick() {
+		if (this.timeout > 0) this.timeout -= 1
+		super.tick()
+	}
+	collide() {
+		if (this.timeout > 0) return
+		var playerRect = view.player.getRect()
+		var thisRect = this.getRect().rotate(this.rotation, this.x + 0.5, this.y + 0.5)
+		if (playerRect.colliderect(thisRect)) {
+			// Jumpy jumpy
+			var target = this
+			view.player.canJump = () => {
+				target.timeout = 10
+				return true
+			}
+		}
+	}
+}
+
 class View {
 	constructor() {
 		this.stage = new Stage()
@@ -393,9 +423,11 @@ var blockTypes = {
 	"basic-block": BasicBlock,
 	"basic-spike": BasicSpike,
 	"half-block": HalfBlock,
-	"half-spike": HalfSpike
+	"half-spike": HalfSpike,
+	"jump-orb": JumpOrb
 }
 var debugMode = url_query.debug == "true"
+/** @type {GameView} */
 var view = new ({
 	"game": GameView,
 	"editor": View
