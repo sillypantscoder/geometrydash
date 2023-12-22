@@ -18,12 +18,12 @@ body {
 	/* background */
 	background: url(../assets/grid.png), url(../assets/Background.png), #007dff;
 	background-size: var(--tile-size), cover, auto;
-	background-position: 0px 75vh;
+	background-position: 0px 60vh;
 }
 #scene > div.regularPos {
 	position: absolute;
 	/*             Invert                         Y * tileSize */
-	top: calc(calc(75% - var(--tile-size)) - calc(var(--y) * var(--tile-size)));
+	top: calc(calc(60% - var(--tile-size)) - calc(var(--y) * var(--tile-size)));
 	left: calc(var(--x) * var(--tile-size));
 	width: var(--tile-size);
 	height: var(--tile-size);
@@ -32,7 +32,7 @@ body {
 	/* positioning */
 	position: absolute;
 	width: 100%;
-	height: 25%;
+	height: 40%;
 	bottom: 0;
 	/* img */
 	background: url(../assets/Ground_Main.svg), #007dff;
@@ -42,7 +42,7 @@ body {
 	/* positioning */
 	position: absolute;
 	width: 100%;
-	height: 20%;
+	height: 35%;
 	bottom: 0;
 	box-sizing: border-box;
 	/* img */
@@ -63,4 +63,9 @@ body {
 .option-element.option-element-selected {
 	color: white;
 	background-color: black;
+}
+.editing {
+	margin-top: 0.5em;
+	border-top: 1px solid black;
+	padding-top: 0.5em;
 }

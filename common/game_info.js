@@ -24,7 +24,11 @@ class SceneItem {
 		this.extraStyles = []
 	}
 	tick() {
-		this.elm.setAttribute("style", `--x: ${this.x}; --y: ${this.y}; transform: rotate(${this.rotation}deg);${this.extraStyles.map((v) => v==undefined ? "" : ` ${v}`).join("")}`)
+		if (this == window.editing) {
+			this.elm.setAttribute("style", `--x: ${this.x}; --y: ${this.y}; transform: rotate(${this.rotation}deg); box-shadow: 0px 7px 15px 5px orange; outline: 1px solid red;${this.extraStyles.map((v) => v==undefined ? "" : ` ${v}`).join("")}`)
+		} else {
+			this.elm.setAttribute("style", `--x: ${this.x}; --y: ${this.y}; transform: rotate(${this.rotation}deg);${this.extraStyles.map((v) => v==undefined ? "" : ` ${v}`).join("")}`)
+		}
 	}
 	destroy() {
 		this.elm.remove()
@@ -344,6 +348,7 @@ class Rect {
 class Tile extends SceneItem {
 	constructor(x, y, type, rotation) {
 		super(x, y)
+		this.type_file = type
 		this.extraStyles[0] = `background: url(../assets/tile-${type}.svg);`
 		this.rotation = rotation
 		if (debugMode) RectDisplay.create(this)
@@ -364,6 +369,19 @@ class Tile extends SceneItem {
 			y: this.y,
 			rotation: this.rotation
 		}
+	}
+	getEdit() {
+		return [
+			`<div><button onclick="editing.destroy(); view.tiles.splice(view.tiles.indexOf(editing), 1); deselect();">Remove Tile</button></div>`,
+			`<div>Tile Rotation: <select oninput="editing.rotation = Number(this.value); editing.tick();">
+	<option value="0">&nbsp;&uarr; 0</option>
+	<option value="90">&rarr; 90</option>
+	<option value="180">&nbsp;&darr; 180</option>
+	<option value="270">&larr; 270</option>
+</select></div>`,
+			`<div>X: <input type="number" value="${this.x}" min="0" oninput="editing.x = this.valueAsNumber; editing.tick();"></div>`,
+			`<div>Y: <input type="number" value="${this.y}" min="0" oninput="editing.y = this.valueAsNumber; editing.tick();"></div>`
+		]
 	}
 	getRect() {
 		return new Rect(this.x, this.y, 1, 1)
@@ -475,9 +493,15 @@ class Trigger extends TileInvisible {
 	constructor(x, y, type, needsTouch) {
 		super(x, y, type, 0)
 		/** @type {boolean} */
-		this.needsTouch = needsTouch
+		this.needsTouch = needsTouch == true
 		/** @type {boolean} */
 		this.activated = false
+	}
+	getEdit() {
+		return [
+			...super.getEdit(),
+			`<div>Needs touch: <input type="checkbox"${this.needsTouch ? " checked" : ""} oninput="editing.needsTouch = this.checked"></div>`
+		]
 	}
 	hasCollision() {
 		var playerRect = view.player.getRect()
@@ -500,8 +524,11 @@ class Trigger extends TileInvisible {
 class ColorTrigger extends Trigger {
 	constructor(x, y, needsTouch, section, newColor, duration) {
 		super(x, y, "color-trigger", needsTouch)
+		/** @type {"stage" | "bg"} */
 		this.section = section
+		/** @type {number[]} */
 		this.color = newColor
+		/** @type {number} */
 		this.duration = duration
 		this.extraStyles[0] = this.extraStyles[0].substring(0, this.extraStyles[0].length - 1) + `, radial-gradient(circle, var(--trigger-color) 50%, transparent 50%);`
 	}
@@ -528,6 +555,17 @@ class ColorTrigger extends Trigger {
 			duration: this.duration
 		}
 	}
+	getEdit() {
+		return [
+			...super.getEdit(),
+			`<div>Section: <select oninput="editing.section = this.value" value="${this.section}">
+	<option value="stage">Stage</option>
+	<option value="bg">Background</option>
+</select></div>`,
+			`<div>Color: <input type="color" value="${this.getHex()}" oninput="editing.setColorFromHex(this.value)"></div>`,
+			`<div>Duration (60ths of a second): <input type="number" value="${this.duration}" min="1" oninput="editing.duration = this.valueAsNumber"></div>`
+		]
+	}
 	tick() {
 		this.extraStyles[1] = `--trigger-color: rgb(${this.color.join(", ")});`
 		super.tick()
@@ -535,9 +573,17 @@ class ColorTrigger extends Trigger {
 	trigger() {
 		/** @type {InterpolatedColor} */
 		var section = {
-			"stage": view.stage.stageColor
+			"stage": view.stage.stageColor,
+			"bg": view.stage.bgColor
 		}[this.section]
 		section.interpolate(...this.color, this.duration)
+	}
+	setColorFromHex(hex) {
+		this.color = hex.substring(1).match(/.{1,2}/g).map((v) => parseInt(v, 16))
+		this.tick();
+	}
+	getHex() {
+		return "#" + this.color.map((v) => v.toString(16).padStart(2, "0")).join("")
 	}
 }
 
