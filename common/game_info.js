@@ -55,6 +55,9 @@ class InterpolatedVariable {
 		}
 	}
 	interpolate(newValue, duration) {
+		if (this.totalTicks != -1) {
+			this.startValue = this.endValue
+		}
 		this.ticks = 0
 		this.totalTicks = duration
 		this.endValue = newValue
@@ -132,14 +135,16 @@ class Player extends SceneItem {
 		/** @type {() => boolean} */
 		this.canJump = () => false
 		/** @type {number} */
-		this.deathTime = 0
+		this.deathTime = 1
+		/** @type {number} */
+		this.gravity = 1
 	}
 	getRect() {
 		return new Rect(this.x, this.y, 1, 1)
 	}
 	tick() {
 		if (this.deathTime > 0) {
-			if (! debugMode) this.deathTime -= 1
+			if (this.deathTime == 1 || (! debugMode)) this.deathTime -= 1
 			if (this.deathTime == 0) {
 				this.respawn()
 			}
@@ -148,7 +153,7 @@ class Player extends SceneItem {
 		// Move forwards
 		this.x += 0.1
 		// Fall
-		this.vy -= 0.028
+		this.vy -= 0.028 * this.gravity
 		this.y += this.vy
 		this.onGround = false
 		this.canJump = () => false
@@ -157,6 +162,9 @@ class Player extends SceneItem {
 			this.y = 0
 			this.onGround = true
 			this.canJump = () => true
+		}
+		if (this.y > 40) {
+			this.destroy()
 		}
 		// Update styles
 		super.tick()
@@ -179,7 +187,7 @@ class Player extends SceneItem {
 		if (debugMode) RectDisplay.create(this)
 	}
 	cubeJump() {
-		this.vy = 0.35
+		this.vy = 0.35 * this.gravity
 	}
 	destroy() {
 		this.deathTime = 40
@@ -194,7 +202,19 @@ class Player extends SceneItem {
 		this.x = -3
 		this.y = 0
 		this.vy = 0
+		this.gravity = 1
 		view.stage.reset()
+		this.setStartPos()
+	}
+	setStartPos() {
+		for (var i = 0; i < view.tiles.length; i++) {
+			var t = view.tiles[i]
+			if (t instanceof StartPosBlock) {
+				var rect = t.getRect()
+				this.x = rect.x
+				this.y = rect.y
+			}
+		}
 	}
 }
 class Particle extends SceneItem {
@@ -282,7 +302,8 @@ class RectDisplay extends Particle {
 		if (item instanceof Player) color = "yellow"
 		else r = r.rotate(item.rotation, item.x + 0.5, item.y + 0.5)
 		if (item instanceof TileDeath) color = "red"
-		particles.push(new RectDisplay(r, color))
+		if (item instanceof TileInvisible) color = "#0A0A"
+		view.particles.push(new RectDisplay(r, color))
 	}
 }
 class Rect {
@@ -379,8 +400,8 @@ class Tile extends SceneItem {
 	<option value="180">&nbsp;&darr; 180</option>
 	<option value="270">&larr; 270</option>
 </select></div>`,
-			`<div>X: <input type="number" value="${this.x}" min="0" oninput="editing.x = this.valueAsNumber; editing.tick();"></div>`,
-			`<div>Y: <input type="number" value="${this.y}" min="0" oninput="editing.y = this.valueAsNumber; editing.tick();"></div>`
+			`<div>X: <input type="number" value="${this.x}" min="0" oninput="editing.x = Math.round(this.valueAsNumber); editing.tick();"></div>`,
+			`<div>Y: <input type="number" value="${this.y}" min="0" oninput="editing.y = Math.round(this.valueAsNumber); editing.tick();"></div>`
 		]
 	}
 	getRect() {
@@ -399,7 +420,10 @@ class TileBlock extends Tile {
 		var thisRect = this.getRect().rotate(this.rotation, this.x + 0.5, this.y + 0.5)
 		if (playerRect.colliderect(thisRect)) {
 			var yIncrease = (thisRect.y + thisRect.h) - playerRect.y
-			if (yIncrease < 0.5) {
+			var playerDies = false
+			if (view.player.gravity < 0) playerDies = yIncrease <= -0.5
+			else playerDies = yIncrease >= 0.5
+			if (! playerDies) {
 				// Player is fine
 				view.player.y += yIncrease
 				view.player.onGround = true
@@ -489,6 +513,58 @@ class JumpOrb extends Tile {
 		}
 	}
 }
+class GravityOrb extends Tile {
+	constructor(x, y, rotation) {
+		super(x, y, "gravity-orb", rotation)
+		this.timeout = 0
+	}
+	tick() {
+		if (this.timeout > 0) this.timeout -= 1
+		super.tick()
+	}
+	collide() {
+		if (this.timeout > 0) return
+		var playerRect = view.player.getRect()
+		var thisRect = this.getRect().rotate(this.rotation, this.x + 0.5, this.y + 0.5)
+		if (playerRect.colliderect(thisRect)) {
+			// Jumpy jumpy
+			var target = this
+			view.player.canJump = () => {
+				target.timeout = 10
+				view.player.gravity *= -1
+				view.player.vy = view.player.gravity * -1
+				return false
+			}
+		}
+	}
+}
+class StartPosBlock extends TileInvisible {
+	constructor(x, y) {
+		super(x, y, "start-pos", 0)
+	}
+	static load(type, info) {
+		return new type(info.x, info.y)
+	}
+	static default(pos) {
+		return {
+			x: pos[0],
+			y: pos[1]
+		}
+	}
+	save() {
+		return {
+			x: this.x,
+			y: this.y
+		}
+	}
+	getEdit() {
+		return [
+			`<div><button onclick="editing.destroy(); view.tiles.splice(view.tiles.indexOf(editing), 1); deselect();">Remove Tile</button></div>`,
+			`<div>X: <input type="number" value="${this.x}" min="0" oninput="editing.x = Math.round(this.valueAsNumber); editing.tick();"></div>`,
+			`<div>Y: <input type="number" value="${this.y}" min="0" oninput="editing.y = Math.round(this.valueAsNumber); editing.tick();"></div>`
+		]
+	}
+}
 class Trigger extends TileInvisible {
 	constructor(x, y, type, needsTouch) {
 		super(x, y, type, 0)
@@ -527,7 +603,11 @@ class ColorTrigger extends Trigger {
 		/** @type {"stage" | "bg"} */
 		this.section = section
 		/** @type {number[]} */
-		this.color = newColor
+		this.color = [
+			Number(newColor[0]),
+			Number(newColor[1]),
+			Number(newColor[2])
+		]
 		/** @type {number} */
 		this.duration = duration
 		this.extraStyles[0] = this.extraStyles[0].substring(0, this.extraStyles[0].length - 1) + `, radial-gradient(circle, var(--trigger-color) 50%, transparent 50%);`
@@ -558,9 +638,9 @@ class ColorTrigger extends Trigger {
 	getEdit() {
 		return [
 			...super.getEdit(),
-			`<div>Section: <select oninput="editing.section = this.value" value="${this.section}">
-	<option value="stage">Stage</option>
-	<option value="bg">Background</option>
+			`<div>Section: <select oninput="editing.section = this.value">
+	<option value="stage"${this.section=="stage" ? " selected" : ""}>Stage</option>
+	<option value="bg"${this.section=="bg" ? " selected" : ""}>Background</option>
 </select></div>`,
 			`<div>Color: <input type="color" value="${this.getHex()}" oninput="editing.setColorFromHex(this.value)"></div>`,
 			`<div>Duration (60ths of a second): <input type="number" value="${this.duration}" min="1" oninput="editing.duration = this.valueAsNumber"></div>`
@@ -641,7 +721,9 @@ var blockTypes = {
 	"half-block": HalfBlock,
 	"half-spike": HalfSpike,
 	"jump-orb": JumpOrb,
-	"color-trigger": ColorTrigger
+	"color-trigger": ColorTrigger,
+	"start-pos": StartPosBlock,
+	"gravity-orb": GravityOrb
 }
 var debugMode = url_query.debug == "true"
 /** @type {GameView} */
