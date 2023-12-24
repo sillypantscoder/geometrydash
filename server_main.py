@@ -74,7 +74,10 @@ def get(path: str) -> HttpResponse:
 		for name in os.listdir("levels"):
 			contents = json.loads(read_file("levels/" + name))
 			if contents["deleted"] == True: continue
-			data.append(contents)
+			data.append({
+				"name": name,
+				"contents": contents
+			})
 		return {
 			"status": 200,
 			"headers": {

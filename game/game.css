@@ -46,6 +46,9 @@ body {
 	justify-content: center;
 	align-items: center;
 }
+.stage > div > div {
+	display: inline-block;
+}
 .finish-button {
 	--size: calc(var(--tile-size) * 2);
 	width: var(--size);

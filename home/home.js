@@ -6,10 +6,11 @@ x.addEventListener("loadend", () => {
 		var e = document.createElement("div")
 		document.body.appendChild(e)
 		e.classList.add("area")
-		e.innerHTML = `<div class="level-title"></div><div>Verified: ${levels[i].verified[0] ? "Yes" : "No"}</div><div></div><div><a><img src="../assets/LevelStart.svg"></a></div>`
-		e.children[0].innerText = levels[i].name
-		e.children[2].innerText = levels[i].description
-		e.children[3].children[0].setAttribute("href", `../game/index.html?objects=${btoa(JSON.stringify(levels[i].objects))}`)
+		e.innerHTML = `<div class="level-title"></div><div>Verified: ${levels[i].contents.verified[0] ? "Yes" : "No"}</div><div></div><div><a><img src="../assets/LevelStart.svg"></a><a><img src="../assets/LevelEdit.svg"></a></div>`
+		e.children[0].innerText = levels[i].contents.name
+		e.children[2].innerText = levels[i].contents.description
+		e.children[3].children[0].setAttribute("href", `../game/index.html?level=${levels[i].name}`)
+		e.children[3].children[1].setAttribute("href", `../editor/index.html?level=${levels[i].name}`)
 	}
 })
 x.send()

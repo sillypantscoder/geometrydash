@@ -326,7 +326,7 @@ class LevelCompleteSign extends Particle {
 	addButtons() {
 		this.hasButtons = true
 		var e = document.createElement("div")
-		e.innerHTML = `<div onclick='view.restart()'><img src="../assets/Restart.svg" class="finish-button"></div>`
+		e.innerHTML = `<div onclick='view.restart()'><img src="../assets/Restart.svg" class="finish-button"></div><div><a href="../home/index.html"><img src="../assets/Home.svg" class="finish-button"></a></div>`
 		view.stage.elm.appendChild(e)
 		e.setAttribute("style", `opacity: 0; transition: opacity 0.7s linear;`)
 		requestAnimationFrame(() => {
@@ -801,6 +801,8 @@ class View {
 		x.addEventListener("loadend", () => {
 			var level = JSON.parse(x.responseText)
 			view.importObjects(level.objects)
+			levelMeta.name = level.name
+			levelMeta.description = level.description
 		})
 		x.send()
 	}
@@ -870,6 +872,10 @@ var blockTypes = {
 	"black-orb": BlackOrb
 }
 var levelName = url_query.level
+var levelMeta = {
+	"name": "Untitled Level",
+	"description": "",
+}
 var debugMode = url_query.debug == "true"
 /** @type {GameView} */
 var view = new ({

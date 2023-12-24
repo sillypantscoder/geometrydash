@@ -118,8 +118,8 @@ function saveLevel() {
 		x.send(JSON.stringify({
 			"name": levelName,
 			"level": {
-				"name": "",
-				"description": "",
+				"name": levelMeta.name,
+				"description": levelMeta.description,
 				"objects": getExport(),
 				"verified": [false],
 				"deleted": false
