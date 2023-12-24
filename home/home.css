@@ -1,0 +1,31 @@
+html {
+	height: 100%;
+}
+body {
+	background: #0085f9;
+	min-height: 100%;
+	margin: 0;
+	font-family: sans-serif;
+}
+.area {
+	margin: 2em;
+	border-radius: 2em;
+	padding: 3em;
+	background: #FFF3;
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+}
+.area > * {
+	margin: 0.5em;
+}
+.level-title {
+	font-size: 2em;
+	font-weight: bold;
+	margin-bottom: 0;
+	margin-top: 0;
+}
+.area img {
+	width: 5em;
+	height: 5em;
+}

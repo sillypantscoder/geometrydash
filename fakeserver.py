@@ -1,8 +1,7 @@
-import typing
-import os
 import json
 import sys
 import base64
+from server_main import HttpResponse, get, post
 
 class URLQuery:
 	def __init__(self, q):
@@ -17,99 +16,6 @@ class URLQuery:
 			return self.fields[key]
 		else:
 			return ''
-
-def read_file(filename: str) -> bytes:
-	"""Read a file and return the contents."""
-	f = open(filename, "rb")
-	t = f.read()
-	f.close()
-	return t
-
-def write_file(filename: str, content: bytes):
-	"""Write data to a file."""
-	f = open(filename, "wb")
-	f.write(content)
-	f.close()
-
-class HttpResponse(typing.TypedDict):
-	"""A dict containing an HTTP response."""
-	status: int
-	headers: dict[str, str]
-	content: str | bytes
-
-def get(path: str, query: URLQuery) -> HttpResponse:
-	if path == "/":
-		return {
-			"status": 200,
-			"headers": {
-				"Content-Type": "text/html"
-			},
-			"content": read_file("index.html")
-		}
-	elif os.path.isfile("."+path):
-		return {
-			"status": 200,
-			"headers": {
-				"Content-Type": {
-					"html": "text/html",
-					"js": "text/javascript",
-					"css": "text/css",
-					"svg": "image/svg+xml",
-					"png": "image/png"
-				}[path.split(".")[-1]]
-			},
-			"content": read_file(path[1:])
-		}
-	else: # 404 page
-		print("404 GET " + path, file=sys.stderr)
-		return {
-			"status": 404,
-			"headers": {
-				"Content-Type": "text/html"
-			},
-			"content": ""
-		}
-
-def post(path: str, body: str) -> HttpResponse:
-	bodydata = body.split("\n")
-	if path.startswith("/edit"):
-		setname = path[6:]
-		setdata = json.loads(body)
-		if os.path.exists("sets/" + setname + ".json"): return {
-			"status": 404,
-			"headers": {},
-			"content": f""
-		}
-		write_file("sets/" + setname + ".json", json.dumps(setdata, indent='\t').encode("UTF-8"))
-		return {
-			"status": 200,
-			"headers": {},
-			"content": f""
-		}
-	if path.startswith("/delete"):
-		setname = path[8:]
-		if not os.path.exists("sets/" + setname + ".json"): return {
-			"status": 404,
-			"headers": {},
-			"content": f""
-		}
-		setdata = json.loads(read_file("sets/" + setname + ".json"))
-		setdata["deleted"] = True
-		write_file("sets/" + setname + ".json", json.dumps(setdata, indent='\t').encode("UTF-8"))
-		return {
-			"status": 200,
-			"headers": {},
-			"content": f""
-		}
-	else:
-		print("404 POST " + path, file=sys.stderr)
-		return {
-			"status": 404,
-			"headers": {
-				"Content-Type": "text/html"
-			},
-			"content": ""
-		}
 
 class MyServer:
 	def handle_request(self):
@@ -147,8 +53,7 @@ class MyServer:
 		# try: print("Printed[", str(len(info)), '.', info.decode("UTF-8"), "]", sep="", file=sys.stderr)
 		# except UnicodeDecodeError: print("Printed[", str(len(info)), '.', info, "]", sep="", file=sys.stderr)
 	def do_GET(self, path) -> HttpResponse:
-		splitpath = path.split("?")
-		res = get(splitpath[0], URLQuery(''.join(splitpath[1:])))
+		res = get(path)
 		c: str | bytes = res["content"]
 		if isinstance(c, str): c = c.encode("utf-8")
 		return {
@@ -157,7 +62,7 @@ class MyServer:
 			"content": c
 		}
 	def do_POST(self, path: str, body: str) -> HttpResponse:
-		res = post(path, body)
+		res = post(path, body.encode("UTF-8"))
 		c: str | bytes = res["content"]
 		if isinstance(c, str): c = c.encode("utf-8")
 		return {
