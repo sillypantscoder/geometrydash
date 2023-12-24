@@ -157,5 +157,6 @@
 		{"type": "half-block", "data": {"x": 52, "y": 3, "rotation": 0}},
 		{"type": "gravity-pad", "data": {"x": 23, "y": 0, "rotation": 0}}
 	],
-	"verified": [false]
+	"verified": [false],
+	"deleted": false
 }

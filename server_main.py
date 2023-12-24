@@ -1,6 +1,7 @@
 import typing
 import os
 import json
+import random
 
 def read_file(filename: str) -> bytes:
 	f = open(filename, "rb")
@@ -12,6 +13,31 @@ def write_file(filename: str, content: str):
 	f = open(filename, "w")
 	f.write(content)
 	f.close()
+
+def format_level(t: dict):
+	def format_o(o):
+		keys: list[str] = [*o["data"].keys()]
+		data = [f"""\"{k}\": {json.dumps(o["data"][k])}""" for k in keys]
+		return f"""{{"type": "{o["type"]}", "data": {{{', '.join(data)}}}}}"""
+	objects = ',\n'.join([
+		format_o(o)
+		for o in t["objects"]
+	]).replace("\n", "\n\t\t")
+	result = f"""{{
+	"name": {json.dumps(t["name"])},
+	"description": {json.dumps(t["description"])},
+	"objects": [
+		{objects}
+	],
+	"verified": {json.dumps(t["verified"])},
+	"deleted": {json.dumps(t["deleted"])}
+}}"""
+	return result
+
+def delete_file(name: str):
+	data = json.loads(read_file("levels/" + name))
+	data["deleted"] = True
+	write_file("levels/" + name, format_level(data))
 
 class HttpResponse(typing.TypedDict):
 	status: int
@@ -47,6 +73,7 @@ def get(path: str) -> HttpResponse:
 		data = []
 		for name in os.listdir("levels"):
 			contents = json.loads(read_file("levels/" + name))
+			if contents["deleted"] == True: continue
 			data.append(contents)
 		return {
 			"status": 200,
@@ -76,6 +103,21 @@ def post(path: str, body: bytes) -> HttpResponse:
 				"Content-Type": "text/html"
 			},
 			"content": f""
+		}
+	if path == "/save":
+		data = json.loads(body)
+		formatted = format_level(data["level"])
+		name: str = data["name"]
+		while os.path.exists("levels/" + name):
+			delete_file(name)
+			name = name.replace(".json", "_.json")
+		write_file("levels/" + name, formatted)
+		return {
+			"status": 200,
+			"headers": {
+				"Content-Type": "text/html"
+			},
+			"content": name
 		}
 	else:
 		return {

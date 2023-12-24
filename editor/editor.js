@@ -104,14 +104,28 @@ function getExport() {
 	return r
 }
 function exportLevel() {
-	var r = getExport()
-	var data = btoa(JSON.stringify(r))
-	window.open("../game/index.html?objects=" + data)
+	saveLevel().then((e) => {
+		var r = getExport()
+		var data = btoa(JSON.stringify(r))
+		window.open("../game/index.html?level=" + e)
+	})
 }
 function saveLevel() {
-	var r = getExport()
-	var data = btoa(JSON.stringify(r))
-	location.search = "?objects=" + data
+	return new Promise((resolve) => {
+		var x = new XMLHttpRequest()
+		x.open("POST", "/save")
+		x.addEventListener("loadend", () => resolve(x.responseText))
+		x.send(JSON.stringify({
+			"name": levelName,
+			"level": {
+				"name": "",
+				"description": "",
+				"objects": getExport(),
+				"verified": [false],
+				"deleted": false
+			}
+		}))
+	})
 }
 
 (() => {

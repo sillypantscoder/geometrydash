@@ -20,7 +20,8 @@ result = f"""{{
 	"objects": [
 		{objects}
 	],
-	"verified": {json.dumps(t["verified"])}
+	"verified": {json.dumps(t["verified"])},
+	"deleted": {json.dumps(t["deleted"])}
 }}"""
 
 f = open("levels/test_level.json", "w")
