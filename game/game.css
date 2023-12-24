@@ -17,7 +17,7 @@ body {
 	--bg-color: #007dff;
 	--stage-color: #007dff;
 	/* background */
-	background: url(../assets/Background.png), var(--bg-color);
+	background: url(../assets/game/Background.png), var(--bg-color);
 	background-size: cover;
 	background-position-x: calc(-0.1 * calc(var(--move-amount) * var(--tile-size)));
 }
@@ -38,7 +38,7 @@ body {
 	top: unset !important;
 	bottom: 0;
 	/* img */
-	background: url(../assets/Ground_Main.svg), var(--stage-color);
+	background: url(../assets/game/Ground_Main.svg), var(--stage-color);
 	background-position-x: calc(-1 * calc(var(--move-amount) * var(--tile-size)));
 	/* contents */
 	display: flex;
@@ -60,7 +60,7 @@ body {
 	transform: translateY(-5px);
 }
 .player {
-	background: url(../assets/Playerfs.svg);
+	background: url(../assets/game/Player.svg);
 }
 .particle {
 	--real-size: calc(var(--tile-size) * var(--size));

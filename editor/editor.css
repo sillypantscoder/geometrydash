@@ -16,7 +16,7 @@ body {
 	height: 100%;
 	--tile-size: 20px;
 	/* background */
-	background: url(../assets/grid.png), url(../assets/Background.png), #007dff;
+	background: url(../assets/editor/grid.png), url(../assets/game/Background.png), #007dff;
 	background-size: var(--tile-size), cover, auto;
 	background-position: 0px 60vh;
 }
@@ -35,7 +35,7 @@ body {
 	height: 40%;
 	bottom: 0;
 	/* img */
-	background: url(../assets/Ground_Main.svg), #007dff;
+	background: url(../assets/game/Ground_Main.svg), #007dff;
 }
 
 #editor {

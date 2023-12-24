@@ -308,7 +308,7 @@ class LevelCompleteSign extends Particle {
 		super(0, 0)
 		this.imgSize = [676, 66]
 		this.time = 0
-		this.elm.innerHTML = `<img src="../assets/LevelComplete.png" style="width: 100%; height: 100%;">`
+		this.elm.innerHTML = `<img src="../assets/game/LevelComplete.png" style="width: 100%; height: 100%;">`
 		this.hasButtons = false
 	}
 	tick(amount) {
@@ -326,7 +326,7 @@ class LevelCompleteSign extends Particle {
 	addButtons() {
 		this.hasButtons = true
 		var e = document.createElement("div")
-		e.innerHTML = `<div onclick='view.restart()'><img src="../assets/Restart.svg" class="finish-button"></div><div><a href="../home/index.html"><img src="../assets/Home.svg" class="finish-button"></a></div>`
+		e.innerHTML = `<div onclick='view.restart()'><img src="../assets/ui/Restart.svg" class="finish-button"></div><div><a href="../home/index.html"><img src="../assets/ui/Home.svg" class="finish-button"></a></div>`
 		view.stage.elm.appendChild(e)
 		e.setAttribute("style", `opacity: 0; transition: opacity 0.7s linear;`)
 		requestAnimationFrame(() => {
@@ -430,7 +430,7 @@ class Tile extends SceneItem {
 	constructor(x, y, type, rotation) {
 		super(x, y)
 		this.type_file = type
-		this.extraStyles[0] = `background: url(../assets/tile-${type}.svg);`
+		this.extraStyles[0] = `background: url(../assets/tile/${type}.svg);`
 		this.rotation = rotation
 		if (debugMode) RectDisplay.create(this)
 	}
@@ -797,7 +797,7 @@ class View {
 	}
 	loadLevel() {
 		var x = new XMLHttpRequest()
-		x.open("GET", "/levels/" + levelName)
+		x.open("GET", "../levels/" + levelName)
 		x.addEventListener("loadend", () => {
 			var level = JSON.parse(x.responseText)
 			view.importObjects(level.objects)

@@ -71,7 +71,7 @@ function editTileList(tiles) {
 	for (var i = 0; i < tiles.length; i++) {
 		var e = document.createElement("div")
 		e.setAttribute("style", `display: inline-block;`)
-		e.innerHTML = `<div style="background: url(../assets/tile-${tiles[i].type_file}.svg); width: 1em; height: 1em; display: inline-block;"></div>`
+		e.innerHTML = `<div style="background: url(../assets/tile/${tiles[i].type_file}.svg); width: 1em; height: 1em; display: inline-block;"></div>`
 		parent.appendChild(e)
 		e._TileSource = tiles[i]
 		e.setAttribute("onclick", "deselect(); editTile(this._TileSource)")
@@ -137,7 +137,7 @@ function saveLevel() {
 		var e = document.createElement("span")
 		e.classList.add("option-element")
 		e.setAttribute("onclick", `this.classList.add("option-element-selected")`)
-		e.innerHTML = `<div style="background: url(../assets/tile-${k[i]}.svg); width: 1em; height: 1em; display: inline-block;"></div>`
+		e.innerHTML = `<div style="background: url(../assets/tile/${k[i]}.svg); width: 1em; height: 1em; display: inline-block;"></div>`
 		e.dataset.value = k[i]
 		document.querySelector("#blocks").appendChild(e)
 	}
