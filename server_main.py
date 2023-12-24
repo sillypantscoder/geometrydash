@@ -37,7 +37,8 @@ def get(path: str) -> HttpResponse:
 					"js": "text/javascript",
 					"css": "text/css",
 					"svg": "image/svg+xml",
-					"png": "image/png"
+					"png": "image/png",
+					"json": "application/json"
 				}[qpath.split(".")[-1]]
 			},
 			"content": read_file(qpath[1:])
@@ -64,8 +65,18 @@ def get(path: str) -> HttpResponse:
 		}
 
 def post(path: str, body: bytes) -> HttpResponse:
-	if False:
-		bodydata = body.decode("UTF-8").split("\n")
+	if path == "/verify":
+		data = json.loads(body)
+		file = read_file("levels/" + data["level"]).decode("UTF-8")
+		file = file.replace('"verified": [false]', '"verified": [true]')
+		write_file("levels/" + data["level"], file)
+		return {
+			"status": 200,
+			"headers": {
+				"Content-Type": "text/html"
+			},
+			"content": f""
+		}
 	else:
 		return {
 			"status": 404,

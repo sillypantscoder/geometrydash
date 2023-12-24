@@ -1,6 +1,6 @@
 {
-	"name": "Test Level",
-	"description": "A test level to make sure the game is working.",
+	"name": "A Random Level",
+	"description": "",
 	"objects": [
 		{"type": "basic-block", "data": {"x": 13, "y": 1, "rotation": 0}},
 		{"type": "basic-block", "data": {"x": 9, "y": 0, "rotation": 0}},
@@ -157,5 +157,5 @@
 		{"type": "half-block", "data": {"x": 52, "y": 3, "rotation": 0}},
 		{"type": "gravity-pad", "data": {"x": 23, "y": 0, "rotation": 0}}
 	],
-	"verified": false
+	"verified": [false]
 }

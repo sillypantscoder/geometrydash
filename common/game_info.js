@@ -795,6 +795,15 @@ class View {
 			if (viewType == "editor") c.tick()
 		}
 	}
+	loadLevel() {
+		var x = new XMLHttpRequest()
+		x.open("GET", "/levels/" + levelName)
+		x.addEventListener("loadend", () => {
+			var level = JSON.parse(x.responseText)
+			view.importObjects(level.objects)
+		})
+		x.send()
+	}
 }
 class GameView extends View {
 	constructor() {
@@ -829,6 +838,7 @@ class GameView extends View {
 		this.hasWon = true
 		this.player.elm.remove()
 		this.particles.push(new LevelCompleteSign())
+		this.sendVerification()
 	}
 	restart() {
 		this.hasWon = false
@@ -836,6 +846,14 @@ class GameView extends View {
 		for (; this.particles.length > 0; ) {
 			this.particles[0].destroy()
 		}
+	}
+	sendVerification() {
+		var x = new XMLHttpRequest()
+		x.open("POST", "/verify")
+		x.send(JSON.stringify({
+			level: levelName,
+			completion: [true]
+		}))
 	}
 }
 
@@ -851,10 +869,11 @@ var blockTypes = {
 	"gravity-pad": GravityPad,
 	"black-orb": BlackOrb
 }
+var levelName = url_query.level
 var debugMode = url_query.debug == "true"
 /** @type {GameView} */
 var view = new ({
 	"game": GameView,
 	"editor": View
 }[viewType])();
-view.importObjects(JSON.parse(atob(url_query.objects)))
+view.loadLevel()

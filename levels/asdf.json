@@ -1,0 +1,8 @@
+{
+	"name": "Test Level",
+	"description": "A test level to make sure the game is working.",
+	"objects": [
+		{"type":"basic-block","data":{"x":7,"y":0,"rotation":0}},{"type":"basic-block","data":{"x":7,"y":1,"rotation":0}},{"type":"half-block","data":{"x":8,"y":1,"rotation":0}},{"type":"half-block","data":{"x":9,"y":1,"rotation":0}},{"type":"half-block","data":{"x":10,"y":1,"rotation":0}},{"type":"basic-block","data":{"x":11,"y":0,"rotation":0}},{"type":"basic-block","data":{"x":11,"y":1,"rotation":0}},{"type":"basic-block","data":{"x":11,"y":2,"rotation":0}},{"type":"basic-block","data":{"x":11,"y":3,"rotation":0}},{"type":"half-block","data":{"x":14,"y":1,"rotation":0}},{"type":"basic-block","data":{"x":14,"y":5,"rotation":0}},{"type":"basic-spike","data":{"x":14,"y":4,"rotation":180}},{"type":"half-spike","data":{"x":12,"y":0,"rotation":0}},{"type":"half-spike","data":{"x":13,"y":0,"rotation":0}},{"type":"half-spike","data":{"x":14,"y":0,"rotation":0}},{"type":"half-spike","data":{"x":15,"y":0,"rotation":0}}
+	],
+	"verified": [true]
+}
