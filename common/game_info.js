@@ -194,7 +194,7 @@ class Player extends SceneItem {
 				this.cubeJump()
 			}
 		}
-		if (this.x > view.stageWidth) this.destroy()
+		if (this.x > view.stageWidth) view.win()
 		if (debugMode && Math.abs(this.vy) > 0.3) RectDisplay.create(this)
 	}
 	cubeJump() {
@@ -216,9 +216,6 @@ class Player extends SceneItem {
 		this.gravity = 1
 		view.stage.reset()
 		this.setStartPos()
-		for (; view.particles.length > 0; ) {
-			view.particles[0].destroy()
-		}
 	}
 	setStartPos() {
 		for (var i = 0; i < view.tiles.length; i++) {
@@ -306,12 +303,47 @@ class DeathParticleExtra extends Particle {
 		if (this.size >= 5) this.destroy()
 	}
 }
+class LevelCompleteSign extends Particle {
+	constructor() {
+		super(0, 0)
+		this.imgSize = [676, 66]
+		this.time = 0
+		this.elm.innerHTML = `<img src="../assets/LevelComplete.png" style="width: 100%; height: 100%;">`
+		this.hasButtons = false
+	}
+	tick(amount) {
+		if (this.time < 100) this.time += amount
+		else if (! this.hasButtons) {
+			this.addButtons()
+		}
+		var sizem = Math.pow(this.time.map(0, 100, 0, 1), 0.2)
+		this.realSize = [
+			this.imgSize[0] * sizem,
+			this.imgSize[1] * sizem
+		]
+		this.elm.setAttribute("style", `left: ${(window.innerWidth  / 2) - (this.realSize[0] / 2)}px; top: ${(window.innerHeight / 2) - (this.realSize[1] / 2)}px; width: ${this.realSize[0]}px; height: ${this.realSize[1]}px;`)
+	}
+	addButtons() {
+		this.hasButtons = true
+		var e = document.createElement("div")
+		e.innerHTML = `<div onclick='view.restart()'><img src="../assets/Restart.svg" class="finish-button"></div>`
+		view.stage.elm.appendChild(e)
+		e.setAttribute("style", `opacity: 0; transition: opacity 0.7s linear;`)
+		requestAnimationFrame(() => {
+			e.setAttribute("style", `opacity: 1; transition: opacity 0.7s linear;`)
+		})
+	}
+	destroy() {
+		super.destroy()
+		view.stage.elm.children[0].remove()
+	}
+}
 class RectDisplay extends Particle {
 	/** @param {Rect} rect */
 	constructor(rect, color) {
 		super(rect.x, rect.y)
 		this.elm.classList.remove("particle")
-		this.elm.classList.add(`rect-${rect.x}-${rect.y}-${rect.w}-${rect.h}`)
+		// this.elm.classList.add(`rect-${rect.x}-${rect.y}-${rect.w}-${rect.h}`)
 		this.extraStyles[0] = `background: ${color};`
 		this.extraStyles[2] = `bottom: calc(25% + calc(${rect.y} * var(--tile-size))); left: calc(calc(${rect.x} * var(--tile-size)) + calc(-1 * calc(var(--move-amount) * var(--tile-size)))); width: calc(${rect.w} * var(--tile-size)); height: calc(${rect.h} * var(--tile-size));`
 		this.time = 0
@@ -331,6 +363,7 @@ class RectDisplay extends Particle {
 		if (item instanceof TileDeath) color = "red"
 		if (item instanceof TileInvisible) color = "#0A0A"
 		view.particles.push(new RectDisplay(r, color))
+		if (item.elm.parentNode) item.elm.parentNode.appendChild(item.elm)
 	}
 }
 class Rect {
@@ -771,6 +804,7 @@ class GameView extends View {
 		this.particles = []
 		this.isPressing = false
 		this.stageWidth = 0
+		this.hasWon = false
 		// Add event listeners
 		document.addEventListener("keydown", (e) => {
 			if (e.key == " ") view.isPressing = true
@@ -790,6 +824,18 @@ class GameView extends View {
 		document.addEventListener("touchend", (e) => {
 			view.isPressing = false
 		})
+	}
+	win() {
+		this.hasWon = true
+		this.player.elm.remove()
+		this.particles.push(new LevelCompleteSign())
+	}
+	restart() {
+		this.hasWon = false
+		this.player.deathTime = 1
+		for (; this.particles.length > 0; ) {
+			this.particles[0].destroy()
+		}
 	}
 }
 

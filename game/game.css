@@ -40,6 +40,21 @@ body {
 	/* img */
 	background: url(../assets/Ground_Main.svg), var(--stage-color);
 	background-position-x: calc(-1 * calc(var(--move-amount) * var(--tile-size)));
+	/* contents */
+	display: flex;
+	flex-direction: row;
+	justify-content: center;
+	align-items: center;
+}
+.finish-button {
+	--size: calc(var(--tile-size) * 2);
+	width: var(--size);
+	height: var(--size);
+	transition: transform 0.1s ease-in-out;
+	transform: none;
+}
+.finish-button:hover {
+	transform: translateY(-5px);
 }
 .player {
 	background: url(../assets/Playerfs.svg);
