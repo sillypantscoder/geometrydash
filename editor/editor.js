@@ -1,4 +1,4 @@
-/** @type {Tile | null} */
+/** @type {Tile | null | string} */
 var editing = null
 
 function onclick(evt) {
@@ -70,6 +70,7 @@ function editTileList(tiles) {
 	parent.innerHTML = `<div style="display: inline-block;">Select tile to edit:</div>`
 	for (var i = 0; i < tiles.length; i++) {
 		var e = document.createElement("div")
+		e.classList.add("option-element")
 		e.setAttribute("style", `display: inline-block;`)
 		e.innerHTML = `<div style="background: url(../assets/tile/${tiles[i].type_file}.svg); width: 1em; height: 1em; display: inline-block;"></div>`
 		parent.appendChild(e)
@@ -78,11 +79,12 @@ function editTileList(tiles) {
 	}
 }
 function deselect() {
-	if (editing != null) {
+	if (editing instanceof Tile) {
 		var tile = editing
 		editing = null
 		tile.tick()
 	}
+	if (editing != null) editing = null
 	var parent = document.querySelector(".editing")
 	parent.setAttribute("style", "display: none;")
 }
@@ -126,6 +128,17 @@ function saveLevel() {
 			}
 		}))
 	})
+}
+function editLevelSettings() {
+	editing = "settings"
+	var parent = document.querySelector(".editing")
+	parent.removeAttribute("style")
+	parent.innerHTML = [
+		`Level Name: <input type="text" oninput="levelMeta.name = this.value">`,
+		`Level Description:<br><textarea oninput="levelMeta.description = this.value"></textarea>`
+	].map((v) => `<div>${v}</div>`).join("")
+	parent.children[0].children[0].value = levelMeta.name
+	parent.children[1].children[1].value = levelMeta.description
 }
 
 (() => {

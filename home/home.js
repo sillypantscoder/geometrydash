@@ -12,5 +12,10 @@ x.addEventListener("loadend", () => {
 		e.children[3].children[0].setAttribute("href", `../game/index.html?level=${levels[i].name}`)
 		e.children[3].children[1].setAttribute("href", `../editor/index.html?level=${levels[i].name}`)
 	}
+	// New Level button
+	var e = document.createElement("div")
+	document.body.appendChild(e)
+	e.classList.add("area")
+	e.innerHTML = `<div>Create a new level: </div><div><a href="../editor/index.html"><img src="../assets/ui/LevelEdit.svg"></a></div>`
 })
 x.send()

@@ -796,6 +796,10 @@ class View {
 		}
 	}
 	loadLevel() {
+		if (levelName == undefined) {
+			levelName = "new_level"
+			return
+		}
 		var x = new XMLHttpRequest()
 		x.open("GET", "../levels/" + levelName)
 		x.addEventListener("loadend", () => {
