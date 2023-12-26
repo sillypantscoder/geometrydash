@@ -59,9 +59,6 @@ body {
 .finish-button:hover {
 	transform: translateY(-5px);
 }
-.player {
-	background: url(../assets/game/Player.svg);
-}
 .particle {
 	--real-size: calc(var(--tile-size) * var(--size));
 	/*        Invert          Y * tileSize                   Center */

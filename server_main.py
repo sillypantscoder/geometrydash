@@ -26,6 +26,9 @@ def format_level(t: dict):
 	result = f"""{{
 	"name": {json.dumps(t["name"])},
 	"description": {json.dumps(t["description"])},
+	"settings": {{
+		"gamemode": {json.dumps(t["settings"]["gamemode"])}
+	}},
 	"objects": [
 		{objects}
 	],

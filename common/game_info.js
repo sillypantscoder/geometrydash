@@ -132,15 +132,17 @@ class Player extends SceneItem {
 		this.vy = 0
 		/** @type {boolean} */
 		this.onGround = false
-		/** @type {() => boolean} */
-		this.canJump = () => false
+		/** @type {null | () => void} */
+		this.specialJump = null
 		/** @type {number} */
 		this.deathTime = 1
 		/** @type {number} */
 		this.gravity = 1
+		/** @type {GameMode} */
+		this.mode = new CubeMode(this);
 	}
 	getRect() {
-		return new Rect(this.x, this.y, 1, 1)
+		return this.mode.getRect()
 	}
 	tick(amount) {
 		// console.log(1, this.x, this.y, this.vy)
@@ -156,22 +158,20 @@ class Player extends SceneItem {
 		this.x += 0.1 * amount
 		// Fall
 		// console.log(3, this.x, this.y, this.vy)
-		this.vy -= 0.028 * this.gravity * amount
+		this.mode.gravity(amount)
 		// console.log(4, this.x, this.y, this.vy)
 		this.y += this.vy * amount
 		// console.log(5, this.x, this.y, this.vy)
 		this.onGround = false
-		this.canJump = () => false
+		this.specialJump = null
 		// Check for collision with stage
 		if (this.y < 0) {
 			this.y = 0
 			this.onGround = true
-			this.canJump = () => true
 		}
-		if (this.y > 40) {
-			this.destroy()
-		}
+		this.mode.getMax()
 		// Update styles
+		this.extraStyles[0] = "background: url(../assets/game/Player" + this.mode.getFilename() + ".svg)"
 		super.tick(amount)
 		// console.log(0, this.x, this.y, this.vy)
 		// throw new Error()
@@ -180,25 +180,10 @@ class Player extends SceneItem {
 		if (this.deathTime > 0) return
 		if (this.onGround) {
 			this.vy = 0
-			this.rotation = 0
-			if (this.gravity < 0) {
-				view.particles.push(new SlideParticle(this.x, this.y + 1))
-			} else {
-				view.particles.push(new SlideParticle(this.x, this.y))
-			}
-		} else {
-			this.rotation += 5 * amount * this.gravity
 		}
-		if (view.isPressing) {
-			if (this.canJump()) {
-				this.cubeJump()
-			}
-		}
+		this.mode.checkJump(amount)
 		if (this.x > view.stageWidth) view.win()
 		if (debugMode && Math.abs(this.vy) > 0.3) RectDisplay.create(this)
-	}
-	cubeJump() {
-		this.vy = 0.34 * this.gravity
 	}
 	destroy() {
 		this.deathTime = 40
@@ -226,6 +211,83 @@ class Player extends SceneItem {
 				this.y = rect.y
 			}
 		}
+	}
+}
+class GameMode {
+	constructor(player) {
+		/** @type {Player} */
+		this.player = player
+	}
+	gravity(amount) {
+		this.player.vy -= 0.028 * this.player.gravity * amount
+	}
+	checkJump(amount) {}
+	getMax() {
+		if (this.player.y > 40) {
+			this.player.destroy()
+		}
+	}
+	getRect() {
+		return new Rect(this.player.x, this.player.y, 1, 1)
+	}
+	getFilename() {
+		return "Cube";
+	}
+	hitCeiling(h) {
+		view.player.destroy()
+	}
+}
+class CubeMode extends GameMode {
+	checkJump(amount) {
+		if (this.player.onGround) {
+			this.player.rotation = 0
+			if (this.player.gravity < 0) {
+				view.particles.push(new SlideParticle(this.player.x, this.player.y + 1))
+			} else {
+				view.particles.push(new SlideParticle(this.player.x, this.player.y))
+			}
+		} else {
+			this.player.rotation += 5 * amount * this.player.gravity
+		}
+		if (view.isPressing) {
+			if (this.player.specialJump != null) {
+				this.player.specialJump()
+			} else if (this.player.onGround) {
+				this.player.vy = 0.34 * this.player.gravity
+			}
+		}
+	}
+}
+class ShipMode extends GameMode {
+	gravity(amount) {}
+	checkJump(amount) {
+		this.player.rotation = this.player.vy * -100
+		view.particles.push(new SlideParticle(this.player.x + 0.05, this.player.y + 0.2))
+		if (view.isPressing) {
+			if (this.player.specialJump != null) {
+				this.player.specialJump()
+			} else {
+				this.player.vy += 0.005 * this.player.gravity
+			}
+		} else {
+			this.player.vy -= 0.005 * this.player.gravity
+		}
+	}
+	getMax() {
+		if (this.player.y > 14) {
+			this.player.y = 14
+			this.player.vy = 0
+		}
+	}
+	getRect() {
+		return super.getRect().relative(0, 0.1, 1, 0.8)
+	}
+	getFilename() {
+		return "Ship";
+	}
+	hitCeiling(h) {
+		this.player.y = h - 0.1
+		this.player.vy = -0.01
 	}
 }
 class Particle extends SceneItem {
@@ -487,7 +549,8 @@ class TileBlock extends Tile {
 				// Player is fine
 				view.player.y += yIncrease * view.player.gravity
 				view.player.onGround = true
-				view.player.canJump = () => true
+			} else if (thisRect.y + 0.5 > playerRect.y + playerRect.h) {
+				view.player.mode.hitCeiling(thisRect.y - playerRect.h)
 			} else {
 				if (debugMode) {
 					setTimeout((thisRect, playerRect, yIncrease) => {
@@ -566,9 +629,9 @@ class JumpOrb extends Tile {
 		if (playerRect.colliderect(thisRect)) {
 			// Jumpy jumpy
 			var target = this
-			view.player.canJump = () => {
+			view.player.specialJump = () => {
 				target.timeout = 10
-				return true
+				view.player.vy = 0.34 * view.player.gravity
 			}
 		}
 	}
@@ -589,12 +652,11 @@ class GravityOrb extends Tile {
 		if (playerRect.colliderect(thisRect)) {
 			// Jumpy jumpy
 			var target = this
-			view.player.canJump = () => {
+			view.player.specialJump = () => {
 				target.timeout = 10
 				view.player.gravity *= -1
 				view.player.vy = view.player.gravity * -0.5
 				view.isPressing = false
-				return false
 			}
 		}
 	}
@@ -615,10 +677,9 @@ class BlackOrb extends Tile {
 		if (playerRect.colliderect(thisRect)) {
 			// Jumpy jumpy
 			var target = this
-			view.player.canJump = () => {
+			view.player.specialJump = () => {
 				target.timeout = 10
 				view.player.vy += view.player.gravity * -0.7
-				return false
 			}
 		}
 	}
@@ -797,7 +858,7 @@ class View {
 	}
 	loadLevel() {
 		if (levelName == undefined) {
-			levelName = "new_level"
+			levelName = "new_level.json"
 			return
 		}
 		var x = new XMLHttpRequest()
@@ -807,6 +868,10 @@ class View {
 			view.importObjects(level.objects)
 			levelMeta.name = level.name
 			levelMeta.description = level.description
+			view.player.mode = new ({
+				"Cube": CubeMode,
+				"Ship": ShipMode
+			}[level.settings.gamemode])(view.player)
 		})
 		x.send()
 	}
@@ -879,6 +944,16 @@ var levelName = url_query.level
 var levelMeta = {
 	"name": "Untitled Level",
 	"description": "",
+}
+var level = {
+	"name": "Unnamed",
+	"description": "",
+	"settings": {
+		"gamemode": "Cube"
+	},
+	"objects": [],
+	"verified": [false],
+	"deleted": false
 }
 var debugMode = url_query.debug == "true"
 /** @type {GameView} */

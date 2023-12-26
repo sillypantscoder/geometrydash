@@ -122,6 +122,9 @@ function saveLevel() {
 			"level": {
 				"name": levelMeta.name,
 				"description": levelMeta.description,
+				"settings": {
+					"gamemode": "Ship"
+				},
 				"objects": getExport(),
 				"verified": [false],
 				"deleted": false
