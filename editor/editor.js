@@ -1,10 +1,12 @@
 /** @type {Tile | null | string} */
 var editing = null
 
+var floorHeight = 0.25
+
 function onclick(evt) {
 	var pos = [
 		Math.floor(evt.clientX / 20),
-		Math.floor(((window.innerHeight * 0.60) - evt.clientY) / 20)
+		Math.floor(((window.innerHeight * (1 - floorHeight)) - evt.clientY) / 20)
 	]
 	if (pos[1] < 0) return
 	if (editing != null) deselect()
