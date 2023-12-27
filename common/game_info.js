@@ -195,7 +195,7 @@ class Player extends SceneItem {
 	}
 	respawn() {
 		document.querySelector("#scene").appendChild(this.elm)
-		this.mode = new CubeMode(this);
+		this.setStartMode()
 		this.x = -3
 		this.y = 0
 		this.vy = 0
@@ -212,6 +212,12 @@ class Player extends SceneItem {
 				this.y = rect.y
 			}
 		}
+	}
+	setStartMode() {
+		this.mode = new ({
+			"Cube": CubeMode,
+			"Ship": ShipMode
+		}[levelMeta.settings.gamemode])(this)
 	}
 }
 class GameMode {
@@ -929,10 +935,7 @@ class View {
 			levelMeta.settings.colorbg = level.settings.colorbg
 			levelMeta.settings.colorstage = level.settings.colorstage
 			levelMeta.settings.gamemode = level.settings.gamemode
-			if (view instanceof GameView) view.player.mode = new ({
-				"Cube": CubeMode,
-				"Ship": ShipMode
-			}[level.settings.gamemode])(view.player)
+			if (view instanceof GameView) view.player.setStartMode()
 			view.stage.reset()
 		})
 		x.send()
@@ -1014,18 +1017,6 @@ var levelMeta = {
 		"gamemode": "Cube"
 	}
 }
-// var level = {
-// 	"name": "Unnamed",
-// 	"description": "",
-// 	"settings": {
-// 		"colorbg": [0, 125, 255],
-// 		"colorstage": [0, 125, 255],
-// 		"gamemode": "Cube"
-// 	},
-// 	"objects": [],
-// 	"verified": [false],
-// 	"deleted": false
-// }
 var debugMode = url_query.debug == "true"
 /** @type {GameView} */
 var view = new ({
@@ -1033,4 +1024,3 @@ var view = new ({
 	"editor": View
 }[viewType])();
 view.loadLevel()
-// view.tiles.push(new Portal(5, 0, "portal-gamemode-cube", 3.2, 3, 0))
