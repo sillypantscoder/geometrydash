@@ -122,9 +122,7 @@ function saveLevel() {
 			"level": {
 				"name": levelMeta.name,
 				"description": levelMeta.description,
-				"settings": {
-					"gamemode": "Ship"
-				},
+				"settings": levelMeta.settings,
 				"objects": getExport(),
 				"verified": [false],
 				"deleted": false
@@ -138,7 +136,13 @@ function editLevelSettings() {
 	parent.removeAttribute("style")
 	parent.innerHTML = [
 		`Level Name: <input type="text" oninput="levelMeta.name = this.value">`,
-		`Level Description:<br><textarea oninput="levelMeta.description = this.value"></textarea>`
+		`Level Description:<br><textarea oninput="levelMeta.description = this.value"></textarea>`,
+		`Starting Background Color: <input type="color" value="${getHexFromRGB(levelMeta.settings.colorbg)}" oninput="levelMeta.settings.colorbg = getRGBFromHex(this.value)"></div>`,
+		`Starting Stage Color: <input type="color" value="${getHexFromRGB(levelMeta.settings.colorstage)}" oninput="levelMeta.settings.colorstage = getRGBFromHex(this.value)"></div>`,
+		`Starting Gamemode: <select oninput="levelMeta.settubgs.gamemode = this.value">
+	<option value="Cube"${levelMeta.settings.gamemode=="Cube" ? " selected" : ""}>Cube</option>
+	<option value="Ship"${levelMeta.settings.gamemode=="Ship" ? " selected" : ""}>Ship</option>
+</select>`
 	].map((v) => `<div>${v}</div>`).join("")
 	parent.children[0].children[0].value = levelMeta.name
 	parent.children[1].children[1].value = levelMeta.description

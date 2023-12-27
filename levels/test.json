@@ -2,6 +2,8 @@
 	"name": "Test Level",
 	"description": "A test level to make sure the game is working.",
 	"settings": {
+		"colorbg": [0, 125, 255],
+		"colorstage": [0, 125, 255],
 		"gamemode": "Cube"
 	},
 	"objects": [

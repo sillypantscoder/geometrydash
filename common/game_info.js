@@ -104,8 +104,8 @@ class Stage extends SceneItem {
 		super(0, 0)
 		this.elm.classList.remove("regularPos")
 		this.elm.classList.add("stage")
-		this.bgColor = new InterpolatedColor(0, 125, 255)
-		this.stageColor = new InterpolatedColor(0, 125, 255)
+		this.bgColor = new InterpolatedColor(...levelMeta.settings.colorbg)
+		this.stageColor = new InterpolatedColor(...levelMeta.settings.colorstage)
 	}
 	tick(amount) {
 		this.bgColor.tick(amount)
@@ -114,8 +114,8 @@ class Stage extends SceneItem {
 		super.tick()
 	}
 	reset() {
-		this.bgColor = new InterpolatedColor(0, 125, 255)
-		this.stageColor = new InterpolatedColor(0, 125, 255)
+		this.bgColor = new InterpolatedColor(...levelMeta.settings.colorbg)
+		this.stageColor = new InterpolatedColor(...levelMeta.settings.colorstage)
 		for (var i = 0; i < view.tiles.length; i++) {
 			var t = view.tiles[i]
 			if (t instanceof Trigger) {
@@ -788,7 +788,7 @@ class ColorTrigger extends Trigger {
 	<option value="stage"${this.section=="stage" ? " selected" : ""}>Stage</option>
 	<option value="bg"${this.section=="bg" ? " selected" : ""}>Background</option>
 </select></div>`,
-			`<div>Color: <input type="color" value="${this.getHex()}" oninput="editing.setColorFromHex(this.value)"></div>`,
+			`<div>Color: <input type="color" value="${getHexFromRGB(this.color)}" oninput="editing.color = getRGBFromHex(this.value)"></div>`,
 			`<div>Duration (60ths of a second): <input type="number" value="${this.duration}" min="1" oninput="editing.duration = this.valueAsNumber"></div>`
 		]
 	}
@@ -803,13 +803,6 @@ class ColorTrigger extends Trigger {
 			"bg": view.stage.bgColor
 		}[this.section]
 		section.interpolate(...this.color, this.duration)
-	}
-	setColorFromHex(hex) {
-		this.color = hex.substring(1).match(/.{1,2}/g).map((v) => parseInt(v, 16))
-		this.tick();
-	}
-	getHex() {
-		return "#" + this.color.map((v) => v.toString(16).padStart(2, "0")).join("")
 	}
 }
 class GravityPad extends Tile {
@@ -868,10 +861,14 @@ class View {
 			view.importObjects(level.objects)
 			levelMeta.name = level.name
 			levelMeta.description = level.description
-			view.player.mode = new ({
+			levelMeta.settings.colorbg = level.settings.colorbg
+			levelMeta.settings.colorstage = level.settings.colorstage
+			levelMeta.settings.gamemode = level.settings.gamemode
+			if (view instanceof GameView) view.player.mode = new ({
 				"Cube": CubeMode,
 				"Ship": ShipMode
 			}[level.settings.gamemode])(view.player)
+			view.stage.reset()
 		})
 		x.send()
 	}
@@ -944,6 +941,11 @@ var levelName = url_query.level
 var levelMeta = {
 	"name": "Untitled Level",
 	"description": "",
+	"settings": {
+		"colorbg": [0, 125, 255],
+		"colorstage": [0, 125, 255],
+		"gamemode": "Cube"
+	}
 }
 var level = {
 	"name": "Unnamed",
