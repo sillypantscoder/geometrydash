@@ -195,6 +195,7 @@ class Player extends SceneItem {
 	}
 	respawn() {
 		document.querySelector("#scene").appendChild(this.elm)
+		this.mode = new CubeMode(this);
 		this.x = -3
 		this.y = 0
 		this.vy = 0
@@ -420,6 +421,7 @@ class RectDisplay extends Particle {
 	static create(item) {
 		var color = "lime"
 		var r = item.getRect()
+		if (r.hasInvalid()) return
 		if (item instanceof Player) color = "transparent;outline: 1px solid yellow;"
 		else r = r.rotate(item.rotation, item.x + 0.5, item.y + 0.5)
 		if (item instanceof TileDeath) color = "red"
@@ -486,6 +488,13 @@ class Rect {
 		var a = rotate(centerX, centerY, this.x, this.y, amount)
 		var b = rotate(centerX, centerY, this.x + this.w, this.y + this.h, amount)
 		return Rect.fromPoints(a[0], a[1], b[0], b[1])
+	}
+	hasInvalid() {
+		if (this.x == NaN || this.x == undefined) return true
+		if (this.y == NaN || this.y == undefined) return true
+		if (this.w == NaN || this.w == undefined) return true
+		if (this.h == NaN || this.h == undefined) return true
+		return false
 	}
 }
 class Tile extends SceneItem {
@@ -831,6 +840,62 @@ class GravityPad extends Tile {
 		}
 	}
 }
+class Portal extends Tile {
+	/**
+	 * @param {number} x
+	 * @param {number} y
+	 * @param {string} type
+	 * @param {number} displayheight
+	 * @param {number} realheight
+	 * @param {number} rotation
+	 */
+	constructor(x, y, type, displayheight, realheight, displaywidth, rotation) {
+		super(x, y, "portal-" + type, rotation)
+		this.displayheight = displayheight
+		this.realheight = realheight
+		this.extraStyles[1] = `--h: ${displayheight}; width: calc(${displaywidth} * var(--tile-size));`
+		if (debugMode) RectDisplay.create(this)
+	}
+	getRect() {
+		return super.getRect().relative(0, (this.realheight * -0.5) + 0.5, 1, this.realheight);
+	}
+	collide() {
+		var playerRect = view.player.getRect()
+		var thisRect = this.getRect()
+		if (playerRect.colliderect(thisRect)) {
+			this.activate()
+		}
+	}
+	activate() {}
+}
+class GamemodePortal extends Portal {
+	/**
+	 * @param {number} x
+	 * @param {number} y
+	 * @param {string} type
+	 * @param {number} rotation
+	 * @param {typeof GameMode} gamemode
+	 */
+	constructor(x, y, type, rotation, gamemode) {
+		super(x, y, "gamemode-" + type, 3.2, 3, 1.4545, rotation)
+		/** @type {typeof GameMode} */
+		this.mode = gamemode
+	}
+	activate() {
+		var newMode = new this.mode(view.player);
+		view.player.mode = newMode;
+	}
+}
+class CubePortal extends GamemodePortal {
+	constructor(x, y, rotation) {
+		super(x, y, "cube", rotation, CubeMode)
+	}
+}
+class ShipPortal extends GamemodePortal {
+	constructor(x, y, rotation) {
+		super(x, y, "ship", rotation, ShipMode)
+	}
+}
 
 class View {
 	constructor() {
@@ -935,7 +1000,9 @@ var blockTypes = {
 	"start-pos": StartPosBlock,
 	"gravity-orb": GravityOrb,
 	"gravity-pad": GravityPad,
-	"black-orb": BlackOrb
+	"black-orb": BlackOrb,
+	"portal-gamemode-cube": CubePortal,
+	"portal-gamemode-ship": ShipPortal
 }
 var levelName = url_query.level
 var levelMeta = {
@@ -947,16 +1014,18 @@ var levelMeta = {
 		"gamemode": "Cube"
 	}
 }
-var level = {
-	"name": "Unnamed",
-	"description": "",
-	"settings": {
-		"gamemode": "Cube"
-	},
-	"objects": [],
-	"verified": [false],
-	"deleted": false
-}
+// var level = {
+// 	"name": "Unnamed",
+// 	"description": "",
+// 	"settings": {
+// 		"colorbg": [0, 125, 255],
+// 		"colorstage": [0, 125, 255],
+// 		"gamemode": "Cube"
+// 	},
+// 	"objects": [],
+// 	"verified": [false],
+// 	"deleted": false
+// }
 var debugMode = url_query.debug == "true"
 /** @type {GameView} */
 var view = new ({
@@ -964,3 +1033,4 @@ var view = new ({
 	"editor": View
 }[viewType])();
 view.loadLevel()
+// view.tiles.push(new Portal(5, 0, "portal-gamemode-cube", 3.2, 3, 0))

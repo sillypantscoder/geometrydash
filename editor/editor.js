@@ -157,7 +157,7 @@ function editLevelSettings() {
 		var e = document.createElement("span")
 		e.classList.add("option-element")
 		e.setAttribute("onclick", `this.classList.add("option-element-selected")`)
-		e.innerHTML = `<div style="background: url(../assets/tile/${k[i]}.svg); width: 1em; height: 1em; display: inline-block;"></div>`
+		e.innerHTML = `<div style="background: url(../assets/tile/${k[i]}.svg); background-repeat: no-repeat; background-position: center; width: 1em; height: 1em; display: inline-block;"></div>`
 		e.dataset.value = k[i]
 		document.querySelector("#blocks").appendChild(e)
 	}
