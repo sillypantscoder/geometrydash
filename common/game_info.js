@@ -179,11 +179,15 @@ class Player extends SceneItem {
 	finishTick(amount) {
 		if (this.deathTime > 0) return
 		if (this.onGround) {
-			this.vy = 0
+			if (this.gravity < 0) {
+				if (this.vy > 0) this.vy = 0
+			} else {
+				if (this.vy < 0) this.vy = 0
+			}
 		}
 		this.mode.checkJump(amount)
 		if (this.x > view.stageWidth) view.win()
-		if (debugMode && Math.abs(this.vy) > 0.3) RectDisplay.create(this)
+		if (debugMode/* && Math.abs(this.vy) > 0.3*/) RectDisplay.create(this)
 	}
 	destroy() {
 		this.deathTime = 40
@@ -820,6 +824,52 @@ class ColorTrigger extends Trigger {
 		section.interpolate(...this.color, this.duration)
 	}
 }
+class JumpPad extends Tile {
+	constructor(x, y, rotation) {
+		super(x, y, "jump-pad", rotation)
+		this.timeout = 0
+	}
+	getRect() {
+		return super.getRect().relative(0, 0, 1, 0.2)
+	}
+	tick(amount) {
+		this.timeout -= amount
+		super.tick(amount)
+	}
+	collide() {
+		if (this.timeout > 0) return
+		var playerRect = view.player.getRect()
+		var thisRect = this.getRect().rotate(this.rotation, this.x + 0.5, this.y + 0.5)
+		if (playerRect.colliderect(thisRect)) {
+			// Jumpy jumpy
+			view.player.vy = 0.34 * view.player.gravity
+			this.timeout = 10
+		}
+	}
+}
+class SmallJumpPad extends Tile {
+	constructor(x, y, rotation) {
+		super(x, y, "jump-pad-small", rotation)
+		this.timeout = 0
+	}
+	getRect() {
+		return super.getRect().relative(0, 0, 1, 0.2)
+	}
+	tick(amount) {
+		this.timeout -= amount
+		super.tick(amount)
+	}
+	collide() {
+		if (this.timeout > 0) return
+		var playerRect = view.player.getRect()
+		var thisRect = this.getRect().rotate(this.rotation, this.x + 0.5, this.y + 0.5)
+		if (playerRect.colliderect(thisRect)) {
+			// Jumpy jumpy
+			view.player.vy = 0.22 * view.player.gravity
+			this.timeout = 10
+		}
+	}
+}
 class GravityPad extends Tile {
 	constructor(x, y, rotation) {
 		super(x, y, "gravity-pad", rotation)
@@ -1005,7 +1055,9 @@ var blockTypes = {
 	"gravity-pad": GravityPad,
 	"black-orb": BlackOrb,
 	"portal-gamemode-cube": CubePortal,
-	"portal-gamemode-ship": ShipPortal
+	"portal-gamemode-ship": ShipPortal,
+	"jump-pad": JumpPad,
+	"jump-pad-small": SmallJumpPad
 }
 var levelName = url_query.level
 var levelMeta = {
