@@ -32,4 +32,8 @@ async function frameLoop() {
 		await new Promise((resolve) => requestAnimationFrame(resolve))
 	}
 }
-frameLoop()
+function setup() {
+	frameLoop()
+	view.particles.push(new ProgressBar())
+}
+setup()

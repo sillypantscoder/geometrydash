@@ -318,6 +318,6 @@
 		{"type": "basic-spike", "data": {"x": 23, "y": 14, "rotation": 270}},
 		{"type": "basic-spike", "data": {"x": 22, "y": 14, "rotation": 180}}
 	],
-	"verified": [true],
+	"verified": 100,
 	"deleted": false
 }

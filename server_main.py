@@ -102,9 +102,9 @@ def get(path: str) -> HttpResponse:
 def post(path: str, body: bytes) -> HttpResponse:
 	if path == "/verify":
 		data = json.loads(body)
-		file = read_file("levels/" + data["level"]).decode("UTF-8")
-		file = file.replace('"verified": [false]', '"verified": [true]')
-		write_file("levels/" + data["level"], file)
+		file = json.loads(read_file("levels/" + data["level"]).decode("UTF-8"))
+		file["verified"] = max(file["verified"], data["completion"])
+		write_file("levels/" + data["level"], format_level(file))
 		return {
 			"status": 200,
 			"headers": {

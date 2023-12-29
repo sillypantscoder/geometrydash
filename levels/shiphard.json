@@ -226,6 +226,6 @@
 		{"type": "half-spike", "data": {"x": 29, "y": 8, "rotation": 180}},
 		{"type": "half-spike", "data": {"x": 31, "y": 8, "rotation": 180}}
 	],
-	"verified": [true],
+	"verified": 100,
 	"deleted": false
 }

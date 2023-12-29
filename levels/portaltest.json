@@ -79,6 +79,6 @@
 		{"type": "basic-spike", "data": {"x": 20, "y": 1, "rotation": 90}},
 		{"type": "basic-spike", "data": {"x": 19, "y": 2, "rotation": 0}}
 	],
-	"verified": [true],
+	"verified": 100,
 	"deleted": false
 }

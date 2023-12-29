@@ -196,6 +196,7 @@ class Player extends SceneItem {
 		for (var i = 0; i < 20; i++) {
 			view.particles.push(new DeathParticleExtra(this.x + 0.5, this.y + 0.5))
 		}
+		view.sendVerification()
 	}
 	respawn() {
 		document.querySelector("#scene").appendChild(this.elm)
@@ -206,6 +207,7 @@ class Player extends SceneItem {
 		this.gravity = 1
 		view.stage.reset()
 		this.setStartPos()
+		view.attempt += 1
 	}
 	setStartPos() {
 		for (var i = 0; i < view.tiles.length; i++) {
@@ -409,6 +411,21 @@ class LevelCompleteSign extends Particle {
 	destroy() {
 		super.destroy()
 		view.stage.elm.children[0].remove()
+	}
+}
+class ProgressBar extends SceneItem {
+	/**
+	 * @param {number} x The starting X position.
+	 * @param {number} y The starting Y position.
+	 */
+	constructor() {
+		super(0, 0)
+		this.elm.classList.add("progress-bar")
+		document.querySelector("#scene").insertAdjacentElement("afterend", this.elm)
+	}
+	tick(amount) {
+		var c = view.getCompletion()
+		this.elm.innerHTML = `<div>Attempt ${view.attempt}</div><div style="background: linear-gradient(90deg, #AFA ${c}%, white ${c}%);">${c}% complete</div>`
 	}
 }
 class RectDisplay extends Particle {
@@ -959,6 +976,7 @@ class GameView extends View {
 		this.isPressing = false
 		this.stageWidth = 0
 		this.hasWon = false
+		this.attempt = 0
 		// Add event listeners
 		document.addEventListener("keydown", (e) => {
 			if (e.key == " ") view.isPressing = true
@@ -992,12 +1010,19 @@ class GameView extends View {
 			this.particles[0].destroy()
 		}
 	}
+	getCompletion() {
+		var v = Math.floor((this.player.x / this.stageWidth) * 100)
+		if (v < 0) return 0
+		if (v > 100) return 100
+		return v
+	}
 	sendVerification() {
+		var amount = this.getCompletion()
 		var x = new XMLHttpRequest()
 		x.open("POST", "/verify")
 		x.send(JSON.stringify({
 			level: levelName,
-			completion: [true]
+			completion: amount
 		}))
 	}
 }

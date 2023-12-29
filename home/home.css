@@ -11,7 +11,7 @@ body {
 	border-radius: 2em;
 	padding: 3em;
 	background: #FFF3;
-	display: flex;
+	display: inline-flex;
 	flex-direction: column;
 	align-items: center;
 }
