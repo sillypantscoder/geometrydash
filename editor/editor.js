@@ -99,7 +99,7 @@ function getExport() {
 	var keys = map.map((v) => v[0])
 	for (var i = 0; i < view.tiles.length; i++) {
 		var tile = view.tiles[i]
-		var type = keys[values.findIndex((v) => tile instanceof v)]
+		var type = getLocationFromObject("tile", tile).join(".")
 		r.push({
 			type,
 			data: tile.save()
@@ -126,7 +126,7 @@ function saveLevel() {
 				"description": levelMeta.description,
 				"settings": levelMeta.settings,
 				"objects": getExport(),
-				"verified": [false],
+				"verified": 0,
 				"deleted": false
 			}
 		}))
@@ -141,26 +141,35 @@ function editLevelSettings() {
 		`Level Description:<br><textarea oninput="levelMeta.description = this.value"></textarea>`,
 		`Starting Background Color: <input type="color" value="${getHexFromRGB(levelMeta.settings.colorbg)}" oninput="levelMeta.settings.colorbg = getRGBFromHex(this.value)"></div>`,
 		`Starting Stage Color: <input type="color" value="${getHexFromRGB(levelMeta.settings.colorstage)}" oninput="levelMeta.settings.colorstage = getRGBFromHex(this.value)"></div>`,
-		`Starting Gamemode: <select oninput="levelMeta.settubgs.gamemode = this.value">
-	<option value="Cube"${levelMeta.settings.gamemode=="Cube" ? " selected" : ""}>Cube</option>
-	<option value="Ship"${levelMeta.settings.gamemode=="Ship" ? " selected" : ""}>Ship</option>
+		`Starting Gamemode: <select oninput="levelMeta.settings.gamemode = this.value">
+	<option value="cube"${levelMeta.settings.gamemode=="cube" ? " selected" : ""}>Cube</option>
+	<option value="ship"${levelMeta.settings.gamemode=="ship" ? " selected" : ""}>Ship</option>
 </select>`
 	].map((v) => `<div>${v}</div>`).join("")
 	parent.children[0].children[0].value = levelMeta.name
 	parent.children[1].children[1].value = levelMeta.description
 }
 
+function addOptionElements(folder) {
+	var items = getObjectFromLocation("tile", folder)
+	var k = Object.keys(items)
+	for (var i = 0; i < k.length; i++) {
+		if (typeof items[k[i]] == "object") {
+			addOptionElements([...folder, k[i]])
+		} else {
+			var e = document.createElement("span")
+			e.classList.add("option-element")
+			e.setAttribute("onclick", `this.classList.add("option-element-selected")`)
+			e.innerHTML = `<div style="background: url(../assets/tile/${[...folder, k[i]].join("/")}.svg); background-repeat: no-repeat; background-position: center; width: 1em; height: 1em; display: inline-block;"></div>`
+			e.dataset.value = k[i]
+			document.querySelector("#blocks").appendChild(e)
+		}
+	}
+}
+
 (() => {
 	document.querySelector("#blocks").addEventListener("click", () => {
 		document.querySelector('.option-element-selected').classList.remove('option-element-selected');
 	}, true)
-	var k = Object.keys(blockTypes)
-	for (var i = 0; i < k.length; i++) {
-		var e = document.createElement("span")
-		e.classList.add("option-element")
-		e.setAttribute("onclick", `this.classList.add("option-element-selected")`)
-		e.innerHTML = `<div style="background: url(../assets/tile/${k[i]}.svg); background-repeat: no-repeat; background-position: center; width: 1em; height: 1em; display: inline-block;"></div>`
-		e.dataset.value = k[i]
-		document.querySelector("#blocks").appendChild(e)
-	}
+	addOptionElements([])
 })();

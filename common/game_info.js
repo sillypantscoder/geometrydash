@@ -220,10 +220,8 @@ class Player extends SceneItem {
 		}
 	}
 	setStartMode() {
-		this.mode = new ({
-			"Cube": CubeMode,
-			"Ship": ShipMode
-		}[levelMeta.settings.gamemode])(this)
+		var c = getObjectFromLocation("gamemode", [levelMeta.settings.gamemode])
+		this.mode = new c(this)
 	}
 }
 class GameMode {
@@ -427,6 +425,10 @@ class ProgressBar extends SceneItem {
 		var c = view.getCompletion()
 		this.elm.innerHTML = `<div>Attempt ${view.attempt}</div><div style="background: linear-gradient(90deg, #AFA ${c}%, white ${c}%);">${c}% complete</div>`
 	}
+	destroy() {
+		view.particles.splice(view.particles.indexOf(this), 1)
+		super.destroy()
+	}
 }
 class RectDisplay extends Particle {
 	/** @param {Rect} rect */
@@ -525,10 +527,9 @@ class Rect {
 	}
 }
 class Tile extends SceneItem {
-	constructor(x, y, type, rotation) {
+	constructor(x, y, rotation) {
 		super(x, y)
-		this.type_file = type
-		this.extraStyles[0] = `background: url(../assets/tile/${type}.svg);`
+		this.extraStyles[0] = `background: url(../assets/tile/${getLocationFromObject("tile", this).join("/")}.svg);`
 		this.rotation = rotation
 		if (debugMode) RectDisplay.create(this)
 	}
@@ -573,8 +574,8 @@ class Tile extends SceneItem {
 	collide() {}
 }
 class TileBlock extends Tile {
-	constructor(x, y, type, rotation) {
-		super(x, y, "block/" + type, rotation)
+	constructor(x, y, rotation) {
+		super(x, y, rotation)
 	}
 	collide() {
 		var playerRect = view.player.getRect()
@@ -602,8 +603,8 @@ class TileBlock extends Tile {
 	}
 }
 class TileDeath extends Tile {
-	constructor(x, y, type, rotation) {
-		super(x, y, "death/" + type, rotation)
+	constructor(x, y, rotation) {
+		super(x, y, rotation)
 	}
 	collide() {
 		var playerRect = view.player.getRect()
@@ -621,12 +622,12 @@ class TileDeath extends Tile {
 }
 class BasicBlock extends TileBlock {
 	constructor(x, y, rotation) {
-		super(x, y, "basic-block", rotation)
+		super(x, y, rotation)
 	}
 }
 class HalfBlock extends TileBlock {
 	constructor(x, y, rotation) {
-		super(x, y, "half-block", rotation)
+		super(x, y, rotation)
 	}
 	getRect() {
 		return super.getRect().relative(0, 0.5, 1, 0.5);
@@ -634,7 +635,7 @@ class HalfBlock extends TileBlock {
 }
 class BasicSpike extends TileDeath {
 	constructor(x, y, rotation) {
-		super(x, y, "basic-spike", rotation)
+		super(x, y, rotation)
 	}
 	getRect() {
 		return super.getRect().relative(0.2, 0, 0.6, 0.8);
@@ -642,15 +643,15 @@ class BasicSpike extends TileDeath {
 }
 class HalfSpike extends TileDeath {
 	constructor(x, y, rotation) {
-		super(x, y, "half-spike", rotation)
+		super(x, y, rotation)
 	}
 	getRect() {
 		return super.getRect().relative(0.2, 0, 0.6, 0.4);
 	}
 }
 class Orb extends Tile {
-	constructor(x, y, type, rotation) {
-		super(x, y, "jump/orb/" + type, rotation)
+	constructor(x, y, rotation) {
+		super(x, y, rotation)
 		this.timeout = 0
 	}
 	tick(amount) {
@@ -674,7 +675,7 @@ class Orb extends Tile {
 }
 class JumpOrb extends Orb {
 	constructor(x, y, rotation) {
-		super(x, y, "jump", rotation)
+		super(x, y, rotation)
 	}
 	activate() {
 		view.player.vy = 0.34 * view.player.gravity
@@ -682,7 +683,7 @@ class JumpOrb extends Orb {
 }
 class GravityOrb extends Orb {
 	constructor(x, y, rotation) {
-		super(x, y, "gravity", rotation)
+		super(x, y, rotation)
 	}
 	activate() {
 		view.player.gravity *= -1
@@ -691,7 +692,7 @@ class GravityOrb extends Orb {
 }
 class BlackOrb extends Orb {
 	constructor(x, y, rotation) {
-		super(x, y, "black", rotation)
+		super(x, y, rotation)
 	}
 	activate() {
 		view.player.vy += view.player.gravity * -0.7
@@ -699,7 +700,7 @@ class BlackOrb extends Orb {
 }
 class StartPosBlock extends Tile {
 	constructor(x, y) {
-		super(x, y, "special/start-pos", 0)
+		super(x, y, 0)
 		if (viewType == "game") this.elm.remove()
 	}
 	static load(type, info) {
@@ -726,8 +727,8 @@ class StartPosBlock extends Tile {
 	}
 }
 class Trigger extends Tile {
-	constructor(x, y, type, needsTouch) {
-		super(x, y, "special/trigger/" + type, 0)
+	constructor(x, y, needsTouch) {
+		super(x, y, 0)
 		/** @type {boolean} */
 		this.needsTouch = needsTouch == true
 		/** @type {boolean} */
@@ -760,7 +761,7 @@ class Trigger extends Tile {
 }
 class ColorTrigger extends Trigger {
 	constructor(x, y, needsTouch, section, newColor, duration) {
-		super(x, y, "color", needsTouch)
+		super(x, y, needsTouch)
 		/** @type {"stage" | "bg"} */
 		this.section = section
 		/** @type {number[]} */
@@ -821,8 +822,8 @@ class ColorTrigger extends Trigger {
 	}
 }
 class Pad extends Tile {
-	constructor(x, y, type, rotation) {
-		super(x, y, "jump/pad/" + type, rotation)
+	constructor(x, y, rotation) {
+		super(x, y, rotation)
 		this.timeout = 0
 	}
 	getRect() {
@@ -846,7 +847,7 @@ class Pad extends Tile {
 }
 class JumpPad extends Pad {
 	constructor(x, y, rotation) {
-		super(x, y, "jump", rotation)
+		super(x, y, rotation)
 		this.timeout = 0
 	}
 	activate() {
@@ -855,7 +856,7 @@ class JumpPad extends Pad {
 }
 class SmallJumpPad extends Pad {
 	constructor(x, y, rotation) {
-		super(x, y, "jump-small", rotation)
+		super(x, y, rotation)
 	}
 	activate() {
 		view.player.vy = 0.22 * view.player.gravity
@@ -863,7 +864,7 @@ class SmallJumpPad extends Pad {
 }
 class GravityPad extends Pad {
 	constructor(x, y, rotation) {
-		super(x, y, "gravity", rotation)
+		super(x, y, rotation)
 	}
 	activate() {
 		if (this.rotation == 0) view.player.gravity = -1
@@ -876,13 +877,12 @@ class Portal extends Tile {
 	/**
 	 * @param {number} x
 	 * @param {number} y
-	 * @param {string} type
 	 * @param {number} displayheight
 	 * @param {number} realheight
 	 * @param {number} rotation
 	 */
-	constructor(x, y, type, displayheight, realheight, displaywidth, rotation) {
-		super(x, y, "portal/" + type, rotation)
+	constructor(x, y, displayheight, realheight, displaywidth, rotation) {
+		super(x, y, rotation)
 		this.displayheight = displayheight
 		this.realheight = realheight
 		this.extraStyles[1] = `--h: ${displayheight}; width: calc(${displaywidth} * var(--tile-size));`
@@ -904,12 +904,11 @@ class GamemodePortal extends Portal {
 	/**
 	 * @param {number} x
 	 * @param {number} y
-	 * @param {string} type
 	 * @param {number} rotation
 	 * @param {typeof GameMode} gamemode
 	 */
-	constructor(x, y, type, rotation, gamemode) {
-		super(x, y, "gamemode/" + type, 3.2, 3, 1.4545, rotation)
+	constructor(x, y, rotation, gamemode) {
+		super(x, y, 3.2, 3, 1.4545, rotation)
 		/** @type {typeof GameMode} */
 		this.mode = gamemode
 	}
@@ -920,12 +919,12 @@ class GamemodePortal extends Portal {
 }
 class CubePortal extends GamemodePortal {
 	constructor(x, y, rotation) {
-		super(x, y, "Cube", rotation, CubeMode)
+		super(x, y, rotation, CubeMode)
 	}
 }
 class ShipPortal extends GamemodePortal {
 	constructor(x, y, rotation) {
-		super(x, y, "Ship", rotation, ShipMode)
+		super(x, y, rotation, ShipMode)
 	}
 }
 
@@ -937,6 +936,18 @@ class View {
 	}
 	/** @param {{ type: string, x: number, y: number, rotation: number }[]} o */
 	importObjects(o) {
+		for (var i = 0; i < o.length; i++) {
+			var obj = o[i]
+			var type = getObjectFromLocation("tile", obj.type.split("."))
+			/** @type {Tile} */
+			var c = type.load(type, obj.data)
+			this.tiles.push(c)
+			this.stageWidth = Math.max(this.stageWidth, c.x + 5)
+			if (viewType == "editor") c.tick()
+		}
+	}
+	/** @param {{ type: string, x: number, y: number, rotation: number }[]} o */
+	importObjectsOLD(o) {
 		for (var i = 0; i < o.length; i++) {
 			var obj = o[i]
 			/** @type {Tile} */
@@ -1009,6 +1020,7 @@ class GameView extends View {
 		for (; this.particles.length > 0; ) {
 			this.particles[0].destroy()
 		}
+		this.particles.push(new ProgressBar())
 	}
 	getCompletion() {
 		var v = Math.floor((this.player.x / this.stageWidth) * 100)
@@ -1024,6 +1036,78 @@ class GameView extends View {
 			level: levelName,
 			completion: amount
 		}))
+	}
+}
+
+function getObjectFromLocation(registry, location) {
+	var path = registries[registry]
+	if (location == "") return path
+	for (var segment of location) {
+		path = path[segment]
+	}
+	return path
+}
+function getLocationFromObject(registry, object) {
+	var v = null
+	function find(registry, path, object) {
+		var folder = getObjectFromLocation(registry, path)
+		var keys = Object.keys(folder)
+		for (var i = 0; i < keys.length; i++) {
+			var check = folder[keys[i]]
+			// Check the item for the object
+			if (typeof check == "function") {
+				if (object instanceof check || object == check) {
+					v = [...path, keys[i]]
+				}
+			} else {
+				find(registry, [...path, keys[i]], object)
+			}
+			if (v != null) return
+		}
+	}
+	find(registry, [], object)
+	if (v == null) debugger;
+	return v
+}
+
+var registries = {
+	"tile": {
+		"block": {
+			"basic-block": BasicBlock,
+			"half-block": HalfBlock
+		},
+		"death": {
+			"basic-spike": BasicSpike,
+			"half-spike": HalfSpike
+		},
+		"jump": {
+			"orb": {
+				"jump": JumpOrb,
+				"black": BlackOrb,
+				"gravity": GravityOrb
+			},
+			"pad": {
+				"jump": JumpPad,
+				"jump-small": SmallJumpPad,
+				"gravity": GravityPad
+			}
+		},
+		"portal": {
+			"gamemode": {
+				"cube": CubePortal,
+				"ship": ShipPortal
+			}
+		},
+		"special": {
+			"trigger": {
+				"color": ColorTrigger
+			},
+			"start-pos": StartPosBlock
+		}
+	},
+	"gamemode": {
+		"cube": CubeMode,
+		"ship": ShipMode
 	}
 }
 
@@ -1050,7 +1134,7 @@ var levelMeta = {
 	"settings": {
 		"colorbg": [0, 125, 255],
 		"colorstage": [0, 125, 255],
-		"gamemode": "Cube"
+		"gamemode": "cube"
 	}
 }
 var debugMode = url_query.debug == "true"
