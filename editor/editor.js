@@ -75,7 +75,7 @@ function editTileList(tiles) {
 		var e = document.createElement("div")
 		e.classList.add("option-element")
 		e.setAttribute("style", `display: inline-block;`)
-		e.innerHTML = `<div style="background: url(../assets/tile/${tiles[i].type_file}.svg); width: 1em; height: 1em; display: inline-block;"></div>`
+		e.innerHTML = `<div style="background: url(../assets/tile/${getLocationFromObject("tile", tiles[i]).join("/")}.svg); width: 1em; height: 1em; display: inline-block;"></div>`
 		parent.appendChild(e)
 		e._TileSource = tiles[i]
 		e.setAttribute("onclick", "deselect(); editTile(this._TileSource)")

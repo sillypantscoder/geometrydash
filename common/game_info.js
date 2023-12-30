@@ -281,12 +281,6 @@ class ShipMode extends GameMode {
 			this.player.vy -= 0.005 * this.player.gravity
 		}
 	}
-	getMax() {
-		/* if (this.player.y > 14) {
-			this.player.y = 14
-			this.player.vy = 0
-		} */
-	}
 	getRect() {
 		return super.getRect().relative(0, 0.1, 1, 0.8)
 	}
@@ -308,17 +302,11 @@ class BallMode extends GameMode {
 		if (view.isPressing) {
 			if (this.player.specialJump != null) {
 				this.player.specialJump()
-			} else if (this.player.onGround/* || this.player.y == 14*/) {
+			} else if (this.player.onGround) {
 				this.player.gravity *= -1
 				view.isPressing = false
 			}
 		}
-	}
-	getMax() {
-		/* if (this.player.y > 14) {
-			this.player.y = 14
-			this.player.vy = 0
-		} */
 	}
 }
 class WaveMode extends GameMode {
@@ -481,7 +469,7 @@ class ProgressBar extends SceneItem {
 	}
 	tick(amount) {
 		var c = view.getCompletion()
-		this.elm.innerHTML = `<div>Attempt ${view.attempt}</div><div style="background: linear-gradient(90deg, #AFA ${c}%, white ${c}%);">${c}% complete</div>`
+		this.elm.innerHTML = `<div>Attempt ${view.attempt}</div><div style="background: linear-gradient(90deg, #AFA ${c}%, #AAF ${c}%, #AAF ${levelMeta.verified}%, white ${levelMeta.verified}%);">${c}% complete</div>`
 	}
 	destroy() {
 		view.particles.splice(view.particles.indexOf(this), 1)
@@ -613,10 +601,10 @@ class Tile extends SceneItem {
 		return [
 			`<div><button onclick="editing.destroy(); view.tiles.splice(view.tiles.indexOf(editing), 1); deselect();">Remove Tile</button></div>`,
 			`<div>Tile Rotation: <select oninput="editing.rotation = Number(this.value); editing.tick();">
-	<option value="0">&nbsp;&uarr; 0</option>
-	<option value="90">&rarr; 90</option>
-	<option value="180">&nbsp;&darr; 180</option>
-	<option value="270">&larr; 270</option>
+	<option value="0"${this.rotation==0 ? " selected" : ""}>&nbsp;&uarr; 0</option>
+	<option value="90"${this.rotation==90 ? " selected" : ""}>&rarr; 90</option>
+	<option value="180"${this.rotation==180 ? " selected" : ""}>&nbsp;&darr; 180</option>
+	<option value="270"${this.rotation==270 ? " selected" : ""}>&larr; 270</option>
 </select></div>`,
 			`<div>X: <input type="number" value="${this.x}" min="0" oninput="editing.x = Math.round(this.valueAsNumber); editing.tick();"></div>`,
 			`<div>Y: <input type="number" value="${this.y}" min="0" oninput="editing.y = Math.round(this.valueAsNumber); editing.tick();"></div>`
@@ -1023,17 +1011,6 @@ class View {
 			if (viewType == "editor") c.tick()
 		}
 	}
-	/** @param {{ type: string, x: number, y: number, rotation: number }[]} o */
-	importObjectsOLD(o) {
-		for (var i = 0; i < o.length; i++) {
-			var obj = o[i]
-			/** @type {Tile} */
-			var c = blockTypes[obj.type].load(blockTypes[obj.type], obj.data)
-			this.tiles.push(c)
-			this.stageWidth = Math.max(this.stageWidth, c.x + 5)
-			if (viewType == "editor") c.tick()
-		}
-	}
 	loadLevel() {
 		if (levelName == undefined) {
 			levelName = "new_level.json"
@@ -1049,6 +1026,7 @@ class View {
 			levelMeta.settings.colorbg = level.settings.colorbg
 			levelMeta.settings.colorstage = level.settings.colorstage
 			levelMeta.settings.gamemode = level.settings.gamemode
+			levelMeta.verified = level.verified
 			if (view instanceof GameView) view.player.setStartMode()
 			view.stage.reset()
 		})
@@ -1107,6 +1085,7 @@ class GameView extends View {
 	}
 	sendVerification() {
 		var amount = this.getCompletion()
+		levelMeta.verified = Math.max(levelMeta.verified, amount)
 		var x = new XMLHttpRequest()
 		x.open("POST", "/verify")
 		x.send(JSON.stringify({
@@ -1200,7 +1179,8 @@ var levelMeta = {
 		"colorbg": [0, 125, 255],
 		"colorstage": [0, 125, 255],
 		"gamemode": "cube"
-	}
+	},
+	"verified": 0
 }
 var debugMode = url_query.debug == "true"
 /** @type {GameView} */
