@@ -171,7 +171,7 @@ class Player extends SceneItem {
 		}
 		this.mode.getMax()
 		// Update styles
-		this.extraStyles[0] = "background: url(../assets/game/Player" + this.mode.getFilename() + ".svg)"
+		this.extraStyles[0] = "background: url(../assets/game/player/" + getLocationFromObject("gamemode", this.mode) + ".svg)"
 		super.tick(amount)
 		// console.log(0, this.x, this.y, this.vy)
 		// throw new Error()
@@ -241,9 +241,6 @@ class GameMode {
 	getRect() {
 		return new Rect(this.player.x, this.player.y, 1, 1)
 	}
-	getFilename() {
-		return "Cube";
-	}
 	hitCeiling(h) {
 		view.player.destroy()
 	}
@@ -285,16 +282,64 @@ class ShipMode extends GameMode {
 		}
 	}
 	getMax() {
-		if (this.player.y > 14) {
+		/* if (this.player.y > 14) {
 			this.player.y = 14
 			this.player.vy = 0
-		}
+		} */
 	}
 	getRect() {
 		return super.getRect().relative(0, 0.1, 1, 0.8)
 	}
-	getFilename() {
-		return "Ship";
+	hitCeiling(h) {
+		this.player.y = h - 0.1
+		this.player.vy = -0.01
+	}
+}
+class BallMode extends GameMode {
+	checkJump(amount) {
+		this.player.rotation += 10 * amount * this.player.gravity
+		if (this.player.onGround || this.player.y == 14) {
+			if (this.player.gravity < 0) {
+				view.particles.push(new SlideParticle(this.player.x, this.player.y + 1))
+			} else {
+				view.particles.push(new SlideParticle(this.player.x, this.player.y))
+			}
+		}
+		if (view.isPressing) {
+			if (this.player.specialJump != null) {
+				this.player.specialJump()
+			} else if (this.player.onGround/* || this.player.y == 14*/) {
+				this.player.gravity *= -1
+				view.isPressing = false
+			}
+		}
+	}
+	getMax() {
+		/* if (this.player.y > 14) {
+			this.player.y = 14
+			this.player.vy = 0
+		} */
+	}
+}
+class WaveMode extends GameMode {
+	gravity(amount) {}
+	checkJump(amount) {
+		this.player.rotation = this.player.vy * -450
+		view.particles.push(new WaveParticle(this.player.x, this.player.y + 0.5 + (-1 * this.player.vy)))
+		if (view.isPressing) {
+			this.player.vy = 0.1 * this.player.gravity
+		} else {
+			this.player.vy = -0.1 * this.player.gravity
+		}
+	}
+	getMax() {
+		/* if (this.player.y > 14) {
+			this.player.y = 14
+			this.player.vy = 0
+		} */
+	}
+	getRect() {
+		return super.getRect().relative(0, 0.1, 1, 0.8)
 	}
 	hitCeiling(h) {
 		this.player.y = h - 0.1
@@ -345,6 +390,19 @@ class SlideParticle extends Particle {
 		this.extraStyles[1] = `opacity: ${this.time.map(0, 15, 1, 0)};`
 		super.tick(amount)
 		if (this.time >= 15) this.destroy()
+	}
+}
+class WaveParticle extends Particle {
+	constructor(x, y) {
+		super(x, y)
+		this.time = 0
+		this.extraStyles[2] = `--size: 0.3; border-radius: 50%;`
+	}
+	tick(amount) {
+		this.time += amount
+		this.extraStyles[1] = `opacity: ${this.time.map(0, 100, 1, 0)};`
+		super.tick(amount)
+		if (this.time >= 100) this.destroy()
 	}
 }
 class DeathParticleMain extends Particle {
@@ -531,6 +589,7 @@ class Tile extends SceneItem {
 		super(x, y)
 		this.extraStyles[0] = `background: url(../assets/tile/${getLocationFromObject("tile", this).join("/")}.svg);`
 		this.rotation = rotation
+		this.enabled = true
 		if (debugMode) RectDisplay.create(this)
 	}
 	static load(type, info) {
@@ -567,6 +626,7 @@ class Tile extends SceneItem {
 		return new Rect(this.x, this.y, 1, 1)
 	}
 	tick(amount) {
+		this.extraStyles[100] = `opacity: ${this.enabled * 1};`
 		if (viewType == "game") this.collide()
 		super.tick(amount)
 		// if (debugMode) RectDisplay.create(this)
@@ -589,8 +649,10 @@ class TileBlock extends Tile {
 				// Player is fine
 				view.player.y += yIncrease * view.player.gravity
 				view.player.onGround = true
+				this.enabled = true
 			} else if (thisRect.y + 0.5 > playerRect.y + playerRect.h) {
 				view.player.mode.hitCeiling(thisRect.y - playerRect.h)
+				this.enabled = true
 			} else {
 				if (debugMode) {
 					setTimeout((thisRect, playerRect, yIncrease) => {
@@ -598,6 +660,7 @@ class TileBlock extends Tile {
 					}, 100, thisRect, playerRect, yIncrease)
 				}
 				view.player.destroy()
+				this.enabled = true
 			}
 		}
 	}
@@ -617,6 +680,7 @@ class TileDeath extends Tile {
 					view.particles.push(new RectDisplay(view.player.getRect(), "orange"))
 				}, 100)
 			}
+			this.enabled = true
 		}
 	}
 }
@@ -663,6 +727,7 @@ class Orb extends Tile {
 		var playerRect = view.player.getRect()
 		var thisRect = this.getRect().rotate(this.rotation, this.x + 0.5, this.y + 0.5)
 		if (playerRect.colliderect(thisRect)) {
+			this.enabled = true
 			// Jumpy jumpy
 			var target = this
 			view.player.specialJump = () => {
@@ -838,6 +903,7 @@ class Pad extends Tile {
 		var playerRect = view.player.getRect()
 		var thisRect = this.getRect().rotate(this.rotation, this.x + 0.5, this.y + 0.5)
 		if (playerRect.colliderect(thisRect)) {
+			this.enabled = true
 			// Jumpy jumpy
 			this.activate()
 			this.timeout = 10
@@ -895,6 +961,7 @@ class Portal extends Tile {
 		var playerRect = view.player.getRect()
 		var thisRect = this.getRect()
 		if (playerRect.colliderect(thisRect)) {
+			this.enabled = true
 			this.activate()
 		}
 	}
@@ -925,6 +992,16 @@ class CubePortal extends GamemodePortal {
 class ShipPortal extends GamemodePortal {
 	constructor(x, y, rotation) {
 		super(x, y, rotation, ShipMode)
+	}
+}
+class BallPortal extends GamemodePortal {
+	constructor(x, y, rotation) {
+		super(x, y, rotation, BallMode)
+	}
+}
+class WavePortal extends GamemodePortal {
+	constructor(x, y, rotation) {
+		super(x, y, rotation, WaveMode)
 	}
 }
 
@@ -1095,7 +1172,9 @@ var registries = {
 		"portal": {
 			"gamemode": {
 				"cube": CubePortal,
-				"ship": ShipPortal
+				"ship": ShipPortal,
+				"ball": BallPortal,
+				"wave": WavePortal
 			}
 		},
 		"special": {
@@ -1107,26 +1186,12 @@ var registries = {
 	},
 	"gamemode": {
 		"cube": CubeMode,
-		"ship": ShipMode
+		"ship": ShipMode,
+		"ball": BallMode,
+		"wave": WaveMode
 	}
 }
 
-var blockTypes = {
-	"basic-block": BasicBlock,
-	"basic-spike": BasicSpike,
-	"half-block": HalfBlock,
-	"half-spike": HalfSpike,
-	"jump-orb": JumpOrb,
-	"color-trigger": ColorTrigger,
-	"start-pos": StartPosBlock,
-	"gravity-orb": GravityOrb,
-	"gravity-pad": GravityPad,
-	"black-orb": BlackOrb,
-	"portal-gamemode-cube": CubePortal,
-	"portal-gamemode-ship": ShipPortal,
-	"jump-pad": JumpPad,
-	"jump-pad-small": SmallJumpPad
-}
 var levelName = url_query.level
 var levelMeta = {
 	"name": "Untitled Level",

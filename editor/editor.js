@@ -5,10 +5,11 @@ var floorHeight = 0.25
 
 function onclick(evt) {
 	var pos = [
-		Math.floor(evt.clientX / 20),
+		Math.floor(evt.clientX / 20) + document.querySelector("#viewX").valueAsNumber,
 		Math.floor(((window.innerHeight * (1 - floorHeight)) - evt.clientY) / 20)
 	]
 	if (pos[1] < 0) return
+	if (pos[0] < 0) return
 	if (editing != null) deselect()
 	var selectedBlock = document.querySelector(".option-element-selected").dataset.value
 	if (selectedBlock == ".eraser") {
@@ -42,7 +43,7 @@ function onclick(evt) {
 		editTileList(tiles)
 	} else {
 		// Add new block
-		var type = blockTypes[selectedBlock]
+		var type = getObjectFromLocation("tile", selectedBlock.split("."))
 		var args = type.default(pos)
 		/** @type {Tile} */
 		var newTile = type.load(type, args)
@@ -94,9 +95,6 @@ function deselect() {
 var debug = false
 function getExport() {
 	var r = []
-	var map = Object.entries(blockTypes)
-	var values = map.map((v) => v[1])
-	var keys = map.map((v) => v[0])
 	for (var i = 0; i < view.tiles.length; i++) {
 		var tile = view.tiles[i]
 		var type = getLocationFromObject("tile", tile).join(".")
@@ -161,7 +159,7 @@ function addOptionElements(folder) {
 			e.classList.add("option-element")
 			e.setAttribute("onclick", `this.classList.add("option-element-selected")`)
 			e.innerHTML = `<div style="background: url(../assets/tile/${[...folder, k[i]].join("/")}.svg); background-repeat: no-repeat; background-position: center; width: 1em; height: 1em; display: inline-block;"></div>`
-			e.dataset.value = k[i]
+			e.dataset.value = [...folder, k[i]].join(".")
 			document.querySelector("#blocks").appendChild(e)
 		}
 	}

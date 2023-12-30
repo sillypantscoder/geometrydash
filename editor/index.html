@@ -11,6 +11,7 @@
 				--><span class="option-element" data-value=".rotate" onclick="this.classList.add('option-element-selected')">Rotate</span><!--
 				--><span class="option-element" data-value=".edit" onclick="this.classList.add('option-element-selected')">Edit...</span><!--
 			--></span></div>
+			<div>View X: <input type="number" min="0" value="0" id="viewX" oninput="document.querySelector('#scene').setAttribute('style', `--move-amount: ${this.value}`)"></div>
 			<div><button onclick="saveLevel()">Save</button><button onclick="exportLevel()">Play</button><button onclick="editLevelSettings()">Edit Level Settings</button></div>
 			<div class="editing" style="display: none;"></div>
 		</div></div>
