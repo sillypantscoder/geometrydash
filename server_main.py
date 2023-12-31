@@ -34,7 +34,10 @@ def format_level(t: dict):
 	"objects": [
 		{objects}
 	],
-	"verified": {json.dumps(t["verified"])},
+	"completion": {{
+		"percentage": {json.dumps(t["completion"]["percentage"])},
+		"coins": {json.dumps(t["completion"]["coins"])}
+	}},
 	"deleted": {json.dumps(t["deleted"])}
 }}"""
 	return result
@@ -103,7 +106,10 @@ def post(path: str, body: bytes) -> HttpResponse:
 	if path == "/verify":
 		data = json.loads(body)
 		file = json.loads(read_file("levels/" + data["level"]).decode("UTF-8"))
-		file["verified"] = max(file["verified"], data["completion"])
+		file["completion"]["percentage"] = max(file["completion"]["percentage"], data["completion"])
+		if data["completion"] == 100:
+			for i in range(len(file["completion"]["coins"])):
+				file["completion"]["coins"][i] = file["completion"]["coins"][i] or data["coins"][i]
 		write_file("levels/" + data["level"], format_level(file))
 		return {
 			"status": 200,

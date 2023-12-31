@@ -24,6 +24,9 @@
 		{"type": "death.half-spike", "data": {"x": 14, "y": 0, "rotation": 0}},
 		{"type": "death.half-spike", "data": {"x": 15, "y": 0, "rotation": 0}}
 	],
-	"verified": 100,
+	"completion": {
+		"percentage": 100,
+		"coins": []
+	},
 	"deleted": false
 }

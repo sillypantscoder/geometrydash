@@ -32,18 +32,21 @@ body {
 #scene > div.regularPos {
 	--x: 0;
 	--y: 0;
-	--h: 1;
+	--dw: 1;
+	--dh: 1;
 	/* Y calculation */
 	--tile-height-off-ground: calc(var(--y) * var(--tile-size));
-	--offset-from-tile-height: calc(calc(calc(var(--h) - 1) / 2) * var(--tile-size));
+	--offset-from-tile-height: calc(calc(calc(var(--dh) - 1) / 2) * var(--tile-size));
 	--display-height-off-ground: calc(var(--tile-height-off-ground) - var(--offset-from-tile-height));
 	bottom: calc(var(--floor-height) + var(--display-height-off-ground));
 	/* X calculation */
 	--world-x: calc(var(--x) * var(--tile-size));
-	left: calc(var(--world-x) + calc(-1 * var(--camera-pos)));
+	--offset-from-tile-width: calc(calc(calc(var(--dw) - 1) / 2) * var(--tile-size));
+	--display-top-left: calc(var(--world-x) - var(--offset-from-tile-width));
+	left: calc(var(--display-top-left) + calc(-1 * var(--camera-pos)));
 	/* Size */
-	width: var(--tile-size);
-	height: calc(var(--h) * var(--tile-size));
+	width: calc(var(--dw) * var(--tile-size));
+	height: calc(var(--dh) * var(--tile-size));
 }
 .stage {
 	/* positioning */

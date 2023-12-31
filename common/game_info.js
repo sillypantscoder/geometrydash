@@ -121,6 +121,9 @@ class Stage extends SceneItem {
 			if (t instanceof Trigger) {
 				t.activated = false
 			}
+			if (t instanceof Coin) {
+				t.activated = 0
+			}
 		}
 	}
 }
@@ -294,9 +297,9 @@ class BallMode extends GameMode {
 		this.player.rotation += 10 * amount * this.player.gravity
 		if (this.player.onGround || this.player.y == 14) {
 			if (this.player.gravity < 0) {
-				view.particles.push(new SlideParticle(this.player.x, this.player.y + 1))
+				view.particles.push(new SlideParticle(this.player.x + 0.3, this.player.y + 1))
 			} else {
-				view.particles.push(new SlideParticle(this.player.x, this.player.y))
+				view.particles.push(new SlideParticle(this.player.x + 0.3, this.player.y))
 			}
 		}
 		if (view.isPressing) {
@@ -319,12 +322,6 @@ class WaveMode extends GameMode {
 		} else {
 			this.player.vy = -0.1 * this.player.gravity
 		}
-	}
-	getMax() {
-		/* if (this.player.y > 14) {
-			this.player.y = 14
-			this.player.vy = 0
-		} */
 	}
 	getRect() {
 		return super.getRect().relative(0, 0.1, 1, 0.8)
@@ -469,7 +466,7 @@ class ProgressBar extends SceneItem {
 	}
 	tick(amount) {
 		var c = view.getCompletion()
-		this.elm.innerHTML = `<div>Attempt ${view.attempt}</div><div style="background: linear-gradient(90deg, #AFA ${c}%, #AAF ${c}%, #AAF ${levelMeta.verified}%, white ${levelMeta.verified}%);">${c}% complete</div>`
+		this.elm.innerHTML = `<div>Attempt ${view.attempt}</div><div style="background: linear-gradient(90deg, #AFA ${c}%, #AAF ${c}%, #AAF ${levelMeta.completion.percentage}%, white ${levelMeta.completion.percentage}%);">${c}% complete</div>`
 	}
 	destroy() {
 		view.particles.splice(view.particles.indexOf(this), 1)
@@ -497,10 +494,9 @@ class RectDisplay extends Particle {
 		var color = "lime"
 		var r = item.getRect()
 		if (r.hasInvalid()) return
-		if (item instanceof Player) color = "transparent;outline: 1px solid yellow;"
+		if (item instanceof Player) return//color = "transparent;outline: 1px solid yellow;"
 		else r = r.rotate(item.rotation, item.x + 0.5, item.y + 0.5)
 		if (item instanceof TileDeath) color = "red"
-		if (item instanceof TileInvisible) color = "#0A0A"
 		view.particles.push(new RectDisplay(r, color))
 		if (item.elm.parentNode) item.elm.parentNode.appendChild(item.elm)
 	}
@@ -573,11 +569,13 @@ class Rect {
 	}
 }
 class Tile extends SceneItem {
-	constructor(x, y, rotation) {
+	constructor(x, y, dw, dh, rotation) {
 		super(x, y)
+		this.display_size = [dw, dh]
 		this.extraStyles[0] = `background: url(../assets/tile/${getLocationFromObject("tile", this).join("/")}.svg);`
+		this.extraStyles[1] = `--dw: ${dw}; --dh: ${dh};`
 		this.rotation = rotation
-		this.enabled = true
+		// this.enabled = false
 		if (debugMode) RectDisplay.create(this)
 	}
 	static load(type, info) {
@@ -614,7 +612,7 @@ class Tile extends SceneItem {
 		return new Rect(this.x, this.y, 1, 1)
 	}
 	tick(amount) {
-		this.extraStyles[100] = `opacity: ${this.enabled * 1};`
+		// this.extraStyles[100] = `opacity: ${this.enabled * 1};`
 		if (viewType == "game") this.collide()
 		super.tick(amount)
 		// if (debugMode) RectDisplay.create(this)
@@ -623,7 +621,7 @@ class Tile extends SceneItem {
 }
 class TileBlock extends Tile {
 	constructor(x, y, rotation) {
-		super(x, y, rotation)
+		super(x, y, 1, 1, rotation)
 	}
 	collide() {
 		var playerRect = view.player.getRect()
@@ -637,10 +635,10 @@ class TileBlock extends Tile {
 				// Player is fine
 				view.player.y += yIncrease * view.player.gravity
 				view.player.onGround = true
-				this.enabled = true
+				// this.enabled = true
 			} else if (thisRect.y + 0.5 > playerRect.y + playerRect.h) {
 				view.player.mode.hitCeiling(thisRect.y - playerRect.h)
-				this.enabled = true
+				// this.enabled = true
 			} else {
 				if (debugMode) {
 					setTimeout((thisRect, playerRect, yIncrease) => {
@@ -648,14 +646,14 @@ class TileBlock extends Tile {
 					}, 100, thisRect, playerRect, yIncrease)
 				}
 				view.player.destroy()
-				this.enabled = true
+				// this.enabled = true
 			}
 		}
 	}
 }
 class TileDeath extends Tile {
 	constructor(x, y, rotation) {
-		super(x, y, rotation)
+		super(x, y, 1, 1, rotation)
 	}
 	collide() {
 		var playerRect = view.player.getRect()
@@ -703,7 +701,7 @@ class HalfSpike extends TileDeath {
 }
 class Orb extends Tile {
 	constructor(x, y, rotation) {
-		super(x, y, rotation)
+		super(x, y, 1, 1, rotation)
 		this.timeout = 0
 	}
 	tick(amount) {
@@ -753,7 +751,7 @@ class BlackOrb extends Orb {
 }
 class StartPosBlock extends Tile {
 	constructor(x, y) {
-		super(x, y, 0)
+		super(x, y, 1, 1, 0)
 		if (viewType == "game") this.elm.remove()
 	}
 	static load(type, info) {
@@ -779,9 +777,51 @@ class StartPosBlock extends Tile {
 		]
 	}
 }
+class Coin extends Tile {
+	constructor(x, y, rotation) {
+		super(x, y, 2, 2, rotation)
+		/** @type {number} */
+		this.activated = 0
+	}
+	getRect() {
+		return super.getRect().relative(-0.5, -0.5, 2, 2)
+	}
+	hasCollision() {
+		var playerRect = view.player.getRect()
+		var thisRect = this.getRect()
+		if (this.needsTouch) {
+			return playerRect.colliderect(thisRect)
+		} else {
+			return playerRect.centerX() > thisRect.centerX()
+		}
+	}
+	collide() {
+		if (this.activated > 0) {
+			return
+		}
+		var playerRect = view.player.getRect()
+		var thisRect = this.getRect()
+		if (playerRect.colliderect(thisRect)) {
+			this.activated = 1
+			this.trigger()
+		}
+	}
+	tick(amount) {
+		this.extraStyles[1] = `--dw: var(--tsize); --dh: var(--tsize);`
+		this.extraStyles[2] = `--tsize: ${Math.sqrt(Math.sqrt(this.activated + 1)) + 1};`
+		this.extraStyles[3] = `opacity: ${this.activated.map(0, 100, 1, 0)};`
+		super.tick(amount)
+		if (this.activated > 0) {
+			if (this.activated < 100) {
+				this.activated += amount
+			}
+		}
+	}
+	trigger() {}
+}
 class Trigger extends Tile {
 	constructor(x, y, needsTouch) {
-		super(x, y, 0)
+		super(x, y, 1, 1, 0)
 		/** @type {boolean} */
 		this.needsTouch = needsTouch == true
 		/** @type {boolean} */
@@ -861,9 +901,9 @@ class ColorTrigger extends Trigger {
 			`<div>Duration (60ths of a second): <input type="number" value="${this.duration}" min="1" oninput="editing.duration = this.valueAsNumber"></div>`
 		]
 	}
-	tick() {
-		this.extraStyles[1] = `--trigger-color: rgb(${this.color.join(", ")});`
-		super.tick()
+	tick(amount) {
+		this.extraStyles[2] = `--trigger-color: rgb(${this.color.join(", ")});`
+		super.tick(amount)
 	}
 	trigger() {
 		/** @type {InterpolatedColor} */
@@ -876,7 +916,7 @@ class ColorTrigger extends Trigger {
 }
 class Pad extends Tile {
 	constructor(x, y, rotation) {
-		super(x, y, rotation)
+		super(x, y, 1, 1, rotation)
 		this.timeout = 0
 	}
 	getRect() {
@@ -935,11 +975,9 @@ class Portal extends Tile {
 	 * @param {number} realheight
 	 * @param {number} rotation
 	 */
-	constructor(x, y, displayheight, realheight, displaywidth, rotation) {
-		super(x, y, rotation)
-		this.displayheight = displayheight
+	constructor(x, y, dw, dh, realheight, rotation) {
+		super(x, y, dw, dh, rotation)
 		this.realheight = realheight
-		this.extraStyles[1] = `--h: ${displayheight}; width: calc(${displaywidth} * var(--tile-size));`
 		if (debugMode) RectDisplay.create(this)
 	}
 	getRect() {
@@ -963,7 +1001,7 @@ class GamemodePortal extends Portal {
 	 * @param {typeof GameMode} gamemode
 	 */
 	constructor(x, y, rotation, gamemode) {
-		super(x, y, 3.2, 3, 1.4545, rotation)
+		super(x, y, 1.4545, 3.2, 3, rotation)
 		/** @type {typeof GameMode} */
 		this.mode = gamemode
 	}
@@ -1026,7 +1064,7 @@ class View {
 			levelMeta.settings.colorbg = level.settings.colorbg
 			levelMeta.settings.colorstage = level.settings.colorstage
 			levelMeta.settings.gamemode = level.settings.gamemode
-			levelMeta.verified = level.verified
+			levelMeta.completion = level.completion
 			if (view instanceof GameView) view.player.setStartMode()
 			view.stage.reset()
 		})
@@ -1078,19 +1116,27 @@ class GameView extends View {
 		this.particles.push(new ProgressBar())
 	}
 	getCompletion() {
-		var v = Math.floor((this.player.x / this.stageWidth) * 100)
-		if (v < 0) return 0
-		if (v > 100) return 100
-		return v
+		var pc = Math.floor((this.player.x / this.stageWidth) * 100)
+		if (pc < 0) return 0
+		if (pc > 100) return 100
+		return pc
 	}
 	sendVerification() {
 		var amount = this.getCompletion()
-		levelMeta.verified = Math.max(levelMeta.verified, amount)
+		levelMeta.completion.percentage = Math.max(levelMeta.completion.percentage, amount)
+		var coins = []
+		for (var i = 0; i < this.tiles.length; i++) {
+			var t = this.tiles[i]
+			if (t instanceof Coin) {
+				coins.push(t.activated > 0)
+			}
+		}
 		var x = new XMLHttpRequest()
 		x.open("POST", "/verify")
 		x.send(JSON.stringify({
 			level: levelName,
-			completion: amount
+			completion: amount,
+			coins
 		}))
 	}
 }
@@ -1160,7 +1206,8 @@ var registries = {
 			"trigger": {
 				"color": ColorTrigger
 			},
-			"start-pos": StartPosBlock
+			"start-pos": StartPosBlock,
+			"coin": Coin
 		}
 	},
 	"gamemode": {
@@ -1180,7 +1227,10 @@ var levelMeta = {
 		"colorstage": [0, 125, 255],
 		"gamemode": "cube"
 	},
-	"verified": 0
+	"completion": {
+		"percentage": 0,
+		"coins": []
+	}
 }
 var debugMode = url_query.debug == "true"
 /** @type {GameView} */

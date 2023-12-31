@@ -114,6 +114,13 @@ function exportLevel() {
 }
 function saveLevel() {
 	return new Promise((resolve) => {
+		var coins = []
+		for (var i = 0; i < view.tiles.length; i++) {
+			var t = view.tiles[i]
+			if (t instanceof Coin) {
+				coins.push(false)
+			}
+		}
 		var x = new XMLHttpRequest()
 		x.open("POST", "/save")
 		x.addEventListener("loadend", () => resolve(x.responseText))
@@ -124,7 +131,10 @@ function saveLevel() {
 				"description": levelMeta.description,
 				"settings": levelMeta.settings,
 				"objects": getExport(),
-				"verified": 0,
+				"completion": {
+					"percentage": 0,
+					"coins": coins
+				},
 				"deleted": false
 			}
 		}))

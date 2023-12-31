@@ -143,7 +143,6 @@
 		{"type": "block.basic-block", "data": {"x": 25, "y": 12, "rotation": 0}},
 		{"type": "block.basic-block", "data": {"x": 26, "y": 12, "rotation": 0}},
 		{"type": "jump.pad.gravity", "data": {"x": 33, "y": 11, "rotation": 180}},
-		{"type": "death.half-spike", "data": {"x": 42, "y": 8, "rotation": 0}},
 		{"type": "jump.pad.gravity", "data": {"x": 24, "y": 0, "rotation": 0}},
 		{"type": "block.half-block", "data": {"x": 29, "y": 13, "rotation": 0}},
 		{"type": "block.half-block", "data": {"x": 30, "y": 13, "rotation": 0}},
@@ -157,11 +156,29 @@
 		{"type": "death.basic-spike", "data": {"x": 53, "y": 7, "rotation": 0}},
 		{"type": "jump.orb.black", "data": {"x": 48, "y": 9, "rotation": 0}},
 		{"type": "block.half-block", "data": {"x": 36, "y": 8, "rotation": 180}},
-		{"type": "death.basic-spike", "data": {"x": 36, "y": 8, "rotation": 0}},
+		{"type": "death.basic-spike", "data": {"x": 35, "y": 8, "rotation": 0}},
 		{"type": "block.half-block", "data": {"x": 51, "y": 3, "rotation": 180}},
 		{"type": "block.half-block", "data": {"x": 52, "y": 3, "rotation": 0}},
-		{"type": "jump.pad.gravity", "data": {"x": 23, "y": 0, "rotation": 0}}
+		{"type": "jump.pad.gravity", "data": {"x": 23, "y": 0, "rotation": 0}},
+		{"type": "block.basic-block", "data": {"x": 39, "y": 8, "rotation": 0}},
+		{"type": "block.basic-block", "data": {"x": 39, "y": 9, "rotation": 0}},
+		{"type": "block.half-block", "data": {"x": 39, "y": 10, "rotation": 180}},
+		{"type": "block.half-block", "data": {"x": 39, "y": 11, "rotation": 0}},
+		{"type": "death.basic-spike", "data": {"x": 43, "y": 7, "rotation": 0}},
+		{"type": "death.half-spike", "data": {"x": 47, "y": 7, "rotation": 90}},
+		{"type": "death.half-spike", "data": {"x": 47, "y": 6, "rotation": 90}},
+		{"type": "death.half-spike", "data": {"x": 47, "y": 5, "rotation": 90}},
+		{"type": "death.half-spike", "data": {"x": 47, "y": 4, "rotation": 90}},
+		{"type": "death.half-spike", "data": {"x": 47, "y": 3, "rotation": 90}},
+		{"type": "death.half-spike", "data": {"x": 47, "y": 2, "rotation": 90}},
+		{"type": "death.half-spike", "data": {"x": 49, "y": 5, "rotation": 270}},
+		{"type": "death.half-spike", "data": {"x": 49, "y": 4, "rotation": 270}},
+		{"type": "death.half-spike", "data": {"x": 49, "y": 3, "rotation": 270}},
+		{"type": "special.coin", "data": {"x": 48, "y": 5, "rotation": 0}}
 	],
-	"verified": 100,
+	"completion": {
+		"percentage": 100,
+		"coins": [false]
+	},
 	"deleted": false
 }
