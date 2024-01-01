@@ -779,12 +779,9 @@ class StartPosBlock extends Tile {
 }
 class Coin extends Tile {
 	constructor(x, y, rotation) {
-		super(x, y, 2, 2, rotation)
+		super(x, y, 1, 1, rotation)
 		/** @type {number} */
 		this.activated = 0
-	}
-	getRect() {
-		return super.getRect().relative(-0.5, -0.5, 2, 2)
 	}
 	hasCollision() {
 		var playerRect = view.player.getRect()
@@ -808,7 +805,7 @@ class Coin extends Tile {
 	}
 	tick(amount) {
 		this.extraStyles[1] = `--dw: var(--tsize); --dh: var(--tsize);`
-		this.extraStyles[2] = `--tsize: ${Math.sqrt(Math.sqrt(this.activated + 1)) + 1};`
+		this.extraStyles[2] = `--tsize: ${Math.sqrt(Math.sqrt(this.activated + 1))};`
 		this.extraStyles[3] = `opacity: ${this.activated.map(0, 100, 1, 0)};`
 		super.tick(amount)
 		if (this.activated > 0) {

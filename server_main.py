@@ -77,10 +77,26 @@ def get(path: str) -> HttpResponse:
 			},
 			"content": read_file(qpath[1:])
 		}
-	elif path == "/level_list":
+	elif path == "/level_list/published":
 		data = []
-		for name in os.listdir("levels"):
-			contents = json.loads(read_file("levels/" + name))
+		for name in os.listdir("levels/published"):
+			contents = json.loads(read_file("levels/published/" + name))
+			if contents["deleted"] == True: continue
+			data.append({
+				"name": name,
+				"contents": contents
+			})
+		return {
+			"status": 200,
+			"headers": {
+				"Content-Type": "text/html"
+			},
+			"content": json.dumps(data)
+		}
+	elif path == "/level_list/user":
+		data = []
+		for name in os.listdir("levels/user"):
+			contents = json.loads(read_file("levels/user/" + name))
 			if contents["deleted"] == True: continue
 			data.append({
 				"name": name,
@@ -118,14 +134,26 @@ def post(path: str, body: bytes) -> HttpResponse:
 			},
 			"content": f""
 		}
-	if path == "/save":
+	elif path == "/save_user":
 		data = json.loads(body)
 		formatted = format_level(data["level"])
-		name: str = data["name"]
-		while os.path.exists("levels/" + name):
+		name: str = data["name"].replace("user/", "")
+		write_file("levels/user/" + name, formatted)
+		return {
+			"status": 200,
+			"headers": {
+				"Content-Type": "text/html"
+			},
+			"content": name
+		}
+	elif path == "/publish":
+		data = json.loads(body)
+		formatted = format_level(data["level"])
+		name: str = data["name"].replace("user/", "")
+		while os.path.exists("levels/published/" + name):
 			delete_file(name)
 			name = name.replace(".json", "_.json")
-		write_file("levels/" + name, formatted)
+		write_file("levels/published/" + name, formatted)
 		return {
 			"status": 200,
 			"headers": {

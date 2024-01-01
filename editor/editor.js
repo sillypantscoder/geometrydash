@@ -109,7 +109,7 @@ function exportLevel() {
 	saveLevel().then((e) => {
 		var r = getExport()
 		var data = btoa(JSON.stringify(r))
-		window.open("../game/index.html?level=" + e)
+		window.open("../game/index.html?level=user/" + e)
 	})
 }
 function saveLevel() {
@@ -122,7 +122,7 @@ function saveLevel() {
 			}
 		}
 		var x = new XMLHttpRequest()
-		x.open("POST", "/save")
+		x.open("POST", "/save_user")
 		x.addEventListener("loadend", () => resolve(x.responseText))
 		x.send(JSON.stringify({
 			"name": levelName,
@@ -140,6 +140,35 @@ function saveLevel() {
 		}))
 	})
 }
+async function publishLevel() {
+	await new Promise((resolve) => {
+		var coins = []
+		for (var i = 0; i < view.tiles.length; i++) {
+			var t = view.tiles[i]
+			if (t instanceof Coin) {
+				coins.push(false)
+			}
+		}
+		var x = new XMLHttpRequest()
+		x.open("POST", "/publish")
+		x.addEventListener("loadend", () => resolve(x.responseText))
+		x.send(JSON.stringify({
+			"name": levelName,
+			"level": {
+				"name": levelMeta.name,
+				"description": levelMeta.description,
+				"settings": levelMeta.settings,
+				"objects": getExport(),
+				"completion": {
+					"percentage": 0,
+					"coins": coins
+				},
+				"deleted": false
+			}
+		}))
+	})
+	location.replace("../home/home.html")
+}
 function editLevelSettings() {
 	editing = "settings"
 	var parent = document.querySelector(".editing")
@@ -149,9 +178,8 @@ function editLevelSettings() {
 		`Level Description:<br><textarea oninput="levelMeta.description = this.value"></textarea>`,
 		`Starting Background Color: <input type="color" value="${getHexFromRGB(levelMeta.settings.colorbg)}" oninput="levelMeta.settings.colorbg = getRGBFromHex(this.value)"></div>`,
 		`Starting Stage Color: <input type="color" value="${getHexFromRGB(levelMeta.settings.colorstage)}" oninput="levelMeta.settings.colorstage = getRGBFromHex(this.value)"></div>`,
-		`Starting Gamemode: <select oninput="levelMeta.settings.gamemode = this.value">
-	<option value="cube"${levelMeta.settings.gamemode=="cube" ? " selected" : ""}>Cube</option>
-	<option value="ship"${levelMeta.settings.gamemode=="ship" ? " selected" : ""}>Ship</option>
+		`Starting Gamemode: <select oninput="levelMeta.settings.gamemode = this.value">${Object.keys(registries.gamemode).map((v) => `
+	<option value="${v}"${levelMeta.settings.gamemode==v ? " selected" : ""}>${v}</option>`)}
 </select>`
 	].map((v) => `<div>${v}</div>`).join("")
 	parent.children[0].children[0].value = levelMeta.name
