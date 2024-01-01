@@ -782,6 +782,8 @@ class Coin extends Tile {
 		super(x, y, 1, 1, rotation)
 		/** @type {number} */
 		this.activated = 0
+		/** @type {boolean} */
+		this.alreadygot = false
 	}
 	hasCollision() {
 		var playerRect = view.player.getRect()
@@ -804,6 +806,7 @@ class Coin extends Tile {
 		}
 	}
 	tick(amount) {
+		if (this.alreadygot) this.extraStyles[0] = `background: url(../assets/tile/special/coin-alreadygot.svg);`
 		this.extraStyles[1] = `--dw: var(--tsize); --dh: var(--tsize);`
 		this.extraStyles[2] = `--tsize: ${Math.sqrt(Math.sqrt(this.activated + 1))};`
 		this.extraStyles[3] = `opacity: ${this.activated.map(0, 100, 1, 0)};`
@@ -1036,6 +1039,7 @@ class View {
 	}
 	/** @param {{ type: string, x: number, y: number, rotation: number }[]} o */
 	importObjects(o) {
+		var coin_no = 0
 		for (var i = 0; i < o.length; i++) {
 			var obj = o[i]
 			var type = getObjectFromLocation("tile", obj.type.split("."))
@@ -1044,6 +1048,13 @@ class View {
 			this.tiles.push(c)
 			this.stageWidth = Math.max(this.stageWidth, c.x + 5)
 			if (viewType == "editor") c.tick()
+			else if (c instanceof Coin) {
+				var has_coin = levelMeta.completion.coins[coin_no]
+				coin_no += 1
+				if (has_coin) {
+					c.alreadygot = true
+				}
+			}
 		}
 	}
 	loadLevel() {
@@ -1055,13 +1066,13 @@ class View {
 		x.open("GET", "../levels/" + levelName)
 		x.addEventListener("loadend", () => {
 			var level = JSON.parse(x.responseText)
+			levelMeta.completion = level.completion
 			view.importObjects(level.objects)
 			levelMeta.name = level.name
 			levelMeta.description = level.description
 			levelMeta.settings.colorbg = level.settings.colorbg
 			levelMeta.settings.colorstage = level.settings.colorstage
 			levelMeta.settings.gamemode = level.settings.gamemode
-			levelMeta.completion = level.completion
 			if (view instanceof GameView) view.player.setStartMode()
 			view.stage.reset()
 		})
