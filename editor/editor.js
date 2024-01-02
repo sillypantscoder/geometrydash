@@ -1,16 +1,21 @@
-/** @type {Tile | null | string} */
+/** @type {SceneItem | null | string} */
 var editing = null
 
 var floorHeight = 0.25
 
-function onclick(evt) {
+/**
+ * @param {MouseEvent} evt
+ */
+function on_click(evt) {
 	var pos = [
+		// @ts-ignore
 		Math.floor(evt.clientX / 20) + document.querySelector("#viewX").valueAsNumber,
 		Math.floor(((window.innerHeight * (1 - floorHeight)) - evt.clientY) / 20)
 	]
 	if (pos[1] < 0) return
 	if (pos[0] < 0) return
 	if (editing != null) deselect()
+	// @ts-ignore
 	var selectedBlock = document.querySelector(".option-element-selected").dataset.value
 	if (selectedBlock == ".eraser") {
 		// Remove
@@ -28,7 +33,7 @@ function onclick(evt) {
 			var tile = view.tiles[i]
 			if (tile.x == pos[0] && tile.y == pos[1]) {
 				tile.rotation = (tile.rotation + 90) % 360
-				tile.tick()
+				tile.tick(1)
 			}
 		}
 	} else if (selectedBlock == ".edit") {
@@ -48,10 +53,11 @@ function onclick(evt) {
 		/** @type {Tile} */
 		var newTile = type.load(type, args)
 		view.tiles.push(newTile)
-		newTile.tick()
+		newTile.tick(1)
 	}
 }
-document.querySelector("#scene").addEventListener("click", onclick);
+// @ts-ignore
+document.querySelector("#scene").addEventListener("click", on_click);
 /** @param {Tile} tile */
 function editTile(tile) {
 	if (editing != null) deselect()
@@ -60,7 +66,7 @@ function editTile(tile) {
 	var parent = document.querySelector(".editing")
 	parent.removeAttribute("style")
 	parent.innerHTML = tile.getEdit().join("")
-	tile.tick()
+	tile.tick(1)
 }
 /** @param {Tile[]} tiles */
 function editTileList(tiles) {
@@ -77,6 +83,7 @@ function editTileList(tiles) {
 		e.setAttribute("style", `display: inline-block;`)
 		e.innerHTML = `<div style="background: url(../assets/tile/${getLocationFromObject("tile", tiles[i]).join("/")}.svg); width: 1em; height: 1em; display: inline-block;"></div>`
 		parent.appendChild(e)
+		// @ts-ignore
 		e._TileSource = tiles[i]
 		e.setAttribute("onclick", "deselect(); editTile(this._TileSource)")
 	}
@@ -85,7 +92,7 @@ function deselect() {
 	if (editing instanceof Tile) {
 		var tile = editing
 		editing = null
-		tile.tick()
+		tile.tick(1)
 	}
 	if (editing != null) editing = null
 	var parent = document.querySelector(".editing")
@@ -182,10 +189,15 @@ function editLevelSettings() {
 	<option value="${v}"${levelMeta.settings.gamemode==v ? " selected" : ""}>${v}</option>`)}
 </select>`
 	].map((v) => `<div>${v}</div>`).join("")
+	// @ts-ignore
 	parent.children[0].children[0].value = levelMeta.name
+	// @ts-ignore
 	parent.children[1].children[1].value = levelMeta.description
 }
 
+/**
+ * @param {string[]} folder
+ */
 function addOptionElements(folder) {
 	var items = getObjectFromLocation("tile", folder)
 	var k = Object.keys(items)

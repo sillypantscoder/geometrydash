@@ -1,3 +1,6 @@
+/**
+ * @param {number} amount
+ */
 function frame(amount) {
 	for (var i = 0; i < view.particles.length; i++) {
 		view.particles[i].tick(amount)

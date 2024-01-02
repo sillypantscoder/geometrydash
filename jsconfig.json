@@ -1,0 +1,23 @@
+{
+	"compilerOptions": {
+		"module": "ESNext",
+		"moduleResolution": "Node",
+		"target": "ES2022",
+		"jsx": "react",
+		"allowImportingTsExtensions": true,
+		"strictNullChecks": false,
+		"strictFunctionTypes": true,
+		"strict": true,
+		"checkJs": true
+	},
+	"exclude": [
+		"node_modules",
+		"**/node_modules/*"
+	],
+	"include": [
+		"common/*",
+		"editor/*",
+		"game/*",
+		"home/*"
+	]
+}

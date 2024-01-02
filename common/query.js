@@ -6,10 +6,12 @@
 		for (var a = 0; a < things.length; a++) {
 			var name =  things[a].split("=")[0]
 			var value = things[a].split("=")[1]
+			// @ts-ignore
 			query[name] = value
 		}
 	} else {
 		query = {}
 	}
+	// @ts-ignore
 	window.url_query = query
 })();

@@ -1,4 +1,6 @@
+// @ts-ignore
 Number.prototype.map = function (in_min, in_max, out_min, out_max) {
+	// @ts-ignore
 	return (this - in_min) * (out_max - out_min) / (in_max - in_min) + out_min;
 }
 
@@ -23,7 +25,10 @@ class SceneItem {
 		/** @type {(string | undefined)[]} */
 		this.extraStyles = []
 	}
-	tick(amount) {
+	/**
+	 * @param {number} _amount
+	 */
+	tick(_amount) {
 		if (this == window.editing) {
 			this.elm.setAttribute("style", `--x: ${this.x}; --y: ${this.y}; transform: rotate(${this.rotation}deg); box-shadow: 0px 7px 15px 5px orange; outline: 1px solid red;${this.extraStyles.map((v) => v==undefined ? "" : ` ${v}`).join("")}`)
 		} else {
@@ -35,6 +40,9 @@ class SceneItem {
 	}
 }
 class InterpolatedVariable {
+	/**
+	 * @param {number} initialValue
+	 */
 	constructor(initialValue) {
 		/** @type {number} */
 		this.startValue = initialValue
@@ -45,6 +53,9 @@ class InterpolatedVariable {
 		/** @type {number} */
 		this.totalTicks = -1
 	}
+	/**
+	 * @param {number} amount
+	 */
 	tick(amount) {
 		if (this.totalTicks == -1) return
 		this.ticks += amount
@@ -54,6 +65,10 @@ class InterpolatedVariable {
 			this.startValue = this.endValue
 		}
 	}
+	/**
+	 * @param {number} newValue
+	 * @param {number} duration
+	 */
 	interpolate(newValue, duration) {
 		if (this.totalTicks != -1) {
 			this.startValue = this.endValue
@@ -65,10 +80,16 @@ class InterpolatedVariable {
 	/** @returns {number} */
 	get() {
 		if (this.totalTicks == -1) return this.startValue
+		// @ts-ignore
 		return (this.ticks / this.totalTicks).map(0, 1, this.startValue, this.endValue)
 	}
 }
 class InterpolatedColor {
+	/**
+	 * @param {number} r
+	 * @param {number} g
+	 * @param {number} b
+	 */
 	constructor(r, g, b) {
 		/** @type {InterpolatedVariable} */
 		this.r = new InterpolatedVariable(r)
@@ -77,11 +98,20 @@ class InterpolatedColor {
 		/** @type {InterpolatedVariable} */
 		this.b = new InterpolatedVariable(b)
 	}
+	/**
+	 * @param {number} amount
+	 */
 	tick(amount) {
 		this.r.tick(amount)
 		this.g.tick(amount)
 		this.b.tick(amount)
 	}
+	/**
+	 * @param {number} r
+	 * @param {number} g
+	 * @param {number} b
+	 * @param {number} duration
+	 */
 	interpolate(r, g, b, duration) {
 		this.r.interpolate(r, duration)
 		this.g.interpolate(g, duration)
@@ -98,24 +128,34 @@ class InterpolatedColor {
 	getHex() {
 		return "#" + this.get().map((v) => Math.round(v).toString(16).padStart(2, "0")).join("")
 	}
+	/**
+	 * @param {number[]} values
+	 */
+	static fromRGB(values) {
+		return new InterpolatedColor(values[0], values[1], values[2])
+	}
 }
 class Stage extends SceneItem {
 	constructor() {
 		super(0, 0)
 		this.elm.classList.remove("regularPos")
 		this.elm.classList.add("stage")
-		this.bgColor = new InterpolatedColor(...levelMeta.settings.colorbg)
-		this.stageColor = new InterpolatedColor(...levelMeta.settings.colorstage)
+		this.bgColor = InterpolatedColor.fromRGB(levelMeta.settings.colorbg)
+		this.stageColor = InterpolatedColor.fromRGB(levelMeta.settings.colorstage)
 	}
+	/**
+	 * @param {number} amount
+	 */
 	tick(amount) {
 		this.bgColor.tick(amount)
 		this.stageColor.tick(amount)
+		// @ts-ignore
 		this.elm.parentNode.setAttribute("style", `--move-amount: ${Math.max(0, view.player.x - 5)}; --bg-color: ${this.bgColor.getHex()}; --stage-color: ${this.stageColor.getHex()};`)
-		super.tick()
+		super.tick(amount)
 	}
 	reset() {
-		this.bgColor = new InterpolatedColor(...levelMeta.settings.colorbg)
-		this.stageColor = new InterpolatedColor(...levelMeta.settings.colorstage)
+		this.bgColor = InterpolatedColor.fromRGB(levelMeta.settings.colorbg)
+		this.stageColor = InterpolatedColor.fromRGB(levelMeta.settings.colorstage)
 		for (var i = 0; i < view.tiles.length; i++) {
 			var t = view.tiles[i]
 			if (t instanceof Trigger) {
@@ -135,7 +175,7 @@ class Player extends SceneItem {
 		this.vy = 0
 		/** @type {boolean} */
 		this.onGround = false
-		/** @type {null | () => void} */
+		/** @type {null | (() => void)} */
 		this.specialJump = null
 		/** @type {number} */
 		this.deathTime = 1
@@ -147,6 +187,9 @@ class Player extends SceneItem {
 	getRect() {
 		return this.mode.getRect()
 	}
+	/**
+	 * @param {number} amount
+	 */
 	tick(amount) {
 		// console.log(1, this.x, this.y, this.vy)
 		if (this.deathTime > 0) {
@@ -179,6 +222,9 @@ class Player extends SceneItem {
 		// console.log(0, this.x, this.y, this.vy)
 		// throw new Error()
 	}
+	/**
+	 * @param {number} amount
+	 */
 	finishTick(amount) {
 		if (this.deathTime > 0) return
 		if (this.onGround) {
@@ -228,14 +274,23 @@ class Player extends SceneItem {
 	}
 }
 class GameMode {
+	/**
+	 * @param {Player} player
+	 */
 	constructor(player) {
 		/** @type {Player} */
 		this.player = player
 	}
+	/**
+	 * @param {number} amount
+	 */
 	gravity(amount) {
 		this.player.vy -= 0.028 * this.player.gravity * amount
 	}
-	checkJump(amount) {}
+	/**
+	 * @param {number} _amount
+	 */
+	checkJump(_amount) {}
 	getMax() {
 		if (this.player.y > 40) {
 			this.player.destroy()
@@ -244,11 +299,17 @@ class GameMode {
 	getRect() {
 		return new Rect(this.player.x, this.player.y, 1, 1)
 	}
-	hitCeiling(h) {
+	/**
+	 * @param {number} _h The height of the ceiling
+	 */
+	hitCeiling(_h) {
 		view.player.destroy()
 	}
 }
 class CubeMode extends GameMode {
+	/**
+	 * @param {number} amount
+	 */
 	checkJump(amount) {
 		if (this.player.onGround) {
 			this.player.rotation = 0
@@ -270,8 +331,14 @@ class CubeMode extends GameMode {
 	}
 }
 class ShipMode extends GameMode {
-	gravity(amount) {}
-	checkJump(amount) {
+	/**
+	 * @param {number} _amount
+	 */
+	gravity(_amount) {}
+	/**
+	 * @param {number} _amount
+	 */
+	checkJump(_amount) {
 		this.player.rotation = this.player.vy * -100
 		view.particles.push(new SlideParticle(this.player.x + 0.05, this.player.y + 0.2))
 		if (view.isPressing) {
@@ -287,12 +354,18 @@ class ShipMode extends GameMode {
 	getRect() {
 		return super.getRect().relative(0, 0.1, 1, 0.8)
 	}
+	/**
+	 * @param {number} h
+	 */
 	hitCeiling(h) {
 		this.player.y = h - 0.1
 		this.player.vy = -0.01
 	}
 }
 class BallMode extends GameMode {
+	/**
+	 * @param {number} amount
+	 */
 	checkJump(amount) {
 		this.player.rotation += 10 * amount * this.player.gravity
 		if (this.player.onGround || this.player.y == 14) {
@@ -313,8 +386,14 @@ class BallMode extends GameMode {
 	}
 }
 class WaveMode extends GameMode {
-	gravity(amount) {}
-	checkJump(amount) {
+	/**
+	 * @param {number} _amount
+	 */
+	gravity(_amount) {}
+	/**
+	 * @param {number} _amount
+	 */
+	checkJump(_amount) {
 		this.player.rotation = this.player.vy * -450
 		view.particles.push(new WaveParticle(this.player.x, this.player.y + 0.5 + (-1 * this.player.vy)))
 		if (view.isPressing) {
@@ -326,12 +405,19 @@ class WaveMode extends GameMode {
 	getRect() {
 		return super.getRect().relative(0, 0.1, 1, 0.8)
 	}
+	/**
+	 * @param {number} h
+	 */
 	hitCeiling(h) {
 		this.player.y = h - 0.1
 		this.player.vy = -0.01
 	}
 }
 class Particle extends SceneItem {
+	/**
+	 * @param {number} x
+	 * @param {number} y
+	 */
 	constructor(x, y) {
 		super(x, y)
 		this.elm.classList.remove("regularPos")
@@ -346,6 +432,10 @@ class Particle extends SceneItem {
 	}
 }
 class SlideParticle extends Particle {
+	/**
+	 * @param {number} x
+	 * @param {number} y
+	 */
 	constructor(x, y) {
 		super(x, y)
 		this.oy = y
@@ -354,6 +444,9 @@ class SlideParticle extends Particle {
 		this.time = 0
 		this.extraStyles[2] = `--size: 0.1;`
 	}
+	/**
+	 * @param {number} amount
+	 */
 	tick(amount) {
 		this.time += amount
 		this.vy -= 0.005 * amount * view.player.gravity
@@ -372,48 +465,73 @@ class SlideParticle extends Particle {
 				this.time += 1
 			}
 		}
+		// @ts-ignore
 		this.extraStyles[1] = `opacity: ${this.time.map(0, 15, 1, 0)};`
 		super.tick(amount)
 		if (this.time >= 15) this.destroy()
 	}
 }
 class WaveParticle extends Particle {
+	/**
+	 * @param {number} x
+	 * @param {number} y
+	 */
 	constructor(x, y) {
 		super(x, y)
 		this.time = 0
 		this.extraStyles[2] = `--size: 0.3; border-radius: 50%;`
 	}
+	/**
+	 * @param {number} amount
+	 */
 	tick(amount) {
 		this.time += amount
+		// @ts-ignore
 		this.extraStyles[1] = `opacity: ${this.time.map(0, 100, 1, 0)};`
 		super.tick(amount)
 		if (this.time >= 100) this.destroy()
 	}
 }
 class DeathParticleMain extends Particle {
+	/**
+	 * @param {number} x
+	 * @param {number} y
+	 */
 	constructor(x, y) {
 		super(x, y)
 		this.size = 1
 	}
+	/**
+	 * @param {number} amount
+	 */
 	tick(amount) {
 		this.size += 0.2 * amount
 		this.extraStyles[2] = `--size: ${this.size};`
+		// @ts-ignore
 		this.extraStyles[3] = `opacity: ${this.size.map(1, 5, 1, 0)};`
 		super.tick(amount)
 		if (this.size >= 5) this.destroy()
 	}
 }
 class DeathParticleExtra extends Particle {
+	/**
+	 * @param {number} x
+	 * @param {number} y
+	 */
 	constructor(x, y) {
 		super(x, y)
 		this.vx = (Math.random() - 0.5) / 3
 		this.vy = (Math.random() - 0.5) / 3
 		this.size = 1
 	}
+	/**
+	 * @param {number} amount
+	 */
 	tick(amount) {
 		this.size += 0.2 * amount
 		this.x += this.vx * amount
 		this.y += this.vy * amount
+		// @ts-ignore
 		this.extraStyles[1] = `opacity: ${this.size.map(1, 5, 1, 0)};`
 		super.tick(amount)
 		if (this.size >= 5) this.destroy()
@@ -427,11 +545,15 @@ class LevelCompleteSign extends Particle {
 		this.elm.innerHTML = `<img src="../assets/game/LevelComplete.png" style="width: 100%; height: 100%;">`
 		this.hasButtons = false
 	}
+	/**
+	 * @param {number} amount
+	 */
 	tick(amount) {
 		if (this.time < 100) this.time += amount
 		else if (! this.hasButtons) {
 			this.addButtons()
 		}
+		// @ts-ignore
 		var sizem = Math.pow(this.time.map(0, 100, 0, 1), 0.2)
 		this.realSize = [
 			this.imgSize[0] * sizem,
@@ -455,15 +577,14 @@ class LevelCompleteSign extends Particle {
 	}
 }
 class ProgressBar extends SceneItem {
-	/**
-	 * @param {number} x The starting X position.
-	 * @param {number} y The starting Y position.
-	 */
 	constructor() {
 		super(0, 0)
 		this.elm.classList.add("progress-bar")
 		document.querySelector("#scene").insertAdjacentElement("afterend", this.elm)
 	}
+	/**
+	 * @param {number} amount
+	 */
 	tick(amount) {
 		var c = view.getCompletion()
 		this.elm.innerHTML = `<div>Attempt ${view.attempt}</div><div style="background: linear-gradient(90deg, #AFA ${c}%, #AAF ${c}%, #AAF ${levelMeta.completion.percentage}%, white ${levelMeta.completion.percentage}%);">${c}% complete</div>`
@@ -474,7 +595,10 @@ class ProgressBar extends SceneItem {
 	}
 }
 class RectDisplay extends Particle {
-	/** @param {Rect} rect */
+	/**
+	 * @param {Rect} rect
+	 * @param {string} color
+	 */
 	constructor(rect, color) {
 		super(rect.x, rect.y)
 		this.elm.classList.remove("particle")
@@ -483,8 +607,12 @@ class RectDisplay extends Particle {
 		this.extraStyles[2] = `bottom: calc(25% + calc(${rect.y} * var(--tile-size))); left: calc(calc(${rect.x} * var(--tile-size)) + calc(-1 * calc(var(--move-amount) * var(--tile-size)))); width: calc(${rect.w} * var(--tile-size)); height: calc(${rect.h} * var(--tile-size));`
 		this.time = 0
 	}
+	/**
+	 * @param {number} amount
+	 */
 	tick(amount) {
 		// this.time += 1
+		// @ts-ignore
 		this.extraStyles[1] = `opacity: ${this.time.map(0, 5, 1, 0)};`
 		super.tick(amount)
 		if (this.time >= 5) this.destroy()
@@ -502,6 +630,12 @@ class RectDisplay extends Particle {
 	}
 }
 class Rect {
+	/**
+	 * @param {number} x
+	 * @param {number} y
+	 * @param {number} w
+	 * @param {number} h
+	 */
 	constructor(x, y, w, h) {
 		/** @type {number} */
 		this.x = x
@@ -522,6 +656,10 @@ class Rect {
 			&& this.y < other.y + other.h
 			&& this.y + this.h > other.y;
 	}
+	/**
+	 * @param {number} x
+	 * @param {number} y
+	 */
 	move(x, y) {
 		return new Rect(this.x + x, this.y + y, this.w, this.h)
 	}
@@ -531,6 +669,12 @@ class Rect {
 	centerX() {
 		return this.x + (this.w / 2)
 	}
+	/**
+	 * @param {number} x
+	 * @param {number} y
+	 * @param {number} w
+	 * @param {number} h
+	 */
 	relative(x, y, w, h) {
 		return new Rect(
 			this.x + (this.w * x),
@@ -539,6 +683,12 @@ class Rect {
 			this.h * h
 		)
 	}
+	/**
+	 * @param {number} x1
+	 * @param {number} y1
+	 * @param {number} x2
+	 * @param {number} y2
+	 */
 	static fromPoints(x1, y1, x2, y2) {
 		return new Rect(
 			Math.min(x1, x2),
@@ -547,7 +697,19 @@ class Rect {
 			Math.abs(y1 - y2)
 		)
 	}
+	/**
+	 * @param {any} amount
+	 * @param {number} centerX
+	 * @param {number} centerY
+	 */
 	rotate(amount, centerX, centerY) {
+		/**
+		 * @param {number} cx
+		 * @param {number} cy
+		 * @param {number} x
+		 * @param {number} y
+		 * @param {number} angle
+		 */
 		function rotate(cx, cy, x, y, angle) {
 			var radians = (Math.PI / 180) * angle,
 				cos = Math.cos(radians),
@@ -561,14 +723,22 @@ class Rect {
 		return Rect.fromPoints(a[0], a[1], b[0], b[1])
 	}
 	hasInvalid() {
-		if (this.x == NaN || this.x == undefined) return true
-		if (this.y == NaN || this.y == undefined) return true
-		if (this.w == NaN || this.w == undefined) return true
-		if (this.h == NaN || this.h == undefined) return true
+		if (Number.isNaN(this.x) || this.x == undefined) return true
+		if (Number.isNaN(this.y) || this.y == undefined) return true
+		if (Number.isNaN(this.w) || this.w == undefined) return true
+		if (Number.isNaN(this.h) || this.h == undefined) return true
 		return false
 	}
 }
 class Tile extends SceneItem {
+	/**
+	 * @param {number} x
+	 * @param {number} y
+	 * @param {number} dw
+	 * @param {number} dh
+	 * @param {number} rotation
+	 * @param {string[]} groups
+	 */
 	constructor(x, y, dw, dh, rotation, groups) {
 		super(x, y)
 		this.display_size = [dw, dh]
@@ -579,17 +749,30 @@ class Tile extends SceneItem {
 		// this.enabled = false
 		if (debugMode) RectDisplay.create(this)
 	}
+	/**
+	 * @param {typeof Object} type
+	 * @param {object} info
+	 */
 	static load(type, info) {
+		// @ts-ignore
 		return new type(info.x, info.y, info.rotation, info.groups)
 	}
+	/**
+	 * @param {number[]} pos
+	 * @returns {object}
+	 */
 	static default(pos) {
 		return {
 			x: pos[0],
 			y: pos[1],
 			rotation: 0,
+			// @ts-ignore
 			groups: []
 		}
 	}
+	/**
+	 * @returns {object}
+	 */
 	save() {
 		return {
 			x: this.x,
@@ -614,15 +797,23 @@ class Tile extends SceneItem {
 	getRect() {
 		return new Rect(this.x, this.y, 1, 1)
 	}
+	/**
+	 * @param {number} amount
+	 */
 	tick(amount) {
-		// this.extraStyles[100] = `opacity: ${this.enabled * 1};`
+		// @ts-ignore
 		if (viewType == "game") this.collide()
 		super.tick(amount)
-		// if (debugMode) RectDisplay.create(this)
 	}
 	collide() {}
 }
 class TileBlock extends Tile {
+	/**
+	 * @param {number} x
+	 * @param {number} y
+	 * @param {number} rotation
+	 * @param {string[]} groups
+	 */
 	constructor(x, y, rotation, groups) {
 		super(x, y, 1, 1, rotation, groups)
 	}
@@ -644,7 +835,7 @@ class TileBlock extends Tile {
 				// this.enabled = true
 			} else {
 				if (debugMode) {
-					setTimeout((thisRect, playerRect, yIncrease) => {
+					setTimeout((/** @type {Rect} */ thisRect, /** @type {Rect} */ playerRect, /** @type {number} */ yIncrease) => {
 						view.particles.push(new RectDisplay(new Rect(thisRect.x, playerRect.y, thisRect.w, yIncrease), "pink"))
 					}, 100, thisRect, playerRect, yIncrease)
 				}
@@ -655,6 +846,12 @@ class TileBlock extends Tile {
 	}
 }
 class TileDeath extends Tile {
+	/**
+	 * @param {number} x
+	 * @param {number} y
+	 * @param {number} rotation
+	 * @param {string[]} groups
+	 */
 	constructor(x, y, rotation, groups) {
 		super(x, y, 1, 1, rotation, groups)
 	}
@@ -674,11 +871,23 @@ class TileDeath extends Tile {
 	}
 }
 class BasicBlock extends TileBlock {
+	/**
+	 * @param {number} x
+	 * @param {number} y
+	 * @param {number} rotation
+	 * @param {string[]} groups
+	 */
 	constructor(x, y, rotation, groups) {
 		super(x, y, rotation, groups)
 	}
 }
 class HalfBlock extends TileBlock {
+	/**
+	 * @param {number} x
+	 * @param {number} y
+	 * @param {number} rotation
+	 * @param {string[]} groups
+	 */
 	constructor(x, y, rotation, groups) {
 		super(x, y, rotation, groups)
 	}
@@ -687,6 +896,12 @@ class HalfBlock extends TileBlock {
 	}
 }
 class BasicSpike extends TileDeath {
+	/**
+	 * @param {number} x
+	 * @param {number} y
+	 * @param {number} rotation
+	 * @param {string[]} groups
+	 */
 	constructor(x, y, rotation, groups) {
 		super(x, y, rotation, groups)
 	}
@@ -695,6 +910,12 @@ class BasicSpike extends TileDeath {
 	}
 }
 class HalfSpike extends TileDeath {
+	/**
+	 * @param {number} x
+	 * @param {number} y
+	 * @param {number} rotation
+	 * @param {string[]} groups
+	 */
 	constructor(x, y, rotation, groups) {
 		super(x, y, rotation, groups)
 	}
@@ -703,10 +924,19 @@ class HalfSpike extends TileDeath {
 	}
 }
 class Orb extends Tile {
+	/**
+	 * @param {number} x
+	 * @param {number} y
+	 * @param {number} rotation
+	 * @param {string[]} groups
+	 */
 	constructor(x, y, rotation, groups) {
 		super(x, y, 1, 1, rotation, groups)
 		this.timeout = 0
 	}
+	/**
+	 * @param {number} amount
+	 */
 	tick(amount) {
 		if (this.timeout > 0) this.timeout -= amount
 		super.tick(amount)
@@ -728,6 +958,12 @@ class Orb extends Tile {
 	activate() {}
 }
 class JumpOrb extends Orb {
+	/**
+	 * @param {number} x
+	 * @param {number} y
+	 * @param {number} rotation
+	 * @param {string[]} groups
+	 */
 	constructor(x, y, rotation, groups) {
 		super(x, y, rotation, groups)
 	}
@@ -736,6 +972,12 @@ class JumpOrb extends Orb {
 	}
 }
 class GravityOrb extends Orb {
+	/**
+	 * @param {number} x
+	 * @param {number} y
+	 * @param {number} rotation
+	 * @param {string[]} groups
+	 */
 	constructor(x, y, rotation, groups) {
 		super(x, y, rotation, groups)
 	}
@@ -745,6 +987,12 @@ class GravityOrb extends Orb {
 	}
 }
 class BlackOrb extends Orb {
+	/**
+	 * @param {number} x
+	 * @param {number} y
+	 * @param {number} rotation
+	 * @param {string[]} groups
+	 */
 	constructor(x, y, rotation, groups) {
 		super(x, y, rotation, groups)
 	}
@@ -753,13 +1001,26 @@ class BlackOrb extends Orb {
 	}
 }
 class StartPosBlock extends Tile {
+	/**
+	 * @param {number} x
+	 * @param {number} y
+	 */
 	constructor(x, y) {
 		super(x, y, 1, 1, 0, [])
+		// @ts-ignore
 		if (viewType == "game") this.elm.remove()
 	}
+	/**
+	 * @param {typeof Object} type
+	 * @param {object} info
+	 */
 	static load(type, info) {
+		// @ts-ignore
 		return new type(info.x, info.y)
 	}
+	/**
+	 * @param {number[]} pos
+	 */
 	static default(pos) {
 		return {
 			x: pos[0],
@@ -781,21 +1042,18 @@ class StartPosBlock extends Tile {
 	}
 }
 class Coin extends Tile {
+	/**
+	 * @param {number} x
+	 * @param {number} y
+	 * @param {number} rotation
+	 * @param {string[]} groups
+	 */
 	constructor(x, y, rotation, groups) {
 		super(x, y, 1, 1, rotation, groups)
 		/** @type {number} */
 		this.activated = 0
 		/** @type {boolean} */
 		this.alreadygot = false
-	}
-	hasCollision() {
-		var playerRect = view.player.getRect()
-		var thisRect = this.getRect()
-		if (this.needsTouch) {
-			return playerRect.colliderect(thisRect)
-		} else {
-			return playerRect.centerX() > thisRect.centerX()
-		}
 	}
 	collide() {
 		if (this.activated > 0) {
@@ -808,10 +1066,14 @@ class Coin extends Tile {
 			this.trigger()
 		}
 	}
+	/**
+	 * @param {number} amount
+	 */
 	tick(amount) {
 		if (this.alreadygot) this.extraStyles[0] = `background: url(../assets/tile/special/coin-alreadygot.svg);`
 		this.extraStyles[1] = `--dw: var(--tsize); --dh: var(--tsize);`
 		this.extraStyles[2] = `--tsize: ${Math.sqrt(Math.sqrt(this.activated + 1))};`
+		// @ts-ignore
 		this.extraStyles[3] = `opacity: ${this.activated.map(0, 100, 1, 0)};`
 		super.tick(amount)
 		if (this.activated > 0) {
@@ -823,12 +1085,19 @@ class Coin extends Tile {
 	trigger() {}
 }
 class Trigger extends Tile {
+	/**
+	 * @param {number} x
+	 * @param {number} y
+	 * @param {boolean} needsTouch
+	 * @param {string[]} groups
+	 */
 	constructor(x, y, needsTouch, groups) {
 		super(x, y, 1, 1, 0, groups)
 		/** @type {boolean} */
 		this.needsTouch = needsTouch == true
 		/** @type {boolean} */
 		this.activated = false
+		// @ts-ignore
 		if (viewType == "game") this.elm.remove()
 	}
 	getEdit() {
@@ -856,6 +1125,15 @@ class Trigger extends Tile {
 	trigger() {}
 }
 class ColorTrigger extends Trigger {
+	/**
+	 * @param {number} x
+	 * @param {number} y
+	 * @param {boolean} needsTouch
+	 * @param {"stage" | "bg"} section
+	 * @param {number[]} newColor
+	 * @param {number} duration
+	 * @param {string[]} groups
+	 */
 	constructor(x, y, needsTouch, section, newColor, duration, groups) {
 		super(x, y, needsTouch, groups)
 		/** @type {"stage" | "bg"} */
@@ -870,6 +1148,9 @@ class ColorTrigger extends Trigger {
 		this.duration = duration
 		this.extraStyles[0] = this.extraStyles[0].substring(0, this.extraStyles[0].length - 1) + `, radial-gradient(circle, var(--trigger-color) 50%, transparent 50%);`
 	}
+	/**
+	 * @param {any[]} pos
+	 */
 	static default(pos) {
 		return {
 			x: pos[0],
@@ -880,7 +1161,12 @@ class ColorTrigger extends Trigger {
 			duration: 0
 		}
 	}
+	/**
+	 * @param {typeof Object} type
+	 * @param {object} info
+	 */
 	static load(type, info) {
+		// @ts-ignore
 		return new type(info.x, info.y, info.needsTouch, info.section, info.color, info.duration)
 	}
 	save() {
@@ -904,6 +1190,9 @@ class ColorTrigger extends Trigger {
 			`<div>Duration (60ths of a second): <input type="number" value="${this.duration}" min="1" oninput="editing.duration = this.valueAsNumber"></div>`
 		]
 	}
+	/**
+	 * @param {number} amount
+	 */
 	tick(amount) {
 		this.extraStyles[2] = `--trigger-color: rgb(${this.color.join(", ")});`
 		super.tick(amount)
@@ -914,10 +1203,16 @@ class ColorTrigger extends Trigger {
 			"stage": view.stage.stageColor,
 			"bg": view.stage.bgColor
 		}[this.section]
-		section.interpolate(...this.color, this.duration)
+		section.interpolate(this.color[0], this.color[1], this.color[2], this.duration)
 	}
 }
 class Pad extends Tile {
+	/**
+	 * @param {number} x
+	 * @param {number} y
+	 * @param {number} rotation
+	 * @param {string[]} groups
+	 */
 	constructor(x, y, rotation, groups) {
 		super(x, y, 1, 1, rotation, groups)
 		this.timeout = 0
@@ -925,6 +1220,9 @@ class Pad extends Tile {
 	getRect() {
 		return super.getRect().relative(0, 0, 1, 0.2)
 	}
+	/**
+	 * @param {number} amount
+	 */
 	tick(amount) {
 		if (this.timeout > 0) this.timeout -= amount
 		super.tick(amount)
@@ -943,6 +1241,12 @@ class Pad extends Tile {
 	activate() {}
 }
 class JumpPad extends Pad {
+	/**
+	 * @param {number} x
+	 * @param {number} y
+	 * @param {number} rotation
+	 * @param {string[]} groups
+	 */
 	constructor(x, y, rotation, groups) {
 		super(x, y, rotation, groups)
 		this.timeout = 0
@@ -952,6 +1256,12 @@ class JumpPad extends Pad {
 	}
 }
 class SmallJumpPad extends Pad {
+	/**
+	 * @param {number} x
+	 * @param {number} y
+	 * @param {number} rotation
+	 * @param {string[]} groups
+	 */
 	constructor(x, y, rotation, groups) {
 		super(x, y, rotation, groups)
 	}
@@ -960,6 +1270,12 @@ class SmallJumpPad extends Pad {
 	}
 }
 class GravityPad extends Pad {
+	/**
+	 * @param {number} x
+	 * @param {number} y
+	 * @param {number} rotation
+	 * @param {string[]} groups
+	 */
 	constructor(x, y, rotation, groups) {
 		super(x, y, rotation, groups)
 	}
@@ -974,9 +1290,11 @@ class Portal extends Tile {
 	/**
 	 * @param {number} x
 	 * @param {number} y
-	 * @param {number} displayheight
 	 * @param {number} realheight
 	 * @param {number} rotation
+	 * @param {number} dw
+	 * @param {number} dh
+	 * @param {string[]} groups
 	 */
 	constructor(x, y, dw, dh, realheight, rotation, groups) {
 		super(x, y, dw, dh, rotation, groups)
@@ -1002,6 +1320,7 @@ class GravityPortal extends Portal {
 	 * @param {number} y
 	 * @param {number} rotation
 	 * @param {number} gravity
+	 * @param {string[]} groups
 	 */
 	constructor(x, y, rotation, gravity, groups) {
 		super(x, y, 1, 2.57, 3, rotation, groups)
@@ -1012,11 +1331,23 @@ class GravityPortal extends Portal {
 	}
 }
 class GravityPortalDown extends GravityPortal {
+	/**
+	 * @param {number} x
+	 * @param {number} y
+	 * @param {number} rotation
+	 * @param {string[]} groups
+	 */
 	constructor(x, y, rotation, groups) {
 		super(x, y, rotation, 1, groups)
 	}
 }
 class GravityPortalUp extends GravityPortal {
+	/**
+	 * @param {number} x
+	 * @param {number} y
+	 * @param {number} rotation
+	 * @param {string[]} groups
+	 */
 	constructor(x, y, rotation, groups) {
 		super(x, y, rotation, -1, groups)
 	}
@@ -1027,6 +1358,7 @@ class GamemodePortal extends Portal {
 	 * @param {number} y
 	 * @param {number} rotation
 	 * @param {typeof GameMode} gamemode
+	 * @param {string[]} groups
 	 */
 	constructor(x, y, rotation, gamemode, groups) {
 		super(x, y, 1.4545, 3.2, 3, rotation, groups)
@@ -1039,21 +1371,45 @@ class GamemodePortal extends Portal {
 	}
 }
 class CubePortal extends GamemodePortal {
+	/**
+	 * @param {number} x
+	 * @param {number} y
+	 * @param {number} rotation
+	 * @param {string[]} groups
+	 */
 	constructor(x, y, rotation, groups) {
 		super(x, y, rotation, CubeMode, groups)
 	}
 }
 class ShipPortal extends GamemodePortal {
+	/**
+	 * @param {number} x
+	 * @param {number} y
+	 * @param {number} rotation
+	 * @param {string[]} groups
+	 */
 	constructor(x, y, rotation, groups) {
 		super(x, y, rotation, ShipMode, groups)
 	}
 }
 class BallPortal extends GamemodePortal {
+	/**
+	 * @param {number} x
+	 * @param {number} y
+	 * @param {number} rotation
+	 * @param {string[]} groups
+	 */
 	constructor(x, y, rotation, groups) {
 		super(x, y, rotation, BallMode, groups)
 	}
 }
 class WavePortal extends GamemodePortal {
+	/**
+	 * @param {number} x
+	 * @param {number} y
+	 * @param {number} rotation
+	 * @param {string[]} groups
+	 */
 	constructor(x, y, rotation, groups) {
 		super(x, y, rotation, WaveMode, groups)
 	}
@@ -1065,7 +1421,7 @@ class View {
 		/** @type {Tile[]} */
 		this.tiles = []
 	}
-	/** @param {{ type: string, x: number, y: number, rotation: number }[]} o */
+	/** @param {{ type: string, data: object }[]} o */
 	importObjects(o) {
 		var coin_no = 0
 		for (var i = 0; i < o.length; i++) {
@@ -1075,7 +1431,8 @@ class View {
 			var c = type.load(type, obj.data)
 			this.tiles.push(c)
 			this.stageWidth = Math.max(this.stageWidth, c.x + 5)
-			if (viewType == "editor") c.tick()
+			// @ts-ignore
+			if (viewType == "editor") c.tick(1)
 			else if (c instanceof Coin) {
 				var has_coin = levelMeta.completion.coins[coin_no]
 				coin_no += 1
@@ -1177,7 +1534,12 @@ class GameView extends View {
 	}
 }
 
+/**
+ * @param {string} registry
+ * @param {string | string[]} location
+ */
 function getObjectFromLocation(registry, location) {
+	// @ts-ignore
 	var path = registries[registry]
 	if (location == "") return path
 	for (var segment of location) {
@@ -1185,8 +1547,20 @@ function getObjectFromLocation(registry, location) {
 	}
 	return path
 }
+/**
+ * @param {string} registry
+ * @param {Tile | GameMode} object
+ */
 function getLocationFromObject(registry, object) {
+	/**
+	 * @type {any[]}
+	 */
 	var v = null
+	/**
+	 * @param {any} registry
+	 * @param {any[]} path
+	 * @param {any} object
+	 */
 	function find(registry, path, object) {
 		var folder = getObjectFromLocation(registry, path)
 		var keys = Object.keys(folder)
@@ -1256,6 +1630,7 @@ var registries = {
 	}
 }
 
+// @ts-ignore
 var levelName = url_query.level
 var levelMeta = {
 	"name": "Untitled Level",
@@ -1267,13 +1642,17 @@ var levelMeta = {
 	},
 	"completion": {
 		"percentage": 0,
+		/** @type {boolean[]} */
 		"coins": []
 	}
 }
+// @ts-ignore
 var debugMode = url_query.debug == "true"
 /** @type {GameView} */
+// @ts-ignore
 var view = new ({
 	"game": GameView,
 	"editor": View
+// @ts-ignore
 }[viewType])();
 view.loadLevel()
