@@ -36,7 +36,7 @@ function onclick(evt) {
 		var tiles = []
 		for (var i = 0; i < view.tiles.length; i++) {
 			var tile = view.tiles[i]
-			if (tile.x == pos[0] && tile.y == pos[1]) {
+			if (Math.round(tile.x) == pos[0] && Math.round(tile.y) == pos[1]) {
 				tiles.push(tile)
 			}
 		}

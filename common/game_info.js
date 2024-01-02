@@ -569,30 +569,33 @@ class Rect {
 	}
 }
 class Tile extends SceneItem {
-	constructor(x, y, dw, dh, rotation) {
+	constructor(x, y, dw, dh, rotation, groups) {
 		super(x, y)
 		this.display_size = [dw, dh]
 		this.extraStyles[0] = `background: url(../assets/tile/${getLocationFromObject("tile", this).join("/")}.svg);`
 		this.extraStyles[1] = `--dw: ${dw}; --dh: ${dh};`
 		this.rotation = rotation
+		this.groups = groups
 		// this.enabled = false
 		if (debugMode) RectDisplay.create(this)
 	}
 	static load(type, info) {
-		return new type(info.x, info.y, info.rotation)
+		return new type(info.x, info.y, info.rotation, info.groups)
 	}
 	static default(pos) {
 		return {
 			x: pos[0],
 			y: pos[1],
-			rotation: 0
+			rotation: 0,
+			groups: []
 		}
 	}
 	save() {
 		return {
 			x: this.x,
 			y: this.y,
-			rotation: this.rotation
+			rotation: this.rotation,
+			groups: this.groups
 		}
 	}
 	getEdit() {
@@ -604,8 +607,8 @@ class Tile extends SceneItem {
 	<option value="180"${this.rotation==180 ? " selected" : ""}>&nbsp;&darr; 180</option>
 	<option value="270"${this.rotation==270 ? " selected" : ""}>&larr; 270</option>
 </select></div>`,
-			`<div>X: <input type="number" value="${this.x}" min="0" oninput="editing.x = Math.round(this.valueAsNumber); editing.tick();"></div>`,
-			`<div>Y: <input type="number" value="${this.y}" min="0" oninput="editing.y = Math.round(this.valueAsNumber); editing.tick();"></div>`
+			`<div>X: <input type="number" value="${this.x}" min="0" oninput="editing.x = this.valueAsNumber; editing.tick();"></div>`,
+			`<div>Y: <input type="number" value="${this.y}" min="0" oninput="editing.y = this.valueAsNumber; editing.tick();"></div>`
 		]
 	}
 	getRect() {
@@ -620,8 +623,8 @@ class Tile extends SceneItem {
 	collide() {}
 }
 class TileBlock extends Tile {
-	constructor(x, y, rotation) {
-		super(x, y, 1, 1, rotation)
+	constructor(x, y, rotation, groups) {
+		super(x, y, 1, 1, rotation, groups)
 	}
 	collide() {
 		var playerRect = view.player.getRect()
@@ -652,8 +655,8 @@ class TileBlock extends Tile {
 	}
 }
 class TileDeath extends Tile {
-	constructor(x, y, rotation) {
-		super(x, y, 1, 1, rotation)
+	constructor(x, y, rotation, groups) {
+		super(x, y, 1, 1, rotation, groups)
 	}
 	collide() {
 		var playerRect = view.player.getRect()
@@ -671,37 +674,37 @@ class TileDeath extends Tile {
 	}
 }
 class BasicBlock extends TileBlock {
-	constructor(x, y, rotation) {
-		super(x, y, rotation)
+	constructor(x, y, rotation, groups) {
+		super(x, y, rotation, groups)
 	}
 }
 class HalfBlock extends TileBlock {
-	constructor(x, y, rotation) {
-		super(x, y, rotation)
+	constructor(x, y, rotation, groups) {
+		super(x, y, rotation, groups)
 	}
 	getRect() {
 		return super.getRect().relative(0, 0.5, 1, 0.5);
 	}
 }
 class BasicSpike extends TileDeath {
-	constructor(x, y, rotation) {
-		super(x, y, rotation)
+	constructor(x, y, rotation, groups) {
+		super(x, y, rotation, groups)
 	}
 	getRect() {
 		return super.getRect().relative(0.2, 0, 0.6, 0.8);
 	}
 }
 class HalfSpike extends TileDeath {
-	constructor(x, y, rotation) {
-		super(x, y, rotation)
+	constructor(x, y, rotation, groups) {
+		super(x, y, rotation, groups)
 	}
 	getRect() {
 		return super.getRect().relative(0.2, 0, 0.6, 0.4);
 	}
 }
 class Orb extends Tile {
-	constructor(x, y, rotation) {
-		super(x, y, 1, 1, rotation)
+	constructor(x, y, rotation, groups) {
+		super(x, y, 1, 1, rotation, groups)
 		this.timeout = 0
 	}
 	tick(amount) {
@@ -725,16 +728,16 @@ class Orb extends Tile {
 	activate() {}
 }
 class JumpOrb extends Orb {
-	constructor(x, y, rotation) {
-		super(x, y, rotation)
+	constructor(x, y, rotation, groups) {
+		super(x, y, rotation, groups)
 	}
 	activate() {
 		view.player.vy = 0.34 * view.player.gravity
 	}
 }
 class GravityOrb extends Orb {
-	constructor(x, y, rotation) {
-		super(x, y, rotation)
+	constructor(x, y, rotation, groups) {
+		super(x, y, rotation, groups)
 	}
 	activate() {
 		view.player.gravity *= -1
@@ -742,8 +745,8 @@ class GravityOrb extends Orb {
 	}
 }
 class BlackOrb extends Orb {
-	constructor(x, y, rotation) {
-		super(x, y, rotation)
+	constructor(x, y, rotation, groups) {
+		super(x, y, rotation, groups)
 	}
 	activate() {
 		view.player.vy += view.player.gravity * -0.7
@@ -751,7 +754,7 @@ class BlackOrb extends Orb {
 }
 class StartPosBlock extends Tile {
 	constructor(x, y) {
-		super(x, y, 1, 1, 0)
+		super(x, y, 1, 1, 0, [])
 		if (viewType == "game") this.elm.remove()
 	}
 	static load(type, info) {
@@ -778,8 +781,8 @@ class StartPosBlock extends Tile {
 	}
 }
 class Coin extends Tile {
-	constructor(x, y, rotation) {
-		super(x, y, 1, 1, rotation)
+	constructor(x, y, rotation, groups) {
+		super(x, y, 1, 1, rotation, groups)
 		/** @type {number} */
 		this.activated = 0
 		/** @type {boolean} */
@@ -820,8 +823,8 @@ class Coin extends Tile {
 	trigger() {}
 }
 class Trigger extends Tile {
-	constructor(x, y, needsTouch) {
-		super(x, y, 1, 1, 0)
+	constructor(x, y, needsTouch, groups) {
+		super(x, y, 1, 1, 0, groups)
 		/** @type {boolean} */
 		this.needsTouch = needsTouch == true
 		/** @type {boolean} */
@@ -853,8 +856,8 @@ class Trigger extends Tile {
 	trigger() {}
 }
 class ColorTrigger extends Trigger {
-	constructor(x, y, needsTouch, section, newColor, duration) {
-		super(x, y, needsTouch)
+	constructor(x, y, needsTouch, section, newColor, duration, groups) {
+		super(x, y, needsTouch, groups)
 		/** @type {"stage" | "bg"} */
 		this.section = section
 		/** @type {number[]} */
@@ -915,8 +918,8 @@ class ColorTrigger extends Trigger {
 	}
 }
 class Pad extends Tile {
-	constructor(x, y, rotation) {
-		super(x, y, 1, 1, rotation)
+	constructor(x, y, rotation, groups) {
+		super(x, y, 1, 1, rotation, groups)
 		this.timeout = 0
 	}
 	getRect() {
@@ -940,8 +943,8 @@ class Pad extends Tile {
 	activate() {}
 }
 class JumpPad extends Pad {
-	constructor(x, y, rotation) {
-		super(x, y, rotation)
+	constructor(x, y, rotation, groups) {
+		super(x, y, rotation, groups)
 		this.timeout = 0
 	}
 	activate() {
@@ -949,16 +952,16 @@ class JumpPad extends Pad {
 	}
 }
 class SmallJumpPad extends Pad {
-	constructor(x, y, rotation) {
-		super(x, y, rotation)
+	constructor(x, y, rotation, groups) {
+		super(x, y, rotation, groups)
 	}
 	activate() {
 		view.player.vy = 0.22 * view.player.gravity
 	}
 }
 class GravityPad extends Pad {
-	constructor(x, y, rotation) {
-		super(x, y, rotation)
+	constructor(x, y, rotation, groups) {
+		super(x, y, rotation, groups)
 	}
 	activate() {
 		if (this.rotation == 0) view.player.gravity = -1
@@ -975,8 +978,8 @@ class Portal extends Tile {
 	 * @param {number} realheight
 	 * @param {number} rotation
 	 */
-	constructor(x, y, dw, dh, realheight, rotation) {
-		super(x, y, dw, dh, rotation)
+	constructor(x, y, dw, dh, realheight, rotation, groups) {
+		super(x, y, dw, dh, rotation, groups)
 		this.realheight = realheight
 		if (debugMode) RectDisplay.create(this)
 	}
@@ -993,6 +996,31 @@ class Portal extends Tile {
 	}
 	activate() {}
 }
+class GravityPortal extends Portal {
+	/**
+	 * @param {number} x
+	 * @param {number} y
+	 * @param {number} rotation
+	 * @param {number} gravity
+	 */
+	constructor(x, y, rotation, gravity, groups) {
+		super(x, y, 1, 2.57, 3, rotation, groups)
+		this.gravity = gravity
+	}
+	activate() {
+		view.player.gravity = this.gravity;
+	}
+}
+class GravityPortalDown extends GravityPortal {
+	constructor(x, y, rotation, groups) {
+		super(x, y, rotation, 1, groups)
+	}
+}
+class GravityPortalUp extends GravityPortal {
+	constructor(x, y, rotation, groups) {
+		super(x, y, rotation, -1, groups)
+	}
+}
 class GamemodePortal extends Portal {
 	/**
 	 * @param {number} x
@@ -1000,8 +1028,8 @@ class GamemodePortal extends Portal {
 	 * @param {number} rotation
 	 * @param {typeof GameMode} gamemode
 	 */
-	constructor(x, y, rotation, gamemode) {
-		super(x, y, 1.4545, 3.2, 3, rotation)
+	constructor(x, y, rotation, gamemode, groups) {
+		super(x, y, 1.4545, 3.2, 3, rotation, groups)
 		/** @type {typeof GameMode} */
 		this.mode = gamemode
 	}
@@ -1011,23 +1039,23 @@ class GamemodePortal extends Portal {
 	}
 }
 class CubePortal extends GamemodePortal {
-	constructor(x, y, rotation) {
-		super(x, y, rotation, CubeMode)
+	constructor(x, y, rotation, groups) {
+		super(x, y, rotation, CubeMode, groups)
 	}
 }
 class ShipPortal extends GamemodePortal {
-	constructor(x, y, rotation) {
-		super(x, y, rotation, ShipMode)
+	constructor(x, y, rotation, groups) {
+		super(x, y, rotation, ShipMode, groups)
 	}
 }
 class BallPortal extends GamemodePortal {
-	constructor(x, y, rotation) {
-		super(x, y, rotation, BallMode)
+	constructor(x, y, rotation, groups) {
+		super(x, y, rotation, BallMode, groups)
 	}
 }
 class WavePortal extends GamemodePortal {
-	constructor(x, y, rotation) {
-		super(x, y, rotation, WaveMode)
+	constructor(x, y, rotation, groups) {
+		super(x, y, rotation, WaveMode, groups)
 	}
 }
 
@@ -1208,7 +1236,9 @@ var registries = {
 				"ship": ShipPortal,
 				"ball": BallPortal,
 				"wave": WavePortal
-			}
+			},
+			"gravity-down": GravityPortalDown,
+			"gravity-up": GravityPortalUp
 		},
 		"special": {
 			"trigger": {
