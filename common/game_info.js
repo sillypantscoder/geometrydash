@@ -169,7 +169,7 @@ class Stage extends SceneItem {
 }
 class Player extends SceneItem {
 	constructor() {
-		super(-3, 0)
+		super(-1000, 0)
 		this.elm.classList.add("player")
 		/** @type {number} */
 		this.vy = 0
@@ -193,7 +193,7 @@ class Player extends SceneItem {
 	tick(amount) {
 		// console.log(1, this.x, this.y, this.vy)
 		if (this.deathTime > 0) {
-			if (this.deathTime == 1 || (! debugMode)) this.deathTime -= 1
+			if ((this.deathTime == 1 || (! debugMode)) && this.x != -1000) this.deathTime -= 1
 			if (this.deathTime == 0) {
 				this.respawn()
 			}
@@ -1460,6 +1460,7 @@ class View {
 			levelMeta.settings.gamemode = level.settings.gamemode
 			if (view instanceof GameView) view.player.setStartMode()
 			view.stage.reset()
+			view.player.deathTime = 1
 		})
 		x.send()
 	}
@@ -1525,7 +1526,7 @@ class GameView extends View {
 			}
 		}
 		var x = new XMLHttpRequest()
-		x.open("POST", "/verify")
+		x.open("POST", "../verify")
 		x.send(JSON.stringify({
 			level: levelName,
 			completion: amount,

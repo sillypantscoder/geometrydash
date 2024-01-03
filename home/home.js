@@ -1,6 +1,6 @@
 (() => {
 	var x = new XMLHttpRequest()
-	x.open("GET", "/level_list/published")
+	x.open("GET", "../level_list/published")
 	x.addEventListener("loadend", () => {
 		var levels = JSON.parse(x.responseText)
 		for (var i = 0; i < levels.length; i++) {
@@ -21,7 +21,7 @@
 })();
 (() => {
 	var x = new XMLHttpRequest()
-	x.open("GET", "/level_list/user")
+	x.open("GET", "../level_list/user")
 	x.addEventListener("loadend", () => {
 		var levels = JSON.parse(x.responseText)
 		for (var i = 0; i < levels.length; i++) {
