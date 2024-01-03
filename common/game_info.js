@@ -1460,7 +1460,7 @@ class View {
 			levelMeta.settings.gamemode = level.settings.gamemode
 			if (view instanceof GameView) view.player.setStartMode()
 			view.stage.reset()
-			view.player.deathTime = 1
+			if (view.player) view.player.x = -999
 		})
 		x.send()
 	}
