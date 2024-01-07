@@ -1,5 +1,5 @@
 {
-	"name": "Another Auto Level",
+	"name": "Disguised Level",
 	"description": "",
 	"settings": {
 		"colorbg": [0, 125, 255],
@@ -87,11 +87,14 @@
 		{"type": "death.basic-spike", "data": {"x": 24, "y": 8, "rotation": 0, "groups": []}},
 		{"type": "death.basic-spike", "data": {"x": 25, "y": 7, "rotation": 0, "groups": []}},
 		{"type": "death.basic-spike", "data": {"x": 26, "y": 6, "rotation": 0, "groups": []}},
-		{"type": "block.basic-block", "data": {"x": 30, "y": 4, "rotation": 0, "groups": []}}
+		{"type": "block.basic-block", "data": {"x": 30, "y": 4, "rotation": 0, "groups": []}},
+		{"type": "death.basic-spike", "data": {"x": 13, "y": -0.7, "rotation": 0, "groups": []}},
+		{"type": "portal.gravity-up", "data": {"x": 20, "y": 16, "rotation": 0, "groups": []}},
+		{"type": "special.coin", "data": {"x": 23, "y": 16, "rotation": 0, "groups": []}}
 	],
 	"completion": {
 		"percentage": 0,
-		"coins": []
+		"coins": [false]
 	},
 	"deleted": false
 }

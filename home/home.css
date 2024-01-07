@@ -31,3 +31,8 @@ body > h1 {
 	width: 5em;
 	height: 5em;
 }
+
+b {
+	color: darkred;
+	font-weight: normal;
+}

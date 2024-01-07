@@ -462,8 +462,8 @@
 		{"type": "death.basic-spike", "data": {"x": 25, "y": 9, "rotation": 270, "groups": []}}
 	],
 	"completion": {
-		"percentage": 100,
-		"coins": [true]
+		"percentage": 0,
+		"coins": [false]
 	},
 	"deleted": false
 }

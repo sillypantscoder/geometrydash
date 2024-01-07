@@ -1,7 +1,17 @@
-// @ts-ignore
-Number.prototype.map = function (in_min, in_max, out_min, out_max) {
-	// @ts-ignore
-	return (this - in_min) * (out_max - out_min) / (in_max - in_min) + out_min;
+if (window.viewType == undefined) {
+	/** @type {"game" | "editor"} */
+	var viewType = "game"
+}
+
+/**
+ * @param {number} n
+ * @param {number} in_min
+ * @param {number} in_max
+ * @param {number} out_min
+ * @param {number} out_max
+ */
+function map(n, in_min, in_max, out_min, out_max) {
+	return (n - in_min) * (out_max - out_min) / (in_max - in_min) + out_min;
 }
 
 
@@ -80,8 +90,7 @@ class InterpolatedVariable {
 	/** @returns {number} */
 	get() {
 		if (this.totalTicks == -1) return this.startValue
-		// @ts-ignore
-		return (this.ticks / this.totalTicks).map(0, 1, this.startValue, this.endValue)
+		return map(this.ticks / this.totalTicks, 0, 1, this.startValue, this.endValue)
 	}
 }
 class InterpolatedColor {
@@ -217,10 +226,9 @@ class Player extends SceneItem {
 		}
 		this.mode.getMax()
 		// Update styles
-		this.extraStyles[0] = "background: url(../assets/game/player/" + getLocationFromObject("gamemode", this.mode) + ".svg)"
+		this.extraStyles[0] = "background: url(../assets/game/player/" + getLocationFromObject("gamemode", this.mode) + ".svg);"
+		this.extraStyles[1] = `transform: rotate(${this.rotation}deg) scaleY(${this.gravity});`
 		super.tick(amount)
-		// console.log(0, this.x, this.y, this.vy)
-		// throw new Error()
 	}
 	/**
 	 * @param {number} amount
@@ -236,7 +244,7 @@ class Player extends SceneItem {
 		}
 		this.mode.checkJump(amount)
 		if (this.x > view.stageWidth) view.win()
-		if (debugMode/* && Math.abs(this.vy) > 0.3*/) RectDisplay.create(this)
+		if (debugMode && Math.abs(this.vy) > 0.3) RectDisplay.create(this)
 	}
 	destroy() {
 		this.deathTime = 40
@@ -465,8 +473,7 @@ class SlideParticle extends Particle {
 				this.time += 1
 			}
 		}
-		// @ts-ignore
-		this.extraStyles[1] = `opacity: ${this.time.map(0, 15, 1, 0)};`
+		this.extraStyles[1] = `opacity: ${map(this.time, 0, 15, 1, 0)};`
 		super.tick(amount)
 		if (this.time >= 15) this.destroy()
 	}
@@ -486,8 +493,7 @@ class WaveParticle extends Particle {
 	 */
 	tick(amount) {
 		this.time += amount
-		// @ts-ignore
-		this.extraStyles[1] = `opacity: ${this.time.map(0, 100, 1, 0)};`
+		this.extraStyles[1] = `opacity: ${map(this.time, 0, 100, 1, 0)};`
 		super.tick(amount)
 		if (this.time >= 100) this.destroy()
 	}
@@ -507,8 +513,7 @@ class DeathParticleMain extends Particle {
 	tick(amount) {
 		this.size += 0.2 * amount
 		this.extraStyles[2] = `--size: ${this.size};`
-		// @ts-ignore
-		this.extraStyles[3] = `opacity: ${this.size.map(1, 5, 1, 0)};`
+		this.extraStyles[3] = `opacity: ${map(this.size, 1, 5, 1, 0)};`
 		super.tick(amount)
 		if (this.size >= 5) this.destroy()
 	}
@@ -531,8 +536,7 @@ class DeathParticleExtra extends Particle {
 		this.size += 0.2 * amount
 		this.x += this.vx * amount
 		this.y += this.vy * amount
-		// @ts-ignore
-		this.extraStyles[1] = `opacity: ${this.size.map(1, 5, 1, 0)};`
+		this.extraStyles[1] = `opacity: ${map(this.size, 1, 5, 1, 0)};`
 		super.tick(amount)
 		if (this.size >= 5) this.destroy()
 	}
@@ -553,8 +557,7 @@ class LevelCompleteSign extends Particle {
 		else if (! this.hasButtons) {
 			this.addButtons()
 		}
-		// @ts-ignore
-		var sizem = Math.pow(this.time.map(0, 100, 0, 1), 0.2)
+		var sizem = Math.pow(map(this.time, 0, 100, 0, 1), 0.2)
 		this.realSize = [
 			this.imgSize[0] * sizem,
 			this.imgSize[1] * sizem
@@ -612,8 +615,7 @@ class RectDisplay extends Particle {
 	 */
 	tick(amount) {
 		// this.time += 1
-		// @ts-ignore
-		this.extraStyles[1] = `opacity: ${this.time.map(0, 5, 1, 0)};`
+		this.extraStyles[1] = `opacity: ${map(this.time, 0, 5, 1, 0)};`
 		super.tick(amount)
 		if (this.time >= 5) this.destroy()
 	}
@@ -766,7 +768,7 @@ class Tile extends SceneItem {
 			x: pos[0],
 			y: pos[1],
 			rotation: 0,
-			// @ts-ignore
+			/** @type {string[]} */
 			groups: []
 		}
 	}
@@ -801,7 +803,6 @@ class Tile extends SceneItem {
 	 * @param {number} amount
 	 */
 	tick(amount) {
-		// @ts-ignore
 		if (viewType == "game") this.collide()
 		super.tick(amount)
 	}
@@ -1007,7 +1008,6 @@ class StartPosBlock extends Tile {
 	 */
 	constructor(x, y) {
 		super(x, y, 1, 1, 0, [])
-		// @ts-ignore
 		if (viewType == "game") this.elm.remove()
 	}
 	/**
@@ -1073,8 +1073,7 @@ class Coin extends Tile {
 		if (this.alreadygot) this.extraStyles[0] = `background: url(../assets/tile/special/coin-alreadygot.svg);`
 		this.extraStyles[1] = `--dw: var(--tsize); --dh: var(--tsize);`
 		this.extraStyles[2] = `--tsize: ${Math.sqrt(Math.sqrt(this.activated + 1))};`
-		// @ts-ignore
-		this.extraStyles[3] = `opacity: ${this.activated.map(0, 100, 1, 0)};`
+		this.extraStyles[3] = `opacity: ${map(this.activated, 0, 100, 1, 0)};`
 		super.tick(amount)
 		if (this.activated > 0) {
 			if (this.activated < 100) {
@@ -1097,7 +1096,6 @@ class Trigger extends Tile {
 		this.needsTouch = needsTouch == true
 		/** @type {boolean} */
 		this.activated = false
-		// @ts-ignore
 		if (viewType == "game") this.elm.remove()
 	}
 	getEdit() {
@@ -1431,7 +1429,6 @@ class View {
 			var c = type.load(type, obj.data)
 			this.tiles.push(c)
 			this.stageWidth = Math.max(this.stageWidth, c.x + 5)
-			// @ts-ignore
 			if (viewType == "editor") c.tick(1)
 			else if (c instanceof Coin) {
 				var has_coin = levelMeta.completion.coins[coin_no]
@@ -1654,6 +1651,5 @@ var debugMode = url_query.debug == "true"
 var view = new ({
 	"game": GameView,
 	"editor": View
-// @ts-ignore
 }[viewType])();
 view.loadLevel()

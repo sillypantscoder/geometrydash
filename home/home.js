@@ -9,7 +9,7 @@
 			document.querySelector("#published + div").appendChild(e)
 			e.classList.add("area")
 			var v = cts.completion.percentage
-			e.innerHTML = `<div class="level-title"></div><div>Verified: ${v==100 ? "Yes" : (v==0 ? "No" : `No (${v}%)`)}</div><div>Coins: ${cts.completion.coins.length > 0 ? cts.completion.coins.map((/** @type {boolean} */ v) => ({"false": "[Unverified]", "true": "[Verified]"}[v.toString()])).join(" ") : "None"}</div><div></div><div><a><img src="../assets/ui/LevelStart.svg"></a></div>`
+			e.innerHTML = `<div class="level-title"></div><div>Verified: ${v==100 ? "Yes" : (v==0 ? "<b>No</b>" : `<b>No</b> (${v}%)`)}</div><div>Coins: ${cts.completion.coins.length > 0 ? cts.completion.coins.map((/** @type {boolean} */ v) => ({"false": "[<b>Unverified</b>]", "true": "[Verified]"}[v.toString()])).join(" ") : "None"}</div><div></div><div><a><img src="../assets/ui/LevelStart.svg"></a></div>`
 			// @ts-ignore
 			e.children[0].innerText = cts.name
 			// @ts-ignore
@@ -30,7 +30,7 @@
 			document.querySelector("#user + div").appendChild(e)
 			e.classList.add("area")
 			var v = cts.completion.percentage
-			e.innerHTML = `<div class="level-title"></div><div>Verified: ${v==100 ? "Yes" : (v==0 ? "No" : `No (${v}%)`)}</div><div>Coins: ${cts.completion.coins.length > 0 ? cts.completion.coins.map((/** @type {boolean} */ v) => ({"false": "[Unverified]", "true": "[Verified]"}[v.toString()])).join(" ") : "None"}</div><div></div><div><a><img src="../assets/ui/LevelStart.svg"></a><a><img src="../assets/ui/LevelEdit.svg"></a></div>`
+			e.innerHTML = `<div class="level-title"></div><div>Verified: ${v==100 ? "Yes" : (v==0 ? "<b>No</b>" : `<b>No</b> (${v}%)`)}</div><div>Coins: ${cts.completion.coins.length > 0 ? cts.completion.coins.map((/** @type {boolean} */ v) => ({"false": "[<b>Unverified</b>]", "true": "[Verified]"}[v.toString()])).join(" ") : "None"}</div><div></div><div><a><img src="../assets/ui/LevelStart.svg"></a><a><img src="../assets/ui/LevelEdit.svg"></a></div>`
 			// @ts-ignore
 			e.children[0].innerText = cts.name
 			// @ts-ignore
