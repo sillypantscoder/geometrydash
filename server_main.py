@@ -62,21 +62,29 @@ def get(path: str) -> HttpResponse:
 			},
 			"content": read_file("index.html")
 		}
-	elif (qpath.startswith("/assets/") or qpath.startswith("/common/") or qpath.startswith("/editor/") or qpath.startswith("/game/") or qpath.startswith("/home/") or qpath.startswith("/levels/")) and os.path.exists("." + qpath):
-		return {
-			"status": 200,
-			"headers": {
-				"Content-Type": {
-					"html": "text/html",
-					"js": "text/javascript",
-					"css": "text/css",
-					"svg": "image/svg+xml",
-					"png": "image/png",
-					"json": "application/json"
-				}[qpath.split(".")[-1]]
-			},
-			"content": read_file(qpath[1:])
-		}
+	elif (qpath.startswith("/assets/") or qpath.startswith("/common/") or qpath.startswith("/editor/") or qpath.startswith("/game/") or qpath.startswith("/home/") or qpath.startswith("/levels/")):
+		if os.path.exists("." + qpath):
+			return {
+				"status": 200,
+				"headers": {
+					"Content-Type": {
+						"html": "text/html",
+						"js": "text/javascript",
+						"css": "text/css",
+						"svg": "image/svg+xml",
+						"png": "image/png",
+						"json": "application/json"
+					}[qpath.split(".")[-1]]
+				},
+				"content": read_file(qpath[1:])
+			}
+		else:
+			print("404 GET " + qpath)
+			return {
+				"status": 404,
+				"headers": {},
+				"content": ""
+			}
 	elif path == "/level_list/published":
 		data = []
 		for name in os.listdir("levels/published"):

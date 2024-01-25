@@ -209,6 +209,74 @@ class Sphere extends Object3D {
 		view.scene.remove( this.mesh )
 	}
 }
+class Torus extends Object3D {
+	/**
+	 * @param {number[]} pos
+	 * @param {number} rad
+	 * @param {number} tubeRad
+	 * @param {number[]} color
+	 */
+	constructor(pos, rad, tubeRad, color) {
+		super()
+		this.geometry = new THREE.TorusGeometry( rad, tubeRad, 10, 45 );
+		this.geometry.translate(...pos);
+		this.material = new THREE.MeshPhongMaterial( { color: (0x010000*color[0])+(0x000100*color[1])+(0x000001*color[2]) } );
+		this.mesh = new THREE.Mesh( this.geometry, this.material );
+	}
+	add() {
+		if (view) view.scene.add( this.mesh );
+	}
+	/**
+	 * @param {number} x
+	 * @param {number} y
+	 */
+	setPos(x, y) {
+		this.mesh.position.set(x, y, 0);
+	}
+	/**
+	 * @param {number} r
+	 */
+	setRotation(r) {
+		this.mesh.rotation.z = (Math.PI / -180) * r
+	}
+	remove() {
+		view.scene.remove( this.mesh )
+	}
+}
+class Cylinder extends Object3D {
+	/**
+	 * @param {number[]} pos
+	 * @param {number} rad
+	 * @param {number} height
+	 * @param {number[]} color
+	 */
+	constructor(pos, rad, height, color) {
+		super()
+		this.geometry = new THREE.CylinderGeometry( rad, rad, height, 32 );
+		this.geometry.translate(...pos);
+		this.material = new THREE.MeshPhongMaterial( { color: (0x010000*color[0])+(0x000100*color[1])+(0x000001*color[2]) } );
+		this.mesh = new THREE.Mesh( this.geometry, this.material );
+	}
+	add() {
+		if (view) view.scene.add( this.mesh );
+	}
+	/**
+	 * @param {number} x
+	 * @param {number} y
+	 */
+	setPos(x, y) {
+		this.mesh.position.set(x, y, 0);
+	}
+	/**
+	 * @param {number} r
+	 */
+	setRotation(r) {
+		this.mesh.rotation.z = (Math.PI / -180) * r
+	}
+	remove() {
+		view.scene.remove( this.mesh )
+	}
+}
 
 class SceneItem {
 	/**
@@ -1633,6 +1701,10 @@ function jsonToObjects(data) {
 			o.push(new Cone(data[i]["pos"], data[i]["rad"], data[i]["height"], data[i]["color"]))
 		} else if (data[i]["type"] == "sphere") {
 			o.push(new Sphere(data[i]["pos"], data[i]["rad"], data[i]["color"]))
+		} else if (data[i]["type"] == "torus") {
+			o.push(new Torus(data[i]["pos"], data[i]["rad"], data[i]["tubeRad"], data[i]["color"]))
+		} else if (data[i]["type"] == "cylinder") {
+			o.push(new Cylinder(data[i]["pos"], data[i]["rad"], data[i]["height"], data[i]["color"]))
 		}
 	}
 	return o
