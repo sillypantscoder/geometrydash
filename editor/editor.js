@@ -121,6 +121,13 @@ function exportLevel() {
 }
 function saveLevel() {
 	return new Promise((resolve) => {
+		var coins = []
+		for (var i = 0; i < view.tiles.length; i++) {
+			var t = view.tiles[i]
+			if (t instanceof Coin) {
+				coins.push(false)
+			}
+		}
 		var x = new XMLHttpRequest()
 		x.open("POST", "/save_user")
 		x.addEventListener("loadend", () => resolve(x.responseText))
@@ -132,7 +139,8 @@ function saveLevel() {
 				"settings": levelMeta.settings,
 				"objects": getExport(),
 				"completion": {
-					"percentage": 0
+					"percentage": 0,
+					"coins": coins
 				},
 				"deleted": false
 			}
@@ -141,6 +149,13 @@ function saveLevel() {
 }
 async function publishLevel() {
 	await new Promise((resolve) => {
+		var coins = []
+		for (var i = 0; i < view.tiles.length; i++) {
+			var t = view.tiles[i]
+			if (t instanceof Coin) {
+				coins.push(false)
+			}
+		}
 		var x = new XMLHttpRequest()
 		x.open("POST", "/publish")
 		x.addEventListener("loadend", () => resolve(x.responseText))
@@ -152,7 +167,8 @@ async function publishLevel() {
 				"settings": levelMeta.settings,
 				"objects": getExport(),
 				"completion": {
-					"percentage": 0
+					"percentage": 0,
+					"coins": coins
 				},
 				"deleted": false
 			}

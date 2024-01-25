@@ -4,8 +4,7 @@
 	"settings": {
 		"colorbg": [0, 0, 0],
 		"colorstage": [0, 0, 0],
-		"gamemode": "ship",
-		"speed": 10
+		"gamemode": "ship"
 	},
 	"objects": [
 		{"type": "block.basic-block", "data": {"x": 8, "y": 0, "rotation": 0, "groups": []}},
