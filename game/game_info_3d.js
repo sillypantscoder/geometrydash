@@ -1505,6 +1505,7 @@ class GameView extends View {
 		return light
 	}
 	addControls() {
+		this.camera.position.x = 10
 		this.controls = new THREE.OrbitControls( this.camera, this.renderer.domElement );
 	}
 	win() {

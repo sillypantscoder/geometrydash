@@ -1,8 +1,9 @@
 from http.server import BaseHTTPRequestHandler, HTTPServer
 from server_main import get, post
+import typing
 
 hostName = "0.0.0.0"
-serverPort = 8080
+serverPort = 8065
 
 class MyServer(BaseHTTPRequestHandler):
 	def do_GET(self):
@@ -24,7 +25,7 @@ class MyServer(BaseHTTPRequestHandler):
 		c = res["content"]
 		if isinstance(c, str): c = c.encode("utf-8")
 		self.wfile.write(c)
-	def log_message(self, format: str, *args) -> None:
+	def log_message(self, format: str, *args: typing.Any) -> None:
 		return
 		# if 400 <= int(args[1]) < 500:
 		# 	# Errored request!

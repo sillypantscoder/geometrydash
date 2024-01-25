@@ -9,12 +9,12 @@
 			document.querySelector("#published + div").appendChild(e)
 			e.classList.add("area")
 			var v = cts.completion.percentage
-			e.innerHTML = `<div class="level-title"></div><div>Verified: ${v==100 ? "Yes" : (v==0 ? "<b>No</b>" : `<b>No</b> (${v}%)`)}</div><div>Coins: ${cts.completion.coins.length > 0 ? cts.completion.coins.map((/** @type {boolean} */ v) => ({"false": "[<b>Unverified</b>]", "true": "[Verified]"}[v.toString()])).join(" ") : "None"}</div><div></div><div><a><img src="../assets/ui/LevelStart.svg"></a></div>`
+			e.innerHTML = `<div class="level-title"></div><div>Verified: ${v==100 ? "Yes" : (v==0 ? "<b>No</b>" : `<b>No</b> (${v}%)`)}</div><div></div><div><a><img src="../assets/ui/LevelStart.svg"></a></div>`
 			// @ts-ignore
 			e.children[0].innerText = cts.name
 			// @ts-ignore
-			e.children[3].innerText = cts.description
-			e.children[4].children[0].setAttribute("href", `../game/index.html?level=published/${levels[i].name}`)
+			e.children[2].innerText = cts.description
+			e.children[3].children[0].setAttribute("href", `../game/index.html?level=published/${levels[i].name}`)
 		}
 	})
 	x.send()
@@ -30,13 +30,13 @@
 			document.querySelector("#user + div").appendChild(e)
 			e.classList.add("area")
 			var v = cts.completion.percentage
-			e.innerHTML = `<div class="level-title"></div><div>Verified: ${v==100 ? "Yes" : (v==0 ? "<b>No</b>" : `<b>No</b> (${v}%)`)}</div><div>Coins: ${cts.completion.coins.length > 0 ? cts.completion.coins.map((/** @type {boolean} */ v) => ({"false": "[<b>Unverified</b>]", "true": "[Verified]"}[v.toString()])).join(" ") : "None"}</div><div></div><div><a><img src="../assets/ui/LevelStart.svg"></a><a><img src="../assets/ui/LevelEdit.svg"></a></div>`
+			e.innerHTML = `<div class="level-title"></div><div>Verified: ${v==100 ? "Yes" : (v==0 ? "<b>No</b>" : `<b>No</b> (${v}%)`)}</div><div></div><div><a><img src="../assets/ui/LevelStart.svg"></a><a><img src="../assets/ui/LevelEdit.svg"></a></div>`
 			// @ts-ignore
 			e.children[0].innerText = cts.name
 			// @ts-ignore
-			e.children[3].innerText = cts.description
-			e.children[4].children[0].setAttribute("href", `../game/index.html?level=user/${levels[i].name}`)
-			e.children[4].children[1].setAttribute("href", `../editor/index.html?level=user/${levels[i].name}`)
+			e.children[2].innerText = cts.description
+			e.children[3].children[0].setAttribute("href", `../game/index.html?level=user/${levels[i].name}`)
+			e.children[3].children[1].setAttribute("href", `../editor/index.html?level=user/${levels[i].name}`)
 		}
 		// New Level button
 		var e = document.createElement("div")

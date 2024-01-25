@@ -4,7 +4,8 @@
 	"settings": {
 		"colorbg": [0, 0, 0],
 		"colorstage": [0, 0, 0],
-		"gamemode": "ship"
+		"gamemode": "ship",
+		"speed": 10
 	},
 	"objects": [
 		{"type": "block.basic-block", "data": {"x": 8, "y": 0, "rotation": 0, "groups": []}},
@@ -288,8 +289,7 @@
 		{"type": "death.half-spike", "data": {"x": 58, "y": 13, "rotation": 180, "groups": []}}
 	],
 	"completion": {
-		"percentage": 0,
-		"coins": []
+		"percentage": 0
 	},
 	"deleted": false
 }
