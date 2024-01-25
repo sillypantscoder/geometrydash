@@ -55,7 +55,7 @@ class Cuboid extends Object3D {
 	 * @param {number} r
 	 */
 	setRotation(r) {
-		var newR = (r + (this.previousRotation * 1)) / 2
+		var newR = (r + (this.previousRotation * 3)) / 4
 		this.previousRotation = newR
 		this.mesh.rotation.z = (Math.PI / -180) * newR
 	}
@@ -93,7 +93,7 @@ class CuboidOutline extends Object3D {
 	 * @param {number} r
 	 */
 	setRotation(r) {
-		var newR = (r + (this.previousRotation * 1)) / 2
+		var newR = (r + (this.previousRotation * 3)) / 4
 		this.previousRotation = newR
 		this.mesh.rotation.z = (Math.PI / -180) * newR
 	}
@@ -1586,21 +1586,37 @@ function getLocationFromObject(registry, object) {
 	return v
 }
 
+/** @type {Object.<string, null | string>} */
+var tileCache = {}
 /**
  * @param {Tile} obj
  * @returns {Promise<Object3D[]>}
  */
 function get3DFromObject(obj) {
-	var location = getLocationFromObject("tile", obj)
-	return new Promise((resolve) => {
+	var location = getLocationFromObject("tile", obj).join("/")
+	if (Object.keys(tileCache).includes(location)) return (async () => {
+		while (true) {
+			await new Promise((r2) => requestAnimationFrame(r2))
+			if (tileCache[location] != null) {
+				var res = JSON.parse(tileCache[location])
+				var objects = jsonToObjects(res)
+				return objects
+			}
+		}
+	})();
+	var promise = new Promise((resolve) => {
 		var x = new XMLHttpRequest()
-		x.open("GET", "../assets/tile3d/" + location.join("/") + ".json")
+		x.open("GET", "../assets/tile3d/" + location + ".json")
 		x.addEventListener("loadend", () => {
 			var res = JSON.parse(x.responseText)
-			resolve(jsonToObjects(res))
+			var objects = jsonToObjects(res)
+			tileCache[location] = x.responseText
+			resolve(objects)
 		})
 		x.send()
 	})
+	tileCache[location] = null
+	return promise
 }
 /**
  * @param {any} data

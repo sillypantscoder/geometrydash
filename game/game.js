@@ -36,7 +36,7 @@ function tick() {
 	aFrames()
 	view.renderer.render( view.scene, view.camera );
 	if (view.controls) view.controls.update()
-	document.querySelector("#log").innerHTML = `${view.player.x}`
+	// document.querySelector("#log").innerHTML = `${view.player.x}`
 }
 async function frameLoop() {
 	while (true) {
