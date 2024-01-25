@@ -463,7 +463,7 @@
 		{"type": "death.basic-spike", "data": {"x": 25, "y": 9, "rotation": 270, "groups": []}}
 	],
 	"completion": {
-		"percentage": 0
+		"percentage": 100
 	},
 	"deleted": false
 }
