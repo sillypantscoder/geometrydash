@@ -29,14 +29,14 @@ def format_level(t: dict):
 	"settings": {{
 		"colorbg": {json.dumps(t["settings"]["colorbg"])},
 		"colorstage": {json.dumps(t["settings"]["colorstage"])},
-		"gamemode": {json.dumps(t["settings"]["gamemode"])}
+		"gamemode": {json.dumps(t["settings"]["gamemode"])},
+		"speed": {json.dumps(t["settings"]["speed"])}
 	}},
 	"objects": [
 		{objects}
 	],
 	"completion": {{
-		"percentage": {json.dumps(t["completion"]["percentage"])},
-		"coins": {json.dumps(t["completion"]["coins"])}
+		"percentage": {json.dumps(t["completion"]["percentage"])}
 	}},
 	"deleted": {json.dumps(t["deleted"])}
 }}"""

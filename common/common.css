@@ -22,7 +22,7 @@ body {
 	/* calc setup */
 	--camera-pos: calc(var(--move-amount) * var(--tile-size));
 	/* background */
-	background: url(../assets/game/Background.png), var(--bg-color);
+	background: var(--bg-color);
 	background-size: cover;
 	background-position-x: calc(-0.1 * calc(var(--move-amount) * var(--tile-size)));
 }
