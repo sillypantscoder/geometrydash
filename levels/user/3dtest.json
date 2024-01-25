@@ -1,0 +1,21 @@
+{
+	"name": "3D Level Test",
+	"description": "",
+	"settings": {
+		"colorbg": [0, 125, 255],
+		"colorstage": [0, 125, 255],
+		"gamemode": "cube",
+		"speed": 15
+	},
+	"objects": [
+		{"type": "block.basic-block", "data": {"x": 6, "y": 0, "rotation": 0, "groups": []}},
+		{"type": "block.basic-block", "data": {"x": 13, "y": 0, "rotation": 0, "groups": []}},
+		{"type": "block.basic-block", "data": {"x": 13, "y": 1, "rotation": 0, "groups": []}},
+		{"type": "death.basic-spike", "data": {"x": 19, "y": 0, "rotation": 0, "groups": []}}
+	],
+	"completion": {
+		"percentage": 0,
+		"coins": []
+	},
+	"deleted": false
+}

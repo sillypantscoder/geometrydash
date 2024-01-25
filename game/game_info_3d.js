@@ -19,17 +19,22 @@ class Object3D {
 	 * @param {number} y
 	 */
 	setPos(x, y) {}
+	/**
+	 * @param {number} r
+	 */
+	setRotation(r) {}
 	remove() {}
 }
 class Cuboid extends Object3D {
 	/**
+	 * @param {number[]} pos
 	 * @param {number[]} size
 	 * @param {number[]} color
 	 */
-	constructor(size, color) {
+	constructor(pos, size, color) {
 		super()
-		this.size = size
 		this.geometry = new THREE.BoxGeometry( ...size );
+		this.geometry.translate(...pos);
 		this.material = new THREE.MeshPhongMaterial( { color: (0x010000*color[0])+(0x000100*color[1])+(0x000001*color[2]) } );
 		this.mesh = new THREE.Mesh( this.geometry, this.material );
 		this.previousRotation = 0
@@ -60,13 +65,14 @@ class Cuboid extends Object3D {
 }
 class CuboidOutline extends Object3D {
 	/**
+	 * @param {number[]} pos
 	 * @param {number[]} size
 	 * @param {number[]} color
 	 */
-	constructor(size, color) {
+	constructor(pos, size, color) {
 		super()
-		this.size = size
 		this.geometry = new THREE.BoxGeometry( ...size );
+		this.geometry.translate(...pos);
 		this.material = new THREE.LineBasicMaterial( { color: (0x010000*color[0])+(0x000100*color[1])+(0x000001*color[2]), linewidth: 1 } );
 		this.mesh = new THREE.LineSegments( new THREE.EdgesGeometry(this.geometry), this.material );
 		this.previousRotation = 0
@@ -97,14 +103,15 @@ class CuboidOutline extends Object3D {
 }
 class CuboidWithOutline extends Object3D {
 	/**
+	 * @param {number[]} pos
 	 * @param {number[]} size
 	 * @param {number[]} color
 	 */
-	constructor(size, color) {
+	constructor(pos, size, color) {
 		super()
 		this.size = size
-		this.cuboid = new Cuboid(size, color)
-		this.cuboidOutline = new CuboidOutline(size, [
+		this.cuboid = new Cuboid(pos, size, color)
+		this.cuboidOutline = new CuboidOutline(pos, size, [
 			color[0] / 2,
 			color[1] / 2,
 			color[2] / 2
@@ -136,16 +143,18 @@ class CuboidWithOutline extends Object3D {
 }
 class Cone extends Object3D {
 	/**
+	 * @param {number[]} pos
 	 * @param {number} rad
 	 * @param {number} h
 	 * @param {number[]} color
 	 */
-	constructor(rad, h, color) {
+	constructor(pos, rad, h, color) {
 		super()
 		this.geometry = new THREE.ConeGeometry( rad, h, 7 );
+		this.geometry.translate(...pos);
+		this.geometry.translate(rad / -2, 0, rad / -2);
 		this.material = new THREE.MeshPhongMaterial( { color: (0x010000*color[0])+(0x000100*color[1])+(0x000001*color[2]) } );
 		this.mesh = new THREE.Mesh( this.geometry, this.material );
-		this.previousRotation = 0
 	}
 	add() {
 		if (view) view.scene.add( this.mesh );
@@ -156,16 +165,45 @@ class Cone extends Object3D {
 	 */
 	setPos(x, y) {
 		this.mesh.position.set(x, y, 0);
-		// this.mesh.position.x = x
-		// this.mesh.position.y = y
 	}
 	/**
 	 * @param {number} r
 	 */
 	setRotation(r) {
-		var newR = (r + (this.previousRotation * 1)) / 2
-		this.previousRotation = newR
-		this.mesh.rotation.z = (Math.PI / -180) * newR
+		this.mesh.rotation.z = (Math.PI / -180) * r
+	}
+	remove() {
+		view.scene.remove( this.mesh )
+	}
+}
+class Sphere extends Object3D {
+	/**
+	 * @param {number[]} pos
+	 * @param {number} rad
+	 * @param {number[]} color
+	 */
+	constructor(pos, rad, color) {
+		super()
+		this.geometry = new THREE.SphereGeometry( rad, 32, 16 );
+		this.geometry.translate(...pos);
+		this.material = new THREE.MeshPhongMaterial( { color: (0x010000*color[0])+(0x000100*color[1])+(0x000001*color[2]) } );
+		this.mesh = new THREE.Mesh( this.geometry, this.material );
+	}
+	add() {
+		if (view) view.scene.add( this.mesh );
+	}
+	/**
+	 * @param {number} x
+	 * @param {number} y
+	 */
+	setPos(x, y) {
+		this.mesh.position.set(x, y, 0);
+	}
+	/**
+	 * @param {number} r
+	 */
+	setRotation(r) {
+		this.mesh.rotation.z = (Math.PI / -180) * r
 	}
 	remove() {
 		view.scene.remove( this.mesh )
@@ -199,6 +237,7 @@ class SceneItem {
 	 */
 	tick(_amount) {
 		this.objects.forEach((e) => e.setPos(this.x, this.y), this)
+		this.objects.forEach((e) => e.setRotation(this.rotation), this)
 	}
 	destroy() {
 		this.objects.forEach((e) => e.remove())
@@ -301,8 +340,8 @@ class InterpolatedColor {
 }
 class Stage extends SceneItem {
 	constructor() {
-		var e = new CuboidWithOutline([view.stageWidth + 5, 2, 1], [0, 125, 255])
-		super((view.stageWidth / 2) - 1.8, -1.5, [e])
+		var e = new CuboidWithOutline([(view.stageWidth / 2) - 1.8, -1.5, 0], [view.stageWidth + 5, 2, 1], [0, 125, 255])
+		super(0, 0, [e])
 		this.bgColor = InterpolatedColor.fromRGB(levelMeta.settings.colorbg)
 		this.stageColor = InterpolatedColor.fromRGB(levelMeta.settings.colorstage)
 	}
@@ -312,10 +351,16 @@ class Stage extends SceneItem {
 	tick(amount) {
 		this.bgColor.tick(amount)
 		this.stageColor.tick(amount)
-		view.camera.position.x = view.player.x
-		view.camera.position.y = view.player.y + 3
-		view.camera.position.z = 15
-		view.camera.lookAt(view.player.obj.cuboid.mesh.position)
+		if (view.controls) {
+			view.controls.target.x = view.player.x
+			view.controls.target.y = view.player.y + 3
+			view.controls.target.z = 15
+		} else {
+			view.camera.position.x = view.player.x
+			view.camera.position.y = view.player.y + 3
+			view.camera.position.z = 15
+			view.camera.lookAt(view.player.obj.cuboid.mesh.position)
+		}
 		view.cameraLight.position.copy(view.camera.position);
 		view.cameraLight.target.position.copy(view.player.obj.cuboid.mesh.position);
 		// TODO: Background color update
@@ -334,7 +379,7 @@ class Stage extends SceneItem {
 }
 class Player extends SceneItem {
 	constructor() {
-		var obj = new CuboidWithOutline([1, 1, 1], [0, 255, 33])
+		var obj = new CuboidWithOutline([0, 0, 0], [1, 1, 1], [0, 255, 33])
 		super(-1000, 0, [obj])
 		/** @type {number} */
 		this.vy = 0
@@ -368,7 +413,7 @@ class Player extends SceneItem {
 		}
 		// Move forwards
 		// console.log(2, this.x, this.y, this.vy)
-		this.x += 0.15 * amount
+		this.x += levelMeta.settings.speed * 0.01 * amount
 		// Fall
 		// console.log(3, this.x, this.y, this.vy)
 		this.mode.gravity(amount)
@@ -1369,6 +1414,7 @@ class View {
 		for (var i = 0; i < o.length; i++) {
 			var obj = o[i]
 			var type = getObjectFromLocation("tile", obj.type.split("."))
+			if (type == undefined) continue
 			/** @type {Tile} */
 			var c = type.load(type, obj.data)
 			this.tiles.push(c)
@@ -1392,6 +1438,7 @@ class View {
 			levelMeta.settings.colorbg = level.settings.colorbg
 			levelMeta.settings.colorstage = level.settings.colorstage
 			levelMeta.settings.gamemode = level.settings.gamemode
+			levelMeta.settings.speed = level.settings.speed
 			if (view instanceof GameView) view.player.setStartMode()
 			view.stage.reset()
 			if (view.player) view.player.x = -999
@@ -1418,7 +1465,7 @@ class GameView extends View {
 		this.renderer.setSize( window.innerWidth, window.innerHeight );
 		this.cameraLight = this.addLight()
 		document.querySelector("#scene").appendChild( this.renderer.domElement );
-		/** @type {undefined | { update: () => void }} */
+		/** @type {undefined | { update: () => void, target: { x: number, y: number, z: number } }} */
 		this.controls = undefined
 		// this.addControls();
 		// Add event listeners
@@ -1562,11 +1609,13 @@ function jsonToObjects(data) {
 	var o = []
 	for (var i = 0; i < data.length; i++) {
 		if (data[i]["type"] == "cuboid") {
-			o.push(new Cuboid(data[i]["size"], data[i]["color"]))
+			o.push(new Cuboid(data[i]["pos"], data[i]["size"], data[i]["color"]))
 		} else if (data[i]["type"] == "cuboid-outline") {
-			o.push(new CuboidOutline(data[i]["size"], data[i]["color"]))
+			o.push(new CuboidOutline(data[i]["pos"], data[i]["size"], data[i]["color"]))
 		} else if (data[i]["type"] == "cone") {
-			o.push(new Cone(data[i]["rad"], data[i]["height"], data[i]["color"]))
+			o.push(new Cone(data[i]["pos"], data[i]["rad"], data[i]["height"], data[i]["color"]))
+		} else if (data[i]["type"] == "sphere") {
+			o.push(new Sphere(data[i]["pos"], data[i]["rad"], data[i]["color"]))
 		}
 	}
 	return o
@@ -1627,7 +1676,8 @@ var levelMeta = {
 	"settings": {
 		"colorbg": [0, 125, 255],
 		"colorstage": [0, 125, 255],
-		"gamemode": "cube"
+		"gamemode": "cube",
+		"speed": 15
 	},
 	"completion": {
 		"percentage": 0,

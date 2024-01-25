@@ -1,6 +1,3 @@
-// @ts-ignore
-const THREE = window.THREE;
-
 /**
  * @param {number} amount
  */
@@ -32,19 +29,14 @@ function aFrames() {
 		frame(1 / n_frames)
 	}
 }
-function tick() {
-	aFrames()
-	view.renderer.render( view.scene, view.camera );
-	if (view.controls) view.controls.update()
-}
 async function frameLoop() {
 	while (true) {
-		if (view.stage) tick()
+		aFrames()
 		await new Promise((resolve) => requestAnimationFrame(resolve))
 	}
 }
 function setup() {
-	view.player.add()
 	frameLoop()
+	view.particles.push(new ProgressBar())
 }
 setup()
