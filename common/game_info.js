@@ -159,7 +159,7 @@ class Stage extends SceneItem {
 		this.bgColor.tick(amount)
 		this.stageColor.tick(amount)
 		// @ts-ignore
-		this.elm.parentNode.setAttribute("style", `--move-amount: ${Math.max(0, view.player.x - 5)}; --bg-color: ${this.bgColor.getHex()}; --stage-color: ${this.stageColor.getHex()};`)
+		this.elm.parentNode.setAttribute("style", `--move-amount: ${Math.max(0, ...view.players.map((v) => v.x - 15))}; --bg-color: ${this.bgColor.getHex()}; --stage-color: ${this.stageColor.getHex()};`)
 		super.tick(amount)
 	}
 	reset() {
@@ -178,7 +178,7 @@ class Stage extends SceneItem {
 }
 class Player extends SceneItem {
 	constructor() {
-		super(-1000, 0)
+		super(-3, 0)
 		this.elm.classList.add("player")
 		/** @type {number} */
 		this.vy = 0
@@ -187,11 +187,42 @@ class Player extends SceneItem {
 		/** @type {null | (() => void)} */
 		this.specialJump = null
 		/** @type {number} */
-		this.deathTime = 1
-		/** @type {number} */
 		this.gravity = 1
 		/** @type {GameMode} */
 		this.mode = new CubeMode(this);
+		/** @type {boolean} */
+		this.isPressing = false
+		this.setStartMode()
+	}
+	/** @param {Player} other */
+	sameAs(other) {
+		if (Math.abs(this.y - other.y) > this.mode.getPosThreshold()) return false;
+		if (Math.abs(this.vy - other.vy) > this.mode.getVThreshold()) return false;
+		// if (this.y != other.y) return false;
+		// if (this.vy != other.vy) return false;
+		if (this.gravity != other.gravity) return false;
+		if (! this.mode.sameAs(other.mode)) return false;
+		if (this.isPressing != other.isPressing) return false;
+		return true;
+	}
+	copy() {
+		var o = new Player()
+		o.x = this.x
+		o.y = this.y
+		o.rotation = this.rotation
+		o.vy = this.vy
+		o.onGround = this.onGround
+		o.gravity = this.gravity
+		o.mode = this.mode.copy(o)
+		o.isPressing = this.isPressing
+		return o
+	}
+	split() {
+		var a = this.copy()
+		a.isPressing = false
+		var b = this.copy()
+		b.isPressing = true
+		return [a, b]
 	}
 	getRect() {
 		return this.mode.getRect()
@@ -200,23 +231,11 @@ class Player extends SceneItem {
 	 * @param {number} amount
 	 */
 	tick(amount) {
-		// console.log(1, this.x, this.y, this.vy)
-		if (this.deathTime > 0) {
-			if ((this.deathTime == 1 || (! debugMode)) && this.x != -1000) this.deathTime -= 1
-			if (this.deathTime == 0) {
-				this.respawn()
-			}
-			return
-		}
 		// Move forwards
-		// console.log(2, this.x, this.y, this.vy)
 		this.x += 0.1 * amount
 		// Fall
-		// console.log(3, this.x, this.y, this.vy)
 		this.mode.gravity(amount)
-		// console.log(4, this.x, this.y, this.vy)
 		this.y += this.vy * amount
-		// console.log(5, this.x, this.y, this.vy)
 		this.onGround = false
 		this.specialJump = null
 		// Check for collision with stage
@@ -234,7 +253,7 @@ class Player extends SceneItem {
 	 * @param {number} amount
 	 */
 	finishTick(amount) {
-		if (this.deathTime > 0) return
+		if (this.x > view.stageWidth) view.win()
 		if (this.onGround) {
 			if (this.gravity < 0) {
 				if (this.vy > 0) this.vy = 0
@@ -242,29 +261,18 @@ class Player extends SceneItem {
 				if (this.vy < 0) this.vy = 0
 			}
 		}
-		this.mode.checkJump(amount)
-		if (this.x > view.stageWidth) view.win()
-		if (debugMode && Math.abs(this.vy) > 0.3) RectDisplay.create(this)
+		this.mode.checkJump(amount, this.isPressing)
 	}
-	destroy() {
-		this.deathTime = 40
+	destroy(particles) {
+		view.players.splice(view.players.indexOf(this), 1)
 		super.destroy()
-		view.particles.push(new DeathParticleMain(this.x + 0.5, this.y + 0.5))
-		for (var i = 0; i < 20; i++) {
-			view.particles.push(new DeathParticleExtra(this.x + 0.5, this.y + 0.5))
+		if (particles) {
+			view.particles.push(new DeathParticleSmall(this.x + 0.5, this.y + 0.5))
+			// view.particles.push(new DeathParticleMain(this.x + 0.5, this.y + 0.5))
+			// for (var i = 0; i < 20; i++) {
+			// 	view.particles.push(new DeathParticleExtra(this.x + 0.5, this.y + 0.5))
+			// }
 		}
-		view.sendVerification()
-	}
-	respawn() {
-		document.querySelector("#scene").appendChild(this.elm)
-		this.setStartMode()
-		this.x = -3
-		this.y = 0
-		this.vy = 0
-		this.gravity = 1
-		view.stage.reset()
-		this.setStartPos()
-		view.attempt += 1
 	}
 	setStartPos() {
 		for (var i = 0; i < view.tiles.length; i++) {
@@ -290,6 +298,21 @@ class GameMode {
 		this.player = player
 	}
 	/**
+	 * @param {GameMode} other
+	 */
+	sameAs(other) {
+		return false;
+	}
+	copy(player) {
+		return new GameMode(player)
+	}
+	getPosThreshold() {
+		return 0.03
+	}
+	getVThreshold() {
+		return 0.03
+	}
+	/**
 	 * @param {number} amount
 	 */
 	gravity(amount) {
@@ -297,11 +320,12 @@ class GameMode {
 	}
 	/**
 	 * @param {number} _amount
+	 * @param {boolean} isPressing
 	 */
-	checkJump(_amount) {}
+	checkJump(_amount, isPressing) {}
 	getMax() {
 		if (this.player.y > 40) {
-			this.player.destroy()
+			this.player.destroy(true)
 		}
 	}
 	getRect() {
@@ -311,25 +335,35 @@ class GameMode {
 	 * @param {number} _h The height of the ceiling
 	 */
 	hitCeiling(_h) {
-		view.player.destroy()
+		this.player.destroy(true)
 	}
 }
 class CubeMode extends GameMode {
 	/**
-	 * @param {number} amount
+	 * @param {GameMode} other
 	 */
-	checkJump(amount) {
+	sameAs(other) {
+		return other instanceof CubeMode;
+	}
+	copy(player) {
+		return new CubeMode(player)
+	}
+	/**
+	 * @param {number} amount
+	 * @param {boolean} isPressing
+	 */
+	checkJump(amount, isPressing) {
 		if (this.player.onGround) {
 			this.player.rotation = 0
 			if (this.player.gravity < 0) {
-				view.particles.push(new SlideParticle(this.player.x, this.player.y + 1))
+				view.particles.push(new SlideParticle(this.player.x, this.player.y + 1, this.player))
 			} else {
-				view.particles.push(new SlideParticle(this.player.x, this.player.y))
+				view.particles.push(new SlideParticle(this.player.x, this.player.y, this.player))
 			}
 		} else {
 			this.player.rotation += 5 * amount * this.player.gravity
 		}
-		if (view.isPressing) {
+		if (isPressing) {
 			if (this.player.specialJump != null) {
 				this.player.specialJump()
 			} else if (this.player.onGround) {
@@ -340,16 +374,31 @@ class CubeMode extends GameMode {
 }
 class ShipMode extends GameMode {
 	/**
+	 * @param {GameMode} other
+	 */
+	sameAs(other) {
+		return other instanceof ShipMode;
+	}
+	copy(player) {
+		return new ShipMode(player)
+	}
+	getPosThreshold() {
+		return 0.85
+	}
+	getVThreshold() {
+		return 0.015
+	}
+	/**
 	 * @param {number} _amount
 	 */
 	gravity(_amount) {}
 	/**
 	 * @param {number} _amount
+	 * @param {boolean} isPressing
 	 */
-	checkJump(_amount) {
+	checkJump(_amount, isPressing) {
 		this.player.rotation = this.player.vy * -100
-		view.particles.push(new SlideParticle(this.player.x + 0.05, this.player.y + 0.2))
-		if (view.isPressing) {
+		if (isPressing) {
 			if (this.player.specialJump != null) {
 				this.player.specialJump()
 			} else {
@@ -372,39 +421,63 @@ class ShipMode extends GameMode {
 }
 class BallMode extends GameMode {
 	/**
-	 * @param {number} amount
+	 * @param {GameMode} other
 	 */
-	checkJump(amount) {
+	sameAs(other) {
+		return other instanceof BallMode;
+	}
+	copy(player) {
+		return new BallMode(player)
+	}
+	/**
+	 * @param {number} amount
+	 * @param {boolean} isPressing
+	 */
+	checkJump(amount, isPressing) {
 		this.player.rotation += 10 * amount * this.player.gravity
 		if (this.player.onGround || this.player.y == 14) {
 			if (this.player.gravity < 0) {
-				view.particles.push(new SlideParticle(this.player.x + 0.3, this.player.y + 1))
+				view.particles.push(new SlideParticle(this.player.x + 0.3, this.player.y + 1, this.player))
 			} else {
-				view.particles.push(new SlideParticle(this.player.x + 0.3, this.player.y))
+				view.particles.push(new SlideParticle(this.player.x + 0.3, this.player.y, this.player))
 			}
 		}
-		if (view.isPressing) {
+		if (isPressing) {
 			if (this.player.specialJump != null) {
 				this.player.specialJump()
 			} else if (this.player.onGround) {
 				this.player.gravity *= -1
-				view.isPressing = false
 			}
 		}
 	}
 }
 class WaveMode extends GameMode {
 	/**
+	 * @param {GameMode} other
+	 */
+	sameAs(other) {
+		return other instanceof WaveMode;
+	}
+	copy(player) {
+		return new WaveMode(player)
+	}
+	getPosThreshold() {
+		return 0.1
+	}
+	getVThreshold() {
+		return 0.03
+	}
+	/**
 	 * @param {number} _amount
 	 */
 	gravity(_amount) {}
 	/**
 	 * @param {number} _amount
+	 * @param {boolean} isPressing
 	 */
-	checkJump(_amount) {
+	checkJump(_amount, isPressing) {
 		this.player.rotation = this.player.vy * -450
-		view.particles.push(new WaveParticle(this.player.x, this.player.y + 0.5 + (-1 * this.player.vy)))
-		if (view.isPressing) {
+		if (isPressing) {
 			this.player.vy = 0.1 * this.player.gravity
 		} else {
 			this.player.vy = -0.1 * this.player.gravity
@@ -412,13 +485,6 @@ class WaveMode extends GameMode {
 	}
 	getRect() {
 		return super.getRect().relative(0, 0.1, 1, 0.8)
-	}
-	/**
-	 * @param {number} h
-	 */
-	hitCeiling(h) {
-		this.player.y = h - 0.1
-		this.player.vy = -0.01
 	}
 }
 class Particle extends SceneItem {
@@ -443,12 +509,14 @@ class SlideParticle extends Particle {
 	/**
 	 * @param {number} x
 	 * @param {number} y
+	 * @param {Player} player
 	 */
-	constructor(x, y) {
+	constructor(x, y, player) {
 		super(x, y)
+		this.player = player
 		this.oy = y
 		this.vx = Math.random() / -20
-		this.vy = (Math.random() / 10) * view.player.gravity
+		this.vy = (Math.random() / 10) * this.player.gravity
 		this.time = 0
 		this.extraStyles[2] = `--size: 0.1;`
 	}
@@ -457,10 +525,10 @@ class SlideParticle extends Particle {
 	 */
 	tick(amount) {
 		this.time += amount
-		this.vy -= 0.005 * amount * view.player.gravity
+		this.vy -= 0.005 * amount * this.player.gravity
 		this.x += this.vx * amount
 		this.y += this.vy * amount
-		if (view.player.gravity < 0) {
+		if (this.player.gravity < 0) {
 			if (this.y >= this.oy) {
 				this.y = this.oy
 				this.vy = 0
@@ -496,6 +564,27 @@ class WaveParticle extends Particle {
 		this.extraStyles[1] = `opacity: ${map(this.time, 0, 100, 1, 0)};`
 		super.tick(amount)
 		if (this.time >= 100) this.destroy()
+	}
+}
+class DeathParticleSmall extends Particle {
+	/**
+	 * @param {number} x
+	 * @param {number} y
+	 */
+	constructor(x, y) {
+		super(x, y)
+		this.size = 1
+	}
+	/**
+	 * @param {number} amount
+	 */
+	tick(amount) {
+		this.size += 0.5 * amount
+		this.extraStyles[0] = `background: radial-gradient(circle, #0F5F 0%, #0F53 100%);`
+		this.extraStyles[2] = `--size: ${this.size};`
+		this.extraStyles[3] = `opacity: ${map(this.size, 1, 5, 0.25, 0)};`
+		super.tick(amount)
+		if (this.size >= 5) this.destroy()
 	}
 }
 class DeathParticleMain extends Particle {
@@ -584,13 +673,16 @@ class ProgressBar extends SceneItem {
 		super(0, 0)
 		this.elm.classList.add("progress-bar")
 		document.querySelector("#scene").insertAdjacentElement("afterend", this.elm)
+		this.elm.innerHTML = `<div></div><div id="log"></div><div></div>`
 	}
 	/**
 	 * @param {number} amount
 	 */
 	tick(amount) {
 		var c = view.getCompletion()
-		this.elm.innerHTML = `<div>Attempt ${view.attempt}</div><div style="background: linear-gradient(90deg, #AFA ${c}%, #AAF ${c}%, #AAF ${levelMeta.completion.percentage}%, white ${levelMeta.completion.percentage}%);">${c}% complete</div>`
+		this.elm.children[0].innerText = `Attempt ${view.attempt}`
+		this.elm.children[2].setAttribute("style", `background: linear-gradient(90deg, #AFA ${c}%, #AAF ${c}%, #AAF ${levelMeta.completion.percentage}%, white ${levelMeta.completion.percentage}%);`)
+		this.elm.children[2].innerText = `${c}% complete`
 	}
 	destroy() {
 		view.particles.splice(view.particles.indexOf(this), 1)
@@ -803,10 +895,11 @@ class Tile extends SceneItem {
 	 * @param {number} amount
 	 */
 	tick(amount) {
-		if (viewType == "game") this.collide()
+		if (view.players) view.players.forEach((v) => this.collide(v))
 		super.tick(amount)
 	}
-	collide() {}
+	/** @param {Player} target */
+	collide(target) {}
 }
 class TileBlock extends Tile {
 	/**
@@ -818,21 +911,29 @@ class TileBlock extends Tile {
 	constructor(x, y, rotation, groups) {
 		super(x, y, 1, 1, rotation, groups)
 	}
-	collide() {
-		var playerRect = view.player.getRect()
+	/**
+	 * @param {Player} target
+	 */
+	collide(target) {
+		var playerRect = target.getRect()
 		var thisRect = this.getRect().rotate(this.rotation, this.x + 0.5, this.y + 0.5)
 		if (playerRect.colliderect(thisRect)) {
+			// Wave shortcut:
+			if (playerRect.mode instanceof WaveMode) {
+				target.destroy(true)
+				return
+			}
 			// if (thisRect.y - (playerRect.y + playerRect.h) > -0.1) return
 			var yIncrease = (thisRect.y + thisRect.h) - playerRect.y
-			if (view.player.gravity < 0) yIncrease = (playerRect.y + playerRect.h) - thisRect.y
+			if (target.gravity < 0) yIncrease = (playerRect.y + playerRect.h) - thisRect.y
 			var playerDies = yIncrease >= 0.5
 			if (! playerDies) {
 				// Player is fine
-				view.player.y += yIncrease * view.player.gravity
-				view.player.onGround = true
+				target.y += yIncrease * target.gravity
+				target.onGround = true
 				// this.enabled = true
 			} else if (thisRect.y + 0.5 > playerRect.y + playerRect.h) {
-				view.player.mode.hitCeiling(thisRect.y - playerRect.h)
+				target.mode.hitCeiling(thisRect.y - playerRect.h)
 				// this.enabled = true
 			} else {
 				if (debugMode) {
@@ -840,7 +941,7 @@ class TileBlock extends Tile {
 						view.particles.push(new RectDisplay(new Rect(thisRect.x, playerRect.y, thisRect.w, yIncrease), "pink"))
 					}, 100, thisRect, playerRect, yIncrease)
 				}
-				view.player.destroy()
+				target.destroy(true)
 				// this.enabled = true
 			}
 		}
@@ -856,18 +957,21 @@ class TileDeath extends Tile {
 	constructor(x, y, rotation, groups) {
 		super(x, y, 1, 1, rotation, groups)
 	}
-	collide() {
-		var playerRect = view.player.getRect()
+	/**
+	 * @param {Player} target
+	 */
+	collide(target) {
+		var playerRect = target.getRect()
 		var thisRect = this.getRect().rotate(this.rotation, this.x + 0.5, this.y + 0.5)
 		if (playerRect.colliderect(thisRect)) {
 			// Player dies!
-			view.player.destroy()
+			target.destroy(true)
 			if (debugMode) {
 				setTimeout(() => {
-					view.particles.push(new RectDisplay(view.player.getRect(), "orange"))
+					view.particles.push(new RectDisplay(target.getRect(), "orange"))
 				}, 100)
 			}
-			this.enabled = true
+			// this.enabled = true
 		}
 	}
 }
@@ -933,30 +1037,30 @@ class Orb extends Tile {
 	 */
 	constructor(x, y, rotation, groups) {
 		super(x, y, 1, 1, rotation, groups)
-		this.timeout = 0
+		/** @type {Player[]} */
+		this.activated = []
 	}
 	/**
-	 * @param {number} amount
+	 * @param {Player} target
 	 */
-	tick(amount) {
-		if (this.timeout > 0) this.timeout -= amount
-		super.tick(amount)
-	}
-	collide() {
-		if (this.timeout > 0) return
-		var playerRect = view.player.getRect()
+	collide(target) {
+		if (this.activated.includes(target)) return
+		var playerRect = target.getRect()
 		var thisRect = this.getRect().rotate(this.rotation, this.x + 0.5, this.y + 0.5)
 		if (playerRect.colliderect(thisRect)) {
 			this.enabled = true
 			// Jumpy jumpy
-			var target = this
-			view.player.specialJump = () => {
-				target.timeout = 10
-				target.activate()
+			var orbT = this
+			target.specialJump = () => {
+				orbT.activated.push(target)
+				orbT.activate(target)
 			}
 		}
 	}
-	activate() {}
+	/**
+	 * @param {Player} target
+	 */
+	activate(target) {}
 }
 class JumpOrb extends Orb {
 	/**
@@ -968,8 +1072,11 @@ class JumpOrb extends Orb {
 	constructor(x, y, rotation, groups) {
 		super(x, y, rotation, groups)
 	}
-	activate() {
-		view.player.vy = 0.34 * view.player.gravity
+	/**
+	 * @param {Player} target
+	 */
+	activate(target) {
+		target.vy = 0.34 * target.gravity
 	}
 }
 class GravityOrb extends Orb {
@@ -982,9 +1089,12 @@ class GravityOrb extends Orb {
 	constructor(x, y, rotation, groups) {
 		super(x, y, rotation, groups)
 	}
-	activate() {
-		view.player.gravity *= -1
-		view.player.vy = view.player.gravity * -0.5
+	/**
+	 * @param {Player} target
+	 */
+	activate(target) {
+		target.gravity *= -1
+		target.vy = target.gravity * -0.5
 	}
 }
 class BlackOrb extends Orb {
@@ -997,8 +1107,11 @@ class BlackOrb extends Orb {
 	constructor(x, y, rotation, groups) {
 		super(x, y, rotation, groups)
 	}
-	activate() {
-		view.player.vy += view.player.gravity * -0.7
+	/**
+	 * @param {Player} target
+	 */
+	activate(target) {
+		target.vy += target.gravity * -0.7
 	}
 }
 class StartPosBlock extends Tile {
@@ -1055,11 +1168,14 @@ class Coin extends Tile {
 		/** @type {boolean} */
 		this.alreadygot = false
 	}
-	collide() {
+	/**
+	 * @param {Player} target
+	 */
+	collide(target) {
 		if (this.activated > 0) {
 			return
 		}
-		var playerRect = view.player.getRect()
+		var playerRect = target.getRect()
 		var thisRect = this.getRect()
 		if (playerRect.colliderect(thisRect)) {
 			this.activated = 1
@@ -1104,8 +1220,11 @@ class Trigger extends Tile {
 			`<div>Needs touch: <input type="checkbox"${this.needsTouch ? " checked" : ""} oninput="editing.needsTouch = this.checked"></div>`
 		]
 	}
-	hasCollision() {
-		var playerRect = view.player.getRect()
+	/**
+	 * @param {Player} target
+	 */
+	hasCollision(target) {
+		var playerRect = target.getRect()
 		var thisRect = this.getRect()
 		if (this.needsTouch) {
 			return playerRect.colliderect(thisRect)
@@ -1113,9 +1232,12 @@ class Trigger extends Tile {
 			return playerRect.centerX() > thisRect.centerX()
 		}
 	}
-	collide() {
+	/**
+	 * @param {Player} target
+	 */
+	collide(target) {
 		if (this.activated) return
-		if (this.hasCollision()) {
+		if (this.hasCollision(target)) {
 			this.activated = true
 			this.trigger()
 		}
@@ -1213,30 +1335,30 @@ class Pad extends Tile {
 	 */
 	constructor(x, y, rotation, groups) {
 		super(x, y, 1, 1, rotation, groups)
-		this.timeout = 0
+		/** @type {Player[]} */
+		this.activated = []
 	}
 	getRect() {
 		return super.getRect().relative(0, 0, 1, 0.2)
 	}
 	/**
-	 * @param {number} amount
+	 * @param {Player} target
 	 */
-	tick(amount) {
-		if (this.timeout > 0) this.timeout -= amount
-		super.tick(amount)
-	}
-	collide() {
-		if (this.timeout > 0) return
-		var playerRect = view.player.getRect()
+	collide(target) {
+		if (this.activated.includes(target)) return
+		var playerRect = target.getRect()
 		var thisRect = this.getRect().rotate(this.rotation, this.x + 0.5, this.y + 0.5)
 		if (playerRect.colliderect(thisRect)) {
 			this.enabled = true
 			// Jumpy jumpy
-			this.activate()
-			this.timeout = 10
+			this.activate(target)
+			this.activated.push(target)
 		}
 	}
-	activate() {}
+	/**
+	 * @param {Player} target
+	 */
+	activate(target) {}
 }
 class JumpPad extends Pad {
 	/**
@@ -1247,10 +1369,12 @@ class JumpPad extends Pad {
 	 */
 	constructor(x, y, rotation, groups) {
 		super(x, y, rotation, groups)
-		this.timeout = 0
 	}
-	activate() {
-		view.player.vy = 0.34 * view.player.gravity
+	/**
+	 * @param {Player} target
+	 */
+	activate(target) {
+		target.vy = 0.34 * target.gravity
 	}
 }
 class SmallJumpPad extends Pad {
@@ -1263,8 +1387,11 @@ class SmallJumpPad extends Pad {
 	constructor(x, y, rotation, groups) {
 		super(x, y, rotation, groups)
 	}
-	activate() {
-		view.player.vy = 0.22 * view.player.gravity
+	/**
+	 * @param {Player} target
+	 */
+	activate(target) {
+		target.vy = 0.22 * target.gravity
 	}
 }
 class GravityPad extends Pad {
@@ -1277,11 +1404,14 @@ class GravityPad extends Pad {
 	constructor(x, y, rotation, groups) {
 		super(x, y, rotation, groups)
 	}
-	activate() {
-		if (this.rotation == 0) view.player.gravity = -1
-		else if (this.rotation == 180) view.player.gravity = 1
-		else view.player.gravity *= -1
-		view.player.vy = view.player.gravity * -0.5
+	/**
+	 * @param {Player} target
+	 */
+	activate(target) {
+		if (this.rotation == 0) target.gravity = -1
+		else if (this.rotation == 180) target.gravity = 1
+		else target.gravity *= -1
+		target.vy = target.gravity * -0.5
 	}
 }
 class Portal extends Tile {
@@ -1302,15 +1432,18 @@ class Portal extends Tile {
 	getRect() {
 		return super.getRect().relative(0, (this.realheight * -0.5) + 0.5, 1, this.realheight);
 	}
-	collide() {
-		var playerRect = view.player.getRect()
+	/**
+	 * @param {Player} target
+	 */
+	collide(target) {
+		var playerRect = target.getRect()
 		var thisRect = this.getRect()
 		if (playerRect.colliderect(thisRect)) {
 			this.enabled = true
-			this.activate()
+			this.activate(target)
 		}
 	}
-	activate() {}
+	activate(target) {}
 }
 class GravityPortal extends Portal {
 	/**
@@ -1324,8 +1457,11 @@ class GravityPortal extends Portal {
 		super(x, y, 1, 2.57, 3, rotation, groups)
 		this.gravity = gravity
 	}
-	activate() {
-		view.player.gravity = this.gravity;
+	/**
+	 * @param {Player} target
+	 */
+	activate(target) {
+		target.gravity = this.gravity;
 	}
 }
 class GravityPortalDown extends GravityPortal {
@@ -1363,9 +1499,12 @@ class GamemodePortal extends Portal {
 		/** @type {typeof GameMode} */
 		this.mode = gamemode
 	}
-	activate() {
-		var newMode = new this.mode(view.player);
-		view.player.mode = newMode;
+	/**
+	 * @param {Player} target
+	 */
+	activate(target) {
+		var newMode = new this.mode(target);
+		target.mode = newMode;
 	}
 }
 class CubePortal extends GamemodePortal {
@@ -1441,7 +1580,7 @@ class View {
 	}
 	loadLevel() {
 		if (levelName == undefined) {
-			levelName = "new_level.json"
+			levelName = `new_level${Math.floor(Math.random() * 1000000)}.json`
 			return
 		}
 		var x = new XMLHttpRequest()
@@ -1455,9 +1594,8 @@ class View {
 			levelMeta.settings.colorbg = level.settings.colorbg
 			levelMeta.settings.colorstage = level.settings.colorstage
 			levelMeta.settings.gamemode = level.settings.gamemode
-			if (view instanceof GameView) view.player.setStartMode()
+			if (view instanceof GameView) view.players.push(new Player())
 			view.stage.reset()
-			if (view.player) view.player.x = -999
 		})
 		x.send()
 	}
@@ -1465,49 +1603,22 @@ class View {
 class GameView extends View {
 	constructor() {
 		super()
-		this.player = new Player()
+		/** @type {Player[]} */
+		this.players = []
 		/** @type {Particle[]} */
 		this.particles = []
-		this.isPressing = false
 		this.stageWidth = 0
 		this.hasWon = false
 		this.attempt = 0
-		// Add event listeners
-		document.addEventListener("keydown", (e) => {
-			if (e.key == " ") view.isPressing = true
-		})
-		document.addEventListener("keyup", (e) => {
-			if (e.key == " ") view.isPressing = false
-		})
-		document.addEventListener("mousedown", (e) => {
-			view.isPressing = true
-		})
-		document.addEventListener("mouseup", (e) => {
-			view.isPressing = false
-		})
-		document.addEventListener("touchstart", (e) => {
-			view.isPressing = true
-		})
-		document.addEventListener("touchend", (e) => {
-			view.isPressing = false
-		})
 	}
 	win() {
 		this.hasWon = true
-		this.player.elm.remove()
 		this.particles.push(new LevelCompleteSign())
 		this.sendVerification()
 	}
-	restart() {
-		this.hasWon = false
-		this.player.deathTime = 1
-		for (; this.particles.length > 0; ) {
-			this.particles[0].destroy()
-		}
-		this.particles.push(new ProgressBar())
-	}
 	getCompletion() {
-		var pc = Math.floor((this.player.x / this.stageWidth) * 100)
+		var maxX = Math.max(...this.players.map((v) => v.x))
+		var pc = Math.floor((maxX / this.stageWidth) * 100)
 		if (pc < 0) return 0
 		if (pc > 100) return 100
 		return pc

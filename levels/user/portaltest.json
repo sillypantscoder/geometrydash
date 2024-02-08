@@ -1,0 +1,48 @@
+{
+	"name": "Gamemode Portal Test",
+	"description": "",
+	"settings": {
+		"colorbg": [0, 125, 255],
+		"colorstage": [0, 125, 255],
+		"gamemode": "ship"
+	},
+	"objects": [
+		{"type": "portal.gamemode.ship", "data": {"x": 9, "y": 1, "rotation": 0, "groups": []}},
+		{"type": "portal.gamemode.ball", "data": {"x": 14, "y": 1, "rotation": 0, "groups": []}},
+		{"type": "portal.gamemode.wave", "data": {"x": 23, "y": 1, "rotation": 0, "groups": []}},
+		{"type": "portal.gamemode.cube", "data": {"x": 28, "y": 1, "rotation": 0, "groups": []}},
+		{"type": "block.basic-block", "data": {"x": 0, "y": 3, "rotation": 0, "groups": []}},
+		{"type": "portal.gamemode.cube", "data": {"x": 5, "y": 1, "rotation": 0, "groups": []}},
+		{"type": "block.basic-block", "data": {"x": 1, "y": 3, "rotation": 0, "groups": []}},
+		{"type": "block.basic-block", "data": {"x": 2, "y": 3, "rotation": 0, "groups": []}},
+		{"type": "block.basic-block", "data": {"x": 3, "y": 3, "rotation": 0, "groups": []}},
+		{"type": "block.basic-block", "data": {"x": 4, "y": 3, "rotation": 0, "groups": []}},
+		{"type": "block.basic-block", "data": {"x": 5, "y": 3, "rotation": 0, "groups": []}},
+		{"type": "death.basic-spike", "data": {"x": 7, "y": 0, "rotation": 0, "groups": []}},
+		{"type": "block.basic-block", "data": {"x": 9, "y": 3, "rotation": 0, "groups": []}},
+		{"type": "block.basic-block", "data": {"x": 10, "y": 3, "rotation": 0, "groups": []}},
+		{"type": "block.basic-block", "data": {"x": 11, "y": 3, "rotation": 0, "groups": []}},
+		{"type": "block.basic-block", "data": {"x": 12, "y": 3, "rotation": 0, "groups": []}},
+		{"type": "block.basic-block", "data": {"x": 13, "y": 3, "rotation": 0, "groups": []}},
+		{"type": "block.basic-block", "data": {"x": 14, "y": 3, "rotation": 0, "groups": []}},
+		{"type": "block.basic-block", "data": {"x": 16, "y": 6, "rotation": 0, "groups": []}},
+		{"type": "block.basic-block", "data": {"x": 17, "y": 6, "rotation": 0, "groups": []}},
+		{"type": "block.basic-block", "data": {"x": 18, "y": 6, "rotation": 0, "groups": []}},
+		{"type": "block.basic-block", "data": {"x": 19, "y": 6, "rotation": 0, "groups": []}},
+		{"type": "death.basic-spike", "data": {"x": 17, "y": 0, "rotation": 0, "groups": []}},
+		{"type": "death.basic-spike", "data": {"x": 18, "y": 0, "rotation": 0, "groups": []}},
+		{"type": "death.basic-spike", "data": {"x": 19, "y": 0, "rotation": 0, "groups": []}},
+		{"type": "block.basic-block", "data": {"x": 23, "y": 3, "rotation": 0, "groups": []}},
+		{"type": "block.basic-block", "data": {"x": 24, "y": 4, "rotation": 0, "groups": []}},
+		{"type": "block.basic-block", "data": {"x": 25, "y": 5, "rotation": 0, "groups": []}},
+		{"type": "block.basic-block", "data": {"x": 26, "y": 4, "rotation": 0, "groups": []}},
+		{"type": "block.basic-block", "data": {"x": 27, "y": 3, "rotation": 0, "groups": []}},
+		{"type": "block.basic-block", "data": {"x": 28, "y": 3, "rotation": 0, "groups": []}},
+		{"type": "death.basic-spike", "data": {"x": 26, "y": 0, "rotation": 0, "groups": []}}
+	],
+	"completion": {
+		"percentage": 100,
+		"coins": []
+	},
+	"deleted": false
+}

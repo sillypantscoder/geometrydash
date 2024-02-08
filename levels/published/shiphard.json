@@ -288,7 +288,7 @@
 		{"type": "death.half-spike", "data": {"x": 58, "y": 13, "rotation": 180, "groups": []}}
 	],
 	"completion": {
-		"percentage": 0,
+		"percentage": 100,
 		"coins": []
 	},
 	"deleted": false

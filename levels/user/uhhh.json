@@ -93,8 +93,8 @@
 		{"type": "special.coin", "data": {"x": 23, "y": 16, "rotation": 0, "groups": []}}
 	],
 	"completion": {
-		"percentage": 0,
-		"coins": [false]
+		"percentage": 100,
+		"coins": [true]
 	},
 	"deleted": false
 }

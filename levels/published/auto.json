@@ -230,7 +230,6 @@
 		{"type": "death.basic-spike", "data": {"x": 39, "y": 0, "rotation": 90, "groups": []}},
 		{"type": "death.basic-spike", "data": {"x": 37, "y": 4, "rotation": 0, "groups": []}},
 		{"type": "death.basic-spike", "data": {"x": 39, "y": 4, "rotation": 0, "groups": []}},
-		{"type": "death.basic-spike", "data": {"x": 37, "y": 10, "rotation": 180, "groups": []}},
 		{"type": "block.basic-block", "data": {"x": 26, "y": 1, "rotation": 0, "groups": []}},
 		{"type": "block.basic-block", "data": {"x": 27, "y": 0, "rotation": 0, "groups": []}},
 		{"type": "block.basic-block", "data": {"x": 27, "y": 2, "rotation": 0, "groups": []}},
@@ -316,10 +315,11 @@
 		{"type": "death.basic-spike", "data": {"x": 23, "y": 12, "rotation": 270, "groups": []}},
 		{"type": "death.basic-spike", "data": {"x": 23, "y": 13, "rotation": 270, "groups": []}},
 		{"type": "death.basic-spike", "data": {"x": 23, "y": 14, "rotation": 270, "groups": []}},
-		{"type": "death.basic-spike", "data": {"x": 22, "y": 14, "rotation": 180, "groups": []}}
+		{"type": "death.basic-spike", "data": {"x": 22, "y": 14, "rotation": 180, "groups": []}},
+		{"type": "jump.pad.gravity", "data": {"x": 37, "y": 10, "rotation": 180, "groups": []}}
 	],
 	"completion": {
-		"percentage": 0,
+		"percentage": 100,
 		"coins": []
 	},
 	"deleted": false
