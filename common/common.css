@@ -19,6 +19,9 @@ body {
 	--stage-color: #007dff;
 	--floor-height: 25vh;
 	--move-amount: 0;
+	user-select: none;
+	-webkit-touch-callout: none; /* iOS Safari */
+	-webkit-user-select: none; /* Safari */
 	/* calc setup */
 	--camera-pos: calc(var(--move-amount) * var(--tile-size));
 	/* background */

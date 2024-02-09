@@ -13,6 +13,21 @@ if (window.viewType == undefined) {
 function map(n, in_min, in_max, out_min, out_max) {
 	return (n - in_min) * (out_max - out_min) / (in_max - in_min) + out_min;
 }
+/**
+ * @param {number} cx
+ * @param {number} cy
+ * @param {number} x
+ * @param {number} y
+ * @param {number} angle
+ */
+function rotatePoint(cx, cy, x, y, angle) {
+	var radians = (Math.PI / 180) * angle,
+		cos = Math.cos(radians),
+		sin = Math.sin(radians),
+		nx = (cos * (x - cx)) + (sin * (y - cy)) + cx,
+		ny = (cos * (y - cy)) - (sin * (x - cx)) + cy;
+	return [nx, ny];
+}
 
 
 
@@ -541,6 +556,67 @@ class DeathParticleExtra extends Particle {
 		if (this.size >= 5) this.destroy()
 	}
 }
+class OrbParticle extends Particle {
+	/**
+	 * @param {number} x
+	 * @param {number} y
+	 * @param {string} color
+	 */
+	constructor(x, y, color) {
+		super(x, y)
+		this.center = { x, y }
+		this.deg = Math.random() * 360
+		this.r = 0.6
+		this.vdeg = 0
+		this.vr = 0
+		this.extraStyles[0] = `background: ${color};`
+		this.extraStyles[1] = `border-radius: 0%;`
+		this.extraStyles[2] = `--size: 0.1;`
+	}
+	/**
+	 * @param {number} amount
+	 */
+	tick(amount) {
+		// Update position based on velocity
+		this.deg += this.vdeg * amount
+		this.r += this.vr * amount
+		// Calculate position
+		var pos = rotatePoint(this.center.x, this.center.y, this.center.x - this.r, this.center.y, this.deg)
+		this.x = pos[0]
+		this.y = pos[1]
+		// Accelerate
+		this.vdeg += 2 * amount
+		this.vr -= 0.01 * amount
+		// Finish
+		super.tick(amount)
+		if (this.r <= 0) this.destroy()
+	}
+}
+class OrbActivateParticle extends Particle {
+	/**
+	 * @param {number} x
+	 * @param {number} y
+	 * @param {string} color
+	 */
+	constructor(x, y, color) {
+		super(x, y)
+		this.center = { x, y }
+		this.r = 0.75
+		this.v = 0
+		this.extraStyles[0] = `background: ${color};`
+		this.extraStyles[2] = `--size: ${this.r * 2}; opacity: 0.5;`
+	}
+	/**
+	 * @param {number} amount
+	 */
+	tick(amount) {
+		this.v -= 0.001
+		this.r += this.v
+		this.extraStyles[2] = `--size: ${this.r * 2}; opacity: ${map(this.r, 0.75, 0, 0.75, 0)};`
+		super.tick(amount)
+		if (this.r <= 0) this.destroy()
+	}
+}
 class LevelCompleteSign extends Particle {
 	constructor() {
 		super(0, 0)
@@ -705,23 +781,8 @@ class Rect {
 	 * @param {number} centerY
 	 */
 	rotate(amount, centerX, centerY) {
-		/**
-		 * @param {number} cx
-		 * @param {number} cy
-		 * @param {number} x
-		 * @param {number} y
-		 * @param {number} angle
-		 */
-		function rotate(cx, cy, x, y, angle) {
-			var radians = (Math.PI / 180) * angle,
-				cos = Math.cos(radians),
-				sin = Math.sin(radians),
-				nx = (cos * (x - cx)) + (sin * (y - cy)) + cx,
-				ny = (cos * (y - cy)) - (sin * (x - cx)) + cy;
-			return [nx, ny];
-		}
-		var a = rotate(centerX, centerY, this.x, this.y, amount)
-		var b = rotate(centerX, centerY, this.x + this.w, this.y + this.h, amount)
+		var a = rotatePoint(centerX, centerY, this.x, this.y, amount)
+		var b = rotatePoint(centerX, centerY, this.x + this.w, this.y + this.h, amount)
 		return Rect.fromPoints(a[0], a[1], b[0], b[1])
 	}
 	hasInvalid() {
@@ -803,8 +864,12 @@ class Tile extends SceneItem {
 	 * @param {number} amount
 	 */
 	tick(amount) {
-		if (viewType == "game") this.collide()
-		super.tick(amount)
+		if (Math.abs(this.x - view.player.x) < 40) {
+			if (viewType == "game") {
+				this.collide()
+			}
+			super.tick(amount)
+		}
 	}
 	collide() {}
 }
@@ -932,8 +997,16 @@ class Orb extends Tile {
 	 * @param {string[]} groups
 	 */
 	constructor(x, y, rotation, groups) {
-		super(x, y, 1, 1, rotation, groups)
+		var ds = 1
+		var particles = false
+		if (view instanceof GameView) {
+			ds = 0.5
+			particles = true
+		}
+		super(x, y, ds, ds, rotation, groups)
 		this.timeout = 0
+		this.hasParticles = particles
+		this.particleColor = "yellow"
 	}
 	/**
 	 * @param {number} amount
@@ -941,6 +1014,10 @@ class Orb extends Tile {
 	tick(amount) {
 		if (this.timeout > 0) this.timeout -= amount
 		super.tick(amount)
+		// Spawn particles
+		if (this.hasParticles && Math.random() < amount) {
+			view.particles.push(new OrbParticle(this.x + 0.5, this.y + 0.5, this.particleColor))
+		}
 	}
 	collide() {
 		if (this.timeout > 0) return
@@ -952,6 +1029,7 @@ class Orb extends Tile {
 			var target = this
 			view.player.specialJump = () => {
 				target.timeout = 10
+				view.particles.push(new OrbActivateParticle(target.x + 0.5, target.y + 0.5, target.particleColor))
 				target.activate()
 			}
 		}
@@ -981,6 +1059,7 @@ class GravityOrb extends Orb {
 	 */
 	constructor(x, y, rotation, groups) {
 		super(x, y, rotation, groups)
+		this.particleColor = "cyan"
 	}
 	activate() {
 		view.player.gravity *= -1
@@ -996,6 +1075,7 @@ class BlackOrb extends Orb {
 	 */
 	constructor(x, y, rotation, groups) {
 		super(x, y, rotation, groups)
+		this.particleColor = "black"
 	}
 	activate() {
 		view.player.vy += view.player.gravity * -0.7
