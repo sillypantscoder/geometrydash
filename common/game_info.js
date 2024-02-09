@@ -219,7 +219,7 @@ class Player extends SceneItem {
 		var margin = 0.2
 		return {
 			death: this.getGeneralRect().relative(margin, margin, 1 - (margin * 2), 1 - (margin * 2)),
-			move: this.getGeneralRect().relative(0, 0, 1, margin)
+			move: this.gravity > 0 ? this.getGeneralRect().relative(0, 0, 1, margin) : this.getGeneralRect().relative(0, 1 - margin, 1, margin)
 		}
 	}
 	/**
@@ -351,13 +351,20 @@ class CubeMode extends GameMode {
 			this.player.rotation = (targetRotation + (this.player.rotation * 2)) / 3
 			if (this.player.gravity < 0) {
 				view.particles.push(new SlideParticle(this.player.x, this.player.y + 1))
+				var ph = this.player.getGeneralRect().h
+				if (this.player.y + ph > this.player.groundHeight) {
+					this.player.y -= 0.1
+					if (this.player.y + ph < this.player.groundHeight) {
+						this.player.y = this.player.groundHeight - ph
+					}
+				}
 			} else {
 				view.particles.push(new SlideParticle(this.player.x, this.player.y))
-			}
-			if (this.player.y < this.player.groundHeight) {
-				this.player.y += 0.1
-				if (this.player.y > this.player.groundHeight) {
-					this.player.y = this.player.groundHeight
+				if (this.player.y < this.player.groundHeight) {
+					this.player.y += 0.1
+					if (this.player.y > this.player.groundHeight) {
+						this.player.y = this.player.groundHeight
+					}
 				}
 			}
 		} else {
@@ -705,11 +712,11 @@ class RectDisplay extends Particle {
 	 * @param {string} color
 	 */
 	constructor(rect, color) {
-		super(rect.x, rect.y)
+		super(rect.x, rect.y + 0.5)
 		this.elm.classList.remove("particle")
 		// this.elm.classList.add(`rect-${rect.x}-${rect.y}-${rect.w}-${rect.h}`)
 		this.extraStyles[0] = `background: ${color};`
-		this.extraStyles[2] = `bottom: calc(25% + calc(${rect.y} * var(--tile-size))); left: calc(calc(${rect.x} * var(--tile-size)) + calc(-1 * calc(var(--move-amount) * var(--tile-size)))); width: calc(${rect.w} * var(--tile-size)); height: calc(${rect.h} * var(--tile-size));`
+		this.extraStyles[2] = `bottom: calc(25% + calc(${rect.y + 0.5} * var(--tile-size))); left: calc(calc(${rect.x} * var(--tile-size)) + calc(-1 * calc(var(--move-amount) * var(--tile-size)))); width: calc(${rect.w} * var(--tile-size)); height: calc(${rect.h} * var(--tile-size));`
 		this.time = 0
 	}
 	/**
@@ -873,14 +880,14 @@ class Tile extends SceneItem {
 	getEdit() {
 		return [
 			`<div><button onclick="editing.destroy(); view.tiles.splice(view.tiles.indexOf(editing), 1); deselect();">Remove Tile</button></div>`,
-			`<div>Tile Rotation: <select oninput="editing.rotation = Number(this.value); editing.tick();">
+			`<div>Tile Rotation: <select oninput="editing.rotation = Number(this.value); SceneItem.prototype.tick.call(editing, 1);">
 	<option value="0"${this.rotation==0 ? " selected" : ""}>&nbsp;&uarr; 0</option>
 	<option value="90"${this.rotation==90 ? " selected" : ""}>&rarr; 90</option>
 	<option value="180"${this.rotation==180 ? " selected" : ""}>&nbsp;&darr; 180</option>
 	<option value="270"${this.rotation==270 ? " selected" : ""}>&larr; 270</option>
 </select></div>`,
-			`<div>X: <input type="number" value="${this.x}" min="0" oninput="editing.x = this.valueAsNumber; editing.tick();"></div>`,
-			`<div>Y: <input type="number" value="${this.y}" min="0" oninput="editing.y = this.valueAsNumber; editing.tick();"></div>`
+			`<div>X: <input type="number" value="${this.x}" min="0" oninput="editing.x = this.valueAsNumber; SceneItem.prototype.tick.call(editing, 1);"></div>`,
+			`<div>Y: <input type="number" value="${this.y}" min="0" oninput="editing.y = this.valueAsNumber; SceneItem.prototype.tick.call(editing, 1);"></div>`
 		]
 	}
 	getRect() {
@@ -914,7 +921,11 @@ class TileBlock extends Tile {
 		var thisRect = this.getRect().rotate(this.rotation, this.x + 0.5, this.y + 0.5)
 		if (playerRects.move.colliderect(thisRect)) {
 			// If the player is almost on top of this block, push them.
-			view.player.groundHeight = thisRect.y + thisRect.h
+			if (view.player.gravity > 0) {
+				view.player.groundHeight = thisRect.y + thisRect.h
+			} else {
+				view.player.groundHeight = thisRect.y
+			}
 		}
 		if (playerRects.death.colliderect(thisRect)) {
 			// If the player is right in the middle of this, they die.
@@ -1127,8 +1138,8 @@ class StartPosBlock extends Tile {
 	getEdit() {
 		return [
 			`<div><button onclick="editing.destroy(); view.tiles.splice(view.tiles.indexOf(editing), 1); deselect();">Remove Tile</button></div>`,
-			`<div>X: <input type="number" value="${this.x}" min="0" oninput="editing.x = Math.round(this.valueAsNumber); editing.tick();"></div>`,
-			`<div>Y: <input type="number" value="${this.y}" min="0" oninput="editing.y = Math.round(this.valueAsNumber); editing.tick();"></div>`
+			`<div>X: <input type="number" value="${this.x}" min="0" oninput="editing.x = Math.round(this.valueAsNumber); SceneItem.prototype.tick.call(editing, 1);"></div>`,
+			`<div>Y: <input type="number" value="${this.y}" min="0" oninput="editing.y = Math.round(this.valueAsNumber); SceneItem.prototype.tick.call(editing, 1);"></div>`
 		]
 	}
 }
@@ -1520,7 +1531,7 @@ class View {
 			var c = type.load(type, obj.data)
 			this.tiles.push(c)
 			this.stageWidth = Math.max(this.stageWidth, c.x + 5)
-			if (viewType == "editor") c.tick(1)
+			if (viewType == "editor") SceneItem.prototype.tick.call(c, 1)
 			else if (c instanceof Coin) {
 				var has_coin = levelMeta.completion.coins[coin_no]
 				coin_no += 1
