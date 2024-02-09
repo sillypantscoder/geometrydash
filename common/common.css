@@ -24,6 +24,7 @@ body {
 	-webkit-user-select: none; /* Safari */
 	/* calc setup */
 	--camera-pos: calc(var(--move-amount) * var(--tile-size));
+	transform: translateX(calc(-1 * var(--camera-pos)));
 	/* background */
 	background: url(../assets/game/Background.png), var(--bg-color);
 	background-size: cover;
@@ -45,8 +46,7 @@ body {
 	/* X calculation */
 	--world-x: calc(var(--x) * var(--tile-size));
 	--offset-from-tile-width: calc(calc(calc(var(--dw) - 1) / 2) * var(--tile-size));
-	--display-top-left: calc(var(--world-x) - var(--offset-from-tile-width));
-	left: calc(var(--display-top-left) + calc(-1 * var(--camera-pos)));
+	left: calc(var(--world-x) - var(--offset-from-tile-width));
 	/* Size */
 	width: calc(var(--dw) * var(--tile-size));
 	height: calc(var(--dh) * var(--tile-size));

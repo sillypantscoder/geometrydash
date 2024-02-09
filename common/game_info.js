@@ -49,15 +49,16 @@ class SceneItem {
 		this.rotation = 0
 		/** @type {(string | undefined)[]} */
 		this.extraStyles = []
+		/** @type {boolean} */
+		this.needsRedraw = true
 	}
 	/**
 	 * @param {number} _amount
 	 */
 	tick(_amount) {
-		if (this == window.editing) {
-			this.elm.setAttribute("style", `--x: ${this.x}; --y: ${this.y}; transform: rotate(${this.rotation}deg); box-shadow: 0px 7px 15px 5px orange; outline: 1px solid red;${this.extraStyles.map((v) => v==undefined ? "" : ` ${v}`).join("")}`)
-		} else {
+		if (this.needsRedraw) {
 			this.elm.setAttribute("style", `--x: ${this.x}; --y: ${this.y}; transform: rotate(${this.rotation}deg);${this.extraStyles.map((v) => v==undefined ? "" : ` ${v}`).join("")}`)
+			this.needsRedraw = false
 		}
 	}
 	destroy() {
@@ -243,6 +244,7 @@ class Player extends SceneItem {
 		// Update styles
 		this.extraStyles[0] = "background: url(../assets/game/player/" + getLocationFromObject("gamemode", this.mode) + ".svg);"
 		this.extraStyles[1] = `transform: rotate(${this.rotation}deg) scaleY(${this.gravity});`
+		this.needsRedraw = true;
 		super.tick(amount)
 	}
 	/**
@@ -448,6 +450,13 @@ class Particle extends SceneItem {
 		this.extraStyles[0] = `background: radial-gradient(circle, #0F53 0%, #0F5F 100%);`
 		this.extraStyles[1] = `border-radius: 50%;`
 		this.extraStyles[2] = `--size: 0.2;`
+	}
+	/**
+	 * @param {number} amount
+	 */
+	tick(amount) {
+		this.needsRedraw = true
+		super.tick(amount)
 	}
 	destroy() {
 		super.destroy()
@@ -805,7 +814,7 @@ class Tile extends SceneItem {
 	constructor(x, y, dw, dh, rotation, groups) {
 		super(x, y)
 		this.display_size = [dw, dh]
-		this.extraStyles[0] = `background: url(../assets/tile/${getLocationFromObject("tile", this).join("/")}.svg);`
+		this.extraStyles[0] = `background: url(../assets/tile/${getLocationFromObject("tile", this).join("/")}.svg) no-repeat;`
 		this.extraStyles[1] = `--dw: ${dw}; --dh: ${dh};`
 		this.rotation = rotation
 		this.groups = groups
@@ -1150,7 +1159,7 @@ class Coin extends Tile {
 	 * @param {number} amount
 	 */
 	tick(amount) {
-		if (this.alreadygot) this.extraStyles[0] = `background: url(../assets/tile/special/coin-alreadygot.svg);`
+		if (this.alreadygot) this.extraStyles[0] = `background: url(../assets/tile/special/coin-alreadygot.svg) no-repeat;`
 		this.extraStyles[1] = `--dw: var(--tsize); --dh: var(--tsize);`
 		this.extraStyles[2] = `--tsize: ${Math.sqrt(Math.sqrt(this.activated + 1))};`
 		this.extraStyles[3] = `opacity: ${map(this.activated, 0, 100, 1, 0)};`
