@@ -198,8 +198,8 @@ class Player extends SceneItem {
 		this.elm.classList.add("player")
 		/** @type {number} */
 		this.vy = 0
-		/** @type {boolean} */
-		this.onGround = false
+		/** @type {number | null} */
+		this.groundHeight = null
 		/** @type {null | (() => void)} */
 		this.specialJump = null
 		/** @type {number} */
@@ -233,12 +233,12 @@ class Player extends SceneItem {
 		// console.log(4, this.x, this.y, this.vy)
 		this.y += this.vy * amount
 		// console.log(5, this.x, this.y, this.vy)
-		this.onGround = false
+		this.groundHeight = null
 		this.specialJump = null
 		// Check for collision with stage
 		if (this.y < 0) {
 			this.y = 0
-			this.onGround = true
+			this.groundHeight = 0
 		}
 		this.mode.getMax()
 		// Update styles
@@ -252,7 +252,7 @@ class Player extends SceneItem {
 	 */
 	finishTick(amount) {
 		if (this.deathTime > 0) return
-		if (this.onGround) {
+		if (this.groundHeight != null) {
 			if (this.gravity < 0) {
 				if (this.vy > 0) this.vy = 0
 			} else {
@@ -336,12 +336,19 @@ class CubeMode extends GameMode {
 	 * @param {number} amount
 	 */
 	checkJump(amount) {
-		if (this.player.onGround) {
-			this.player.rotation = 0
+		if (this.player.groundHeight != null) {
+			var targetRotation = (Math.floor((this.player.rotation - 45) / 90) * 90) + 90
+			this.player.rotation = (targetRotation + (this.player.rotation * 2)) / 3
 			if (this.player.gravity < 0) {
 				view.particles.push(new SlideParticle(this.player.x, this.player.y + 1))
 			} else {
 				view.particles.push(new SlideParticle(this.player.x, this.player.y))
+			}
+			if (this.player.y < this.player.groundHeight) {
+				this.player.y += 0.1
+				if (this.player.y > this.player.groundHeight) {
+					this.player.y = this.player.groundHeight
+				}
 			}
 		} else {
 			this.player.rotation += 5 * amount * this.player.gravity
@@ -349,7 +356,7 @@ class CubeMode extends GameMode {
 		if (view.isPressing) {
 			if (this.player.specialJump != null) {
 				this.player.specialJump()
-			} else if (this.player.onGround) {
+			} else if (this.player.groundHeight != null) {
 				this.player.vy = 0.34 * this.player.gravity
 			}
 		}
@@ -393,7 +400,7 @@ class BallMode extends GameMode {
 	 */
 	checkJump(amount) {
 		this.player.rotation += 10 * amount * this.player.gravity
-		if (this.player.onGround || this.player.y == 14) {
+		if (this.player.groundHeight != null || this.player.y == 14) {
 			if (this.player.gravity < 0) {
 				view.particles.push(new SlideParticle(this.player.x + 0.3, this.player.y + 1))
 			} else {
@@ -403,7 +410,7 @@ class BallMode extends GameMode {
 		if (view.isPressing) {
 			if (this.player.specialJump != null) {
 				this.player.specialJump()
-			} else if (this.player.onGround) {
+			} else if (this.player.groundHeight != null) {
 				this.player.gravity *= -1
 				view.isPressing = false
 			}
@@ -896,26 +903,15 @@ class TileBlock extends Tile {
 		var playerRect = view.player.getRect()
 		var thisRect = this.getRect().rotate(this.rotation, this.x + 0.5, this.y + 0.5)
 		if (playerRect.colliderect(thisRect)) {
-			// if (thisRect.y - (playerRect.y + playerRect.h) > -0.1) return
-			var yIncrease = (thisRect.y + thisRect.h) - playerRect.y
-			if (view.player.gravity < 0) yIncrease = (playerRect.y + playerRect.h) - thisRect.y
-			var playerDies = yIncrease >= 0.5
-			if (! playerDies) {
-				// Player is fine
-				view.player.y += yIncrease * view.player.gravity
-				view.player.onGround = true
-				// this.enabled = true
-			} else if (thisRect.y + 0.5 > playerRect.y + playerRect.h) {
-				view.player.mode.hitCeiling(thisRect.y - playerRect.h)
-				// this.enabled = true
-			} else {
-				if (debugMode) {
-					setTimeout((/** @type {Rect} */ thisRect, /** @type {Rect} */ playerRect, /** @type {number} */ yIncrease) => {
-						view.particles.push(new RectDisplay(new Rect(thisRect.x, playerRect.y, thisRect.w, yIncrease), "pink"))
-					}, 100, thisRect, playerRect, yIncrease)
-				}
+			// If the player is almost on top of this block, push them.
+			var playerBottom = playerRect.relative(0, 0, 1, 0.1)
+			if (playerBottom.colliderect(thisRect)) {
+				view.player.groundHeight = thisRect.y + thisRect.h
+			}
+			// If the player is right in the middle of this, they die.
+			var playerInstantDeath = playerRect.relative(0, 0.1, 1, 0.8)
+			if (playerInstantDeath.colliderect(thisRect)) {
 				view.player.destroy()
-				// this.enabled = true
 			}
 		}
 	}
@@ -931,7 +927,7 @@ class TileDeath extends Tile {
 		super(x, y, 1, 1, rotation, groups)
 	}
 	collide() {
-		var playerRect = view.player.getRect()
+		var playerRect = view.player.getRect().relative(0.1, 0.1, 0.8, 0.8)
 		var thisRect = this.getRect().rotate(this.rotation, this.x + 0.5, this.y + 0.5)
 		if (playerRect.colliderect(thisRect)) {
 			// Player dies!
