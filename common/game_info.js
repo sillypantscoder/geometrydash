@@ -209,8 +209,18 @@ class Player extends SceneItem {
 		/** @type {GameMode} */
 		this.mode = new CubeMode(this);
 	}
-	getRect() {
+	getGeneralRect() {
 		return this.mode.getRect()
+	}
+	getDeathRect() {
+		return this.getGeneralRect().relative(0.1, 0.1, 0.8, 0.8)
+	}
+	getBlockRects() {
+		var margin = 0.2
+		return {
+			death: this.getGeneralRect().relative(margin, margin, 1 - (margin * 2), 1 - (margin * 2)),
+			move: this.getGeneralRect().relative(0, 0, 1, margin)
+		}
 	}
 	/**
 	 * @param {number} amount
@@ -714,7 +724,7 @@ class RectDisplay extends Particle {
 	/** @param {Tile | Player} item */
 	static create(item) {
 		var color = "lime"
-		var r = item.getRect()
+		var r = item instanceof Player ? item.getDeathRect() : item.getRect()
 		if (r.hasInvalid()) return
 		if (item instanceof Player) return//color = "transparent;outline: 1px solid yellow;"
 		else r = r.rotate(item.rotation, item.x + 0.5, item.y + 0.5)
@@ -900,19 +910,15 @@ class TileBlock extends Tile {
 		super(x, y, 1, 1, rotation, groups)
 	}
 	collide() {
-		var playerRect = view.player.getRect()
+		var playerRects = view.player.getBlockRects()
 		var thisRect = this.getRect().rotate(this.rotation, this.x + 0.5, this.y + 0.5)
-		if (playerRect.colliderect(thisRect)) {
+		if (playerRects.move.colliderect(thisRect)) {
 			// If the player is almost on top of this block, push them.
-			var playerBottom = playerRect.relative(0, 0, 1, 0.1)
-			if (playerBottom.colliderect(thisRect)) {
-				view.player.groundHeight = thisRect.y + thisRect.h
-			}
+			view.player.groundHeight = thisRect.y + thisRect.h
+		}
+		if (playerRects.death.colliderect(thisRect)) {
 			// If the player is right in the middle of this, they die.
-			var playerInstantDeath = playerRect.relative(0, 0.1, 1, 0.8)
-			if (playerInstantDeath.colliderect(thisRect)) {
-				view.player.destroy()
-			}
+			view.player.destroy()
 		}
 	}
 }
@@ -927,14 +933,14 @@ class TileDeath extends Tile {
 		super(x, y, 1, 1, rotation, groups)
 	}
 	collide() {
-		var playerRect = view.player.getRect().relative(0.1, 0.1, 0.8, 0.8)
+		var playerRect = view.player.getDeathRect().relative(0.1, 0.1, 0.8, 0.8)
 		var thisRect = this.getRect().rotate(this.rotation, this.x + 0.5, this.y + 0.5)
 		if (playerRect.colliderect(thisRect)) {
 			// Player dies!
 			view.player.destroy()
 			if (debugMode) {
 				setTimeout(() => {
-					view.particles.push(new RectDisplay(view.player.getRect(), "orange"))
+					view.particles.push(new RectDisplay(view.player.getDeathRect(), "orange"))
 				}, 100)
 			}
 			this.enabled = true
@@ -1026,7 +1032,7 @@ class Orb extends Tile {
 	}
 	collide() {
 		if (this.timeout > 0) return
-		var playerRect = view.player.getRect()
+		var playerRect = view.player.getGeneralRect()
 		var thisRect = this.getRect().rotate(this.rotation, this.x + 0.5, this.y + 0.5)
 		if (playerRect.colliderect(thisRect)) {
 			this.enabled = true
@@ -1144,7 +1150,7 @@ class Coin extends Tile {
 		if (this.activated > 0) {
 			return
 		}
-		var playerRect = view.player.getRect()
+		var playerRect = view.player.getGeneralRect()
 		var thisRect = this.getRect()
 		if (playerRect.colliderect(thisRect)) {
 			this.activated = 1
@@ -1190,7 +1196,7 @@ class Trigger extends Tile {
 		]
 	}
 	hasCollision() {
-		var playerRect = view.player.getRect()
+		var playerRect = view.player.getGeneralRect()
 		var thisRect = this.getRect()
 		if (this.needsTouch) {
 			return playerRect.colliderect(thisRect)
@@ -1312,7 +1318,7 @@ class Pad extends Tile {
 	}
 	collide() {
 		if (this.timeout > 0) return
-		var playerRect = view.player.getRect()
+		var playerRect = view.player.getGeneralRect()
 		var thisRect = this.getRect().rotate(this.rotation, this.x + 0.5, this.y + 0.5)
 		if (playerRect.colliderect(thisRect)) {
 			this.enabled = true
@@ -1388,7 +1394,7 @@ class Portal extends Tile {
 		return super.getRect().relative(0, (this.realheight * -0.5) + 0.5, 1, this.realheight);
 	}
 	collide() {
-		var playerRect = view.player.getRect()
+		var playerRect = view.player.getGeneralRect()
 		var thisRect = this.getRect()
 		if (playerRect.colliderect(thisRect)) {
 			this.enabled = true
