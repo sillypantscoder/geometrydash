@@ -342,7 +342,7 @@ class GameMode {
 	 */
 	checkJump(_amount) {}
 	getMax() {
-		if (this.player.y > 40) {
+		if (this.player.y > view.stageHeight) {
 			this.player.destroy()
 		}
 	}
@@ -1556,6 +1556,7 @@ class View {
 			var c = type.load(type, obj.data)
 			this.tiles.push(c)
 			this.stageWidth = Math.max(this.stageWidth, c.x + 5)
+			this.stageHeight = Math.max(this.stageHeight, c.y + 15)
 			if (viewType == "editor") SceneItem.prototype.tick.call(c, 1)
 			else if (c instanceof Coin) {
 				var has_coin = levelMeta.completion.coins[coin_no]
@@ -1600,6 +1601,7 @@ class GameView extends View {
 		this.isPressingLeft = false
 		this.isPressingRight = false
 		this.stageWidth = 0
+		this.stageHeight = 0
 		this.hasWon = false
 		this.attempt = 0
 		// Add event listeners

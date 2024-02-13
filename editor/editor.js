@@ -10,7 +10,8 @@ function on_click(evt) {
 	var pos = [
 		// @ts-ignore
 		Math.floor(evt.clientX / 20) + document.querySelector("#viewX").valueAsNumber,
-		Math.floor(((window.innerHeight * (1 - floorHeight)) - evt.clientY) / 20) - 1
+		// @ts-ignore
+		Math.floor(((window.innerHeight * (1 - floorHeight)) - evt.clientY) / 20) + document.querySelector("#viewY").valueAsNumber
 	]
 	if (pos[1] < 0) return
 	if (pos[0] < 0) return
@@ -197,7 +198,9 @@ function editLevelSettings() {
 	parent.children[1].children[1].value = levelMeta.description
 }
 function updateViewPos() {
+	// @ts-ignore
 	var x = document.querySelector("#viewX").valueAsNumber
+	// @ts-ignore
 	var y = document.querySelector("#viewY").valueAsNumber
 	document.querySelector('#scene').setAttribute('style', `--move-amount-x: ${x}; --move-amount-y: ${y};`)
 }
