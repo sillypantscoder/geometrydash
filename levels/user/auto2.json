@@ -4,7 +4,8 @@
 	"settings": {
 		"colorbg": [0, 125, 255],
 		"colorstage": [0, 125, 255],
-		"gamemode": "cube"
+		"gamemode": "cube",
+		"platformer": false
 	},
 	"objects": [
 		{"type": "block.basic-block", "data": {"x": 0, "y": 2, "rotation": 0, "groups": []}},
@@ -90,7 +91,7 @@
 		{"type": "block.basic-block", "data": {"x": 30, "y": 4, "rotation": 0, "groups": []}}
 	],
 	"completion": {
-		"percentage": 0,
+		"percentage": 100,
 		"coins": []
 	},
 	"deleted": false

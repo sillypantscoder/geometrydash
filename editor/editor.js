@@ -10,7 +10,7 @@ function on_click(evt) {
 	var pos = [
 		// @ts-ignore
 		Math.floor(evt.clientX / 20) + document.querySelector("#viewX").valueAsNumber,
-		Math.floor(((window.innerHeight * (1 - floorHeight)) - evt.clientY) / 20)
+		Math.floor(((window.innerHeight * (1 - floorHeight)) - evt.clientY) / 20) - 1
 	]
 	if (pos[1] < 0) return
 	if (pos[0] < 0) return
@@ -33,7 +33,8 @@ function on_click(evt) {
 			var tile = view.tiles[i]
 			if (tile.x == pos[0] && tile.y == pos[1]) {
 				tile.rotation = (tile.rotation + 90) % 360
-				tile.tick(1)
+				tile.needsRedraw = true
+				SceneItem.prototype.tick.call(tile, 1)
 			}
 		}
 	} else if (selectedBlock == ".edit") {
@@ -53,7 +54,7 @@ function on_click(evt) {
 		/** @type {Tile} */
 		var newTile = type.load(type, args)
 		view.tiles.push(newTile)
-		newTile.tick(1)
+		SceneItem.prototype.tick.call(newTile, 1)
 	}
 }
 // @ts-ignore
@@ -66,7 +67,8 @@ function editTile(tile) {
 	var parent = document.querySelector(".editing")
 	parent.removeAttribute("style")
 	parent.innerHTML = tile.getEdit().join("")
-	tile.tick(1)
+	tile.needsRedraw = true
+	SceneItem.prototype.tick.call(tile, 1)
 }
 /** @param {Tile[]} tiles */
 function editTileList(tiles) {
@@ -92,7 +94,7 @@ function deselect() {
 	if (editing instanceof Tile) {
 		var tile = editing
 		editing = null
-		tile.tick(1)
+		SceneItem.prototype.tick.call(tile, 1)
 	}
 	if (editing != null) editing = null
 	var parent = document.querySelector(".editing")
@@ -147,35 +149,35 @@ function saveLevel() {
 		}))
 	})
 }
-async function publishLevel() {
-	await new Promise((resolve) => {
-		var coins = []
-		for (var i = 0; i < view.tiles.length; i++) {
-			var t = view.tiles[i]
-			if (t instanceof Coin) {
-				coins.push(false)
-			}
-		}
-		var x = new XMLHttpRequest()
-		x.open("POST", "/publish")
-		x.addEventListener("loadend", () => resolve(x.responseText))
-		x.send(JSON.stringify({
-			"name": levelName,
-			"level": {
-				"name": levelMeta.name,
-				"description": levelMeta.description,
-				"settings": levelMeta.settings,
-				"objects": getExport(),
-				"completion": {
-					"percentage": 0,
-					"coins": coins
-				},
-				"deleted": false
-			}
-		}))
-	})
-	location.replace("../home/home.html")
-}
+// async function publishLevel() {
+// 	await new Promise((resolve) => {
+// 		var coins = []
+// 		for (var i = 0; i < view.tiles.length; i++) {
+// 			var t = view.tiles[i]
+// 			if (t instanceof Coin) {
+// 				coins.push(false)
+// 			}
+// 		}
+// 		var x = new XMLHttpRequest()
+// 		x.open("POST", "/publish")
+// 		x.addEventListener("loadend", () => resolve(x.responseText))
+// 		x.send(JSON.stringify({
+// 			"name": levelName,
+// 			"level": {
+// 				"name": levelMeta.name,
+// 				"description": levelMeta.description,
+// 				"settings": levelMeta.settings,
+// 				"objects": getExport(),
+// 				"completion": {
+// 					"percentage": 0,
+// 					"coins": coins
+// 				},
+// 				"deleted": false
+// 			}
+// 		}))
+// 	})
+// 	location.replace("../home/home.html")
+// }
 function editLevelSettings() {
 	editing = "settings"
 	var parent = document.querySelector(".editing")

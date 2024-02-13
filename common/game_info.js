@@ -174,8 +174,10 @@ class Stage extends SceneItem {
 	tick(amount) {
 		this.bgColor.tick(amount)
 		this.stageColor.tick(amount)
+		/** @type {HTMLDivElement} */
 		// @ts-ignore
-		this.elm.parentNode.setAttribute("style", `--move-amount: ${Math.max(0, view.player.x - 5)}; --bg-color: ${this.bgColor.getHex()}; --stage-color: ${this.stageColor.getHex()};`)
+		var viewport = this.elm.parentNode
+		viewport.setAttribute("style", `--move-amount: ${Math.max(0, view.player.x - 20)}; --bg-color: ${this.bgColor.getHex()}; --stage-color: ${this.stageColor.getHex()};`)
 		super.tick(amount)
 	}
 	reset() {
@@ -218,7 +220,9 @@ class Player extends SceneItem {
 	getBlockRects() {
 		var margin = 0.2
 		return {
-			death: this.getGeneralRect().relative(margin, margin, 1 - (margin * 2), 1 - (margin * 2)),
+			death: levelMeta.settings.platformer ?
+				this.getGeneralRect().relative(0, margin, 1, 1 - (margin * 2)) :
+				this.getGeneralRect().relative(margin, margin, 1 - (margin * 2), 1 - (margin * 2)),
 			move: this.gravity > 0 ? this.getGeneralRect().relative(0, 0, 1, margin) : this.getGeneralRect().relative(0, 1 - margin, 1, margin)
 		}
 	}
@@ -236,7 +240,12 @@ class Player extends SceneItem {
 		}
 		// Move forwards
 		// console.log(2, this.x, this.y, this.vy)
-		this.x += 0.1 * amount
+		if (levelMeta.settings.platformer) {
+			if (view.isPressingLeft) this.x -= 0.1 * amount
+			if (view.isPressingRight) this.x += 0.1 * amount
+		} else {
+			this.x += 0.1 * amount
+		}
 		// Fall
 		// console.log(3, this.x, this.y, this.vy)
 		this.mode.gravity(amount)
@@ -285,7 +294,7 @@ class Player extends SceneItem {
 	respawn() {
 		document.querySelector("#scene").appendChild(this.elm)
 		this.setStartMode()
-		this.x = -3
+		this.x = levelMeta.settings.platformer ? 0 : -3
 		this.y = 0
 		this.vy = 0
 		this.gravity = 1
@@ -919,17 +928,26 @@ class TileBlock extends Tile {
 	collide() {
 		var playerRects = view.player.getBlockRects()
 		var thisRect = this.getRect().rotate(this.rotation, this.x + 0.5, this.y + 0.5)
-		if (playerRects.move.colliderect(thisRect)) {
+		if (playerRects.death.colliderect(thisRect)) {
+			if (! levelMeta.settings.platformer) {
+				// If the player is right in the middle of this, they die.
+				view.player.destroy()
+			} else {
+				if (playerRects.death.centerX() < thisRect.centerX()) {
+					// Player is to the left of this block
+					view.player.x = thisRect.x - playerRects.death.w
+				} else {
+					// Player is to the right of this block
+					view.player.x = thisRect.x + thisRect.w
+				}
+			}
+		} else if (playerRects.move.colliderect(thisRect)) {
 			// If the player is almost on top of this block, push them.
 			if (view.player.gravity > 0) {
 				view.player.groundHeight = thisRect.y + thisRect.h
 			} else {
 				view.player.groundHeight = thisRect.y
 			}
-		}
-		if (playerRects.death.colliderect(thisRect)) {
-			// If the player is right in the middle of this, they die.
-			view.player.destroy()
 		}
 	}
 }
@@ -1176,12 +1194,13 @@ class Coin extends Tile {
 		this.extraStyles[1] = `--dw: var(--tsize); --dh: var(--tsize);`
 		this.extraStyles[2] = `--tsize: ${Math.sqrt(Math.sqrt(this.activated + 1))};`
 		this.extraStyles[3] = `opacity: ${map(this.activated, 0, 100, 1, 0)};`
-		super.tick(amount)
 		if (this.activated > 0) {
+			this.needsRedraw = true
 			if (this.activated < 100) {
 				this.activated += amount
 			}
 		}
+		super.tick(amount)
 	}
 	trigger() {}
 }
@@ -1557,6 +1576,7 @@ class View {
 			levelMeta.settings.colorbg = level.settings.colorbg
 			levelMeta.settings.colorstage = level.settings.colorstage
 			levelMeta.settings.gamemode = level.settings.gamemode
+			levelMeta.settings.platformer = level.settings.platformer
 			if (view instanceof GameView) view.player.setStartMode()
 			view.stage.reset()
 			if (view.player) view.player.x = -999
@@ -1571,15 +1591,23 @@ class GameView extends View {
 		/** @type {Particle[]} */
 		this.particles = []
 		this.isPressing = false
+		this.isPressingLeft = false
+		this.isPressingRight = false
 		this.stageWidth = 0
 		this.hasWon = false
 		this.attempt = 0
 		// Add event listeners
 		document.addEventListener("keydown", (e) => {
 			if (e.key == " ") view.isPressing = true
+			if (e.key == "ArrowLeft") view.isPressingLeft = true
+			if (e.key == "ArrowRight") view.isPressingRight = true
+			if (e.key == "ArrowUp") view.isPressing = true
 		})
 		document.addEventListener("keyup", (e) => {
 			if (e.key == " ") view.isPressing = false
+			if (e.key == "ArrowLeft") view.isPressingLeft = false
+			if (e.key == "ArrowRight") view.isPressingRight = false
+			if (e.key == "ArrowUp") view.isPressing = false
 		})
 		document.addEventListener("mousedown", (e) => {
 			view.isPressing = true
@@ -1588,11 +1616,29 @@ class GameView extends View {
 			view.isPressing = false
 		})
 		document.addEventListener("touchstart", (e) => {
-			view.isPressing = true
+			view.handleTouches(e)
+		})
+		document.addEventListener("touchmove", (e) => {
+			view.handleTouches(e)
 		})
 		document.addEventListener("touchend", (e) => {
-			view.isPressing = false
+			view.handleTouches(e)
 		})
+	}
+	/**
+	 * @param {TouchEvent} e
+	 */
+	handleTouches(e) {
+		view.isPressingLeft = false
+		view.isPressing = false
+		view.isPressingRight = false
+		for (var i = 0; i < e.touches.length; i++) {
+			var t = e.touches[i]
+			var a = Math.floor(t.clientX / (window.innerWidth / 4))
+			if (a == 0) view.isPressingLeft = true
+			else if (a == 1) view.isPressingRight = true
+			else view.isPressing = true
+		}
 	}
 	win() {
 		this.hasWon = true
@@ -1738,7 +1784,8 @@ var levelMeta = {
 	"settings": {
 		"colorbg": [0, 125, 255],
 		"colorstage": [0, 125, 255],
-		"gamemode": "cube"
+		"gamemode": "cube",
+		"platformer": false
 	},
 	"completion": {
 		"percentage": 0,

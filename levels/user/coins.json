@@ -4,7 +4,8 @@
 	"settings": {
 		"colorbg": [0, 125, 255],
 		"colorstage": [0, 125, 255],
-		"gamemode": "ship"
+		"gamemode": "ship",
+		"platformer": false
 	},
 	"objects": [
 		{"type": "special.coin", "data": {"x": 2, "y": 5, "rotation": 0, "groups": []}},
@@ -45,8 +46,8 @@
 		{"type": "special.coin", "data": {"x": 15, "y": 1, "rotation": 0, "groups": []}}
 	],
 	"completion": {
-		"percentage": 0,
-		"coins": [false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false]
+		"percentage": 100,
+		"coins": [true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true]
 	},
 	"deleted": false
 }

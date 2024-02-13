@@ -1,7 +1,6 @@
 import typing
 import os
 import json
-import random
 
 def read_file(filename: str) -> bytes:
 	f = open(filename, "rb")
@@ -14,8 +13,8 @@ def write_file(filename: str, content: str):
 	f.write(content)
 	f.close()
 
-def format_level(t: dict):
-	def format_o(o):
+def format_level(t: dict[str, typing.Any]):
+	def format_o(o: dict[str, typing.Any]):
 		keys: list[str] = [*o["data"].keys()]
 		data = [f"""\"{k}\": {json.dumps(o["data"][k])}""" for k in keys]
 		return f"""{{"type": "{o["type"]}", "data": {{{', '.join(data)}}}}}"""
@@ -29,7 +28,8 @@ def format_level(t: dict):
 	"settings": {{
 		"colorbg": {json.dumps(t["settings"]["colorbg"])},
 		"colorstage": {json.dumps(t["settings"]["colorstage"])},
-		"gamemode": {json.dumps(t["settings"]["gamemode"])}
+		"gamemode": {json.dumps(t["settings"]["gamemode"])},
+		"platformer": {json.dumps(t["settings"]["platformer"])}
 	}},
 	"objects": [
 		{objects}
@@ -78,7 +78,7 @@ def get(path: str) -> HttpResponse:
 			"content": read_file(qpath[1:])
 		}
 	elif path == "/level_list/published":
-		data = []
+		data: list[dict[str, typing.Any]] = []
 		for name in os.listdir("levels/published"):
 			contents = json.loads(read_file("levels/published/" + name))
 			if contents["deleted"] == True: continue
