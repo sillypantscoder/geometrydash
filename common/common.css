@@ -18,12 +18,14 @@ body {
 	--bg-color: #007dff;
 	--stage-color: #007dff;
 	--floor-height: 25vh;
-	--move-amount: 0;
+	--move-amount-x: 0;
+	--move-amount-y: 0;
 	user-select: none;
 	-webkit-touch-callout: none; /* iOS Safari */
 	-webkit-user-select: none; /* Safari */
 	/* calc setup */
-	--camera-pos: calc(var(--move-amount) * var(--tile-size));
+	--camera-x: calc(var(--move-amount-x) * var(--tile-size));
+	--camera-y: calc(var(--move-amount-y) * var(--tile-size));
 	/* background */
 	background: url(../assets/game/Background.png), var(--bg-color);
 	background-size: cover;
@@ -41,12 +43,13 @@ body {
 	--tile-height-off-ground: calc(var(--y) * var(--tile-size));
 	--offset-from-tile-height: calc(calc(calc(var(--dh) - 1) / 2) * var(--tile-size));
 	--display-height-off-ground: calc(var(--tile-height-off-ground) - var(--offset-from-tile-height));
-	bottom: calc(var(--floor-height) + var(--display-height-off-ground));
+	--world-height: calc(var(--floor-height) + var(--display-height-off-ground));
+	bottom: calc(var(--world-height) + calc(-1 * var(--camera-y)));
 	/* X calculation */
 	--world-x: calc(var(--x) * var(--tile-size));
 	--offset-from-tile-width: calc(calc(calc(var(--dw) - 1) / 2) * var(--tile-size));
 	--display-top-left: calc(var(--world-x) - var(--offset-from-tile-width));
-	left: calc(var(--display-top-left) + calc(-1 * var(--camera-pos)));
+	left: calc(var(--display-top-left) + calc(-1 * var(--camera-x)));
 	/* Size */
 	width: calc(var(--dw) * var(--tile-size));
 	height: calc(var(--dh) * var(--tile-size));
@@ -56,10 +59,10 @@ body {
 	width: 100%;
 	height: var(--floor-height);
 	top: unset !important;
-	bottom: 0;
+	bottom: calc(-1 * var(--camera-y));
 	/* img */
 	background: url(../assets/game/Ground_Main.svg), var(--stage-color);
-	background-position-x: calc(-1 * calc(var(--move-amount) * var(--tile-size)));
+	background-position-x: calc(-1 * calc(var(--move-amount-x) * var(--tile-size)));
 	/* contents */
 	display: flex;
 	flex-direction: row;

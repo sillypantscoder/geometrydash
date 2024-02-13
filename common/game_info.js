@@ -167,6 +167,7 @@ class Stage extends SceneItem {
 		this.elm.classList.add("stage")
 		this.bgColor = InterpolatedColor.fromRGB(levelMeta.settings.colorbg)
 		this.stageColor = InterpolatedColor.fromRGB(levelMeta.settings.colorstage)
+		this.lastY = 0
 	}
 	/**
 	 * @param {number} amount
@@ -174,13 +175,18 @@ class Stage extends SceneItem {
 	tick(amount) {
 		this.bgColor.tick(amount)
 		this.stageColor.tick(amount)
+		var ty = view.player.y - 5
+		if (ty < 0) ty = 0
+		// var ypad = 4
+		this.lastY = ((this.lastY * 150) + ty) / 151
 		/** @type {HTMLDivElement} */
 		// @ts-ignore
 		var viewport = this.elm.parentNode
-		viewport.setAttribute("style", `--move-amount: ${Math.max(0, view.player.x - 20)}; --bg-color: ${this.bgColor.getHex()}; --stage-color: ${this.stageColor.getHex()};`)
+		viewport.setAttribute("style", `--move-amount-x: ${Math.max(0, view.player.x - 20)}; --move-amount-y: ${this.lastY}; --bg-color: ${this.bgColor.getHex()}; --stage-color: ${this.stageColor.getHex()};`)
 		super.tick(amount)
 	}
 	reset() {
+		this.lastY = 0
 		this.bgColor = InterpolatedColor.fromRGB(levelMeta.settings.colorbg)
 		this.stageColor = InterpolatedColor.fromRGB(levelMeta.settings.colorstage)
 		for (var i = 0; i < view.tiles.length; i++) {

@@ -196,6 +196,11 @@ function editLevelSettings() {
 	// @ts-ignore
 	parent.children[1].children[1].value = levelMeta.description
 }
+function updateViewPos() {
+	var x = document.querySelector("#viewX").valueAsNumber
+	var y = document.querySelector("#viewY").valueAsNumber
+	document.querySelector('#scene').setAttribute('style', `--move-amount-x: ${x}; --move-amount-y: ${y};`)
+}
 
 /**
  * @param {string[]} folder
