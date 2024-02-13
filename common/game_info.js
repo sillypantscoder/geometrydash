@@ -404,7 +404,6 @@ class ShipMode extends GameMode {
 	 */
 	checkJump(_amount) {
 		this.player.rotation = this.player.vy * -100
-		view.particles.push(new SlideParticle(this.player.x + 0.05, this.player.y + 0.2))
 		if (view.isPressing) {
 			if (this.player.specialJump != null) {
 				this.player.specialJump()
@@ -414,16 +413,40 @@ class ShipMode extends GameMode {
 		} else {
 			this.player.vy -= 0.005 * this.player.gravity
 		}
+		if (this.player.gravity < 0) {
+			view.particles.push(new SlideParticle(this.player.x + 0.05, this.player.y + 0.8))
+			if (this.player.groundHeight != null) {
+				var ph = this.player.getGeneralRect().h
+				if (this.player.y + ph > this.player.groundHeight) {
+					this.player.vy = 0
+					this.player.y -= 0.1
+					if (this.player.y + ph < this.player.groundHeight) {
+						this.player.y = this.player.groundHeight - ph
+					}
+				}
+			}
+		} else {
+			view.particles.push(new SlideParticle(this.player.x + 0.05, this.player.y + 0.2))
+			if (this.player.groundHeight != null) {
+				if (this.player.y/* + 0.2*/ < this.player.groundHeight) {
+					this.player.vy = 0
+					this.player.y += 0.1
+					if (this.player.y/* + 0.2*/ > this.player.groundHeight) {
+						this.player.y = this.player.groundHeight
+					}
+				}
+			}
+		}
 	}
-	getRect() {
-		return super.getRect().relative(0, 0.1, 1, 0.8)
-	}
+	// getRect() {
+	// 	return super.getRect().relative(0, 0.1, 1, 0.8)
+	// }
 	/**
 	 * @param {number} h
 	 */
 	hitCeiling(h) {
-		this.player.y = h - 0.1
-		this.player.vy = -0.01
+		this.player.y = h + (-0.8) + (this.player.gravity<0 ? 1.6 : 0)
+		this.player.vy = -0.01 * this.player.gravity
 	}
 }
 class BallMode extends GameMode {
@@ -939,7 +962,10 @@ class TileBlock extends Tile {
 				// If the player is right in the middle of this, they die.
 				view.player.destroy()
 			} else {
-				if (playerRects.death.centerX() < thisRect.centerX()) {
+				if ((playerRects.death.y + playerRects.death.h) * view.player.gravity < thisRect.centerY() * view.player.gravity) {
+					// Player hit the ceiling!
+					view.player.mode.hitCeiling(thisRect.y)
+				} else if (playerRects.death.centerX() < thisRect.centerX()) {
 					// Player is to the left of this block
 					view.player.x = thisRect.x - playerRects.death.w
 				} else {
