@@ -291,7 +291,7 @@
 	],
 	"completion": {
 		"percentage": 100,
-		"coins": [false, false, false]
+		"coins": [true, true, true]
 	},
 	"deleted": false
 }

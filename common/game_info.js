@@ -177,8 +177,10 @@ class Stage extends SceneItem {
 		this.stageColor.tick(amount)
 		var ty = view.player.y - 5
 		if (ty < 0) ty = 0
-		// var ypad = 4
+		var ypad = 7
 		this.lastY = ((this.lastY * 150) + ty) / 151
+		if (this.lastY < ty - ypad) this.lastY = ty - ypad
+		if (this.lastY > ty + ypad) this.lastY = ty + ypad
 		/** @type {HTMLDivElement} */
 		// @ts-ignore
 		var viewport = this.elm.parentNode
@@ -458,8 +460,23 @@ class BallMode extends GameMode {
 		if (this.player.groundHeight != null || this.player.y == 14) {
 			if (this.player.gravity < 0) {
 				view.particles.push(new SlideParticle(this.player.x + 0.3, this.player.y + 1))
+				var ph = this.player.getGeneralRect().h
+				if (this.player.y + ph > this.player.groundHeight) {
+					this.player.vy = 0
+					this.player.y -= 0.1
+					if (this.player.y + ph < this.player.groundHeight) {
+						this.player.y = this.player.groundHeight - ph
+					}
+				}
 			} else {
 				view.particles.push(new SlideParticle(this.player.x + 0.3, this.player.y))
+				if (this.player.y < this.player.groundHeight) {
+					this.player.vy = 0
+					this.player.y += 0.1
+					if (this.player.y > this.player.groundHeight) {
+						this.player.y = this.player.groundHeight
+					}
+				}
 			}
 		}
 		if (view.isPressing) {
@@ -962,7 +979,8 @@ class TileBlock extends Tile {
 				// If the player is right in the middle of this, they die.
 				view.player.destroy()
 			} else {
-				if ((playerRects.death.y + playerRects.death.h) * view.player.gravity < thisRect.centerY() * view.player.gravity) {
+				var playerUnder = playerRects.death.relative(0.2, -1, 0.6, 3).colliderect(thisRect)
+				if (playerUnder && (playerRects.death.y + playerRects.death.h) * view.player.gravity < (thisRect.y + 0.1) * view.player.gravity) {
 					// Player hit the ceiling!
 					view.player.mode.hitCeiling(thisRect.y)
 				} else if (playerRects.death.centerX() < thisRect.centerX()) {
