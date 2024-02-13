@@ -1200,8 +1200,8 @@ class Coin extends Tile {
 		this.extraStyles[1] = `--dw: var(--tsize); --dh: var(--tsize);`
 		this.extraStyles[2] = `--tsize: ${Math.sqrt(Math.sqrt(this.activated + 1))};`
 		this.extraStyles[3] = `opacity: ${map(this.activated, 0, 100, 1, 0)};`
+		this.needsRedraw = true
 		if (this.activated > 0) {
-			this.needsRedraw = true
 			if (this.activated < 100) {
 				this.activated += amount
 			}

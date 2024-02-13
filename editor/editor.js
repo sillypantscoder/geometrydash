@@ -190,7 +190,8 @@ function editLevelSettings() {
 		`Starting Stage Color: <input type="color" value="${getHexFromRGB(levelMeta.settings.colorstage)}" oninput="levelMeta.settings.colorstage = getRGBFromHex(this.value)"></div>`,
 		`Starting Gamemode: <select oninput="levelMeta.settings.gamemode = this.value">${Object.keys(registries.gamemode).map((v) => `
 	<option value="${v}"${levelMeta.settings.gamemode==v ? " selected" : ""}>${v}</option>`)}
-</select>`
+</select>`,
+		`Is Platformer Level: <input type="checkbox"${levelMeta.settings.platformer ? " checked": ""} oninput="levelMeta.settings.platformer = this.checked">`
 	].map((v) => `<div>${v}</div>`).join("")
 	// @ts-ignore
 	parent.children[0].children[0].value = levelMeta.name
