@@ -7,10 +7,9 @@ function frame(amount) {
 	}
 	view.stage.tick(amount)
 	view.player.tick(amount)
-	if (view.player.deathTime == 0) {
-		for (var i = 0; i < view.tiles.length; i++) {
-			view.tiles[i].tick(amount)
-		}
+	for (var i = 0; i < view.tiles.length; i++) {
+		view.tiles[i].tick(amount)
+		if (view.player == null) return
 	}
 	view.player.finishTick(amount)
 }
@@ -22,10 +21,11 @@ function winTick() {
 }
 function aFrames() {
 	if (view.hasWon) return winTick()
-	var n_frames = Math.ceil(Math.abs(view.player.vy * 4) + 1)
+	var n_frames = 1
+	if (view.player) n_frames = Math.ceil(Math.abs(view.player.vy * 4) + 1)
 	// view.particles.push(new RectDisplay(new Rect(view.player.x - 1, 0, 0.1, n_frames), "pink"))
 	for (var i = 0; i < n_frames; i++) {
-		if (view.hasWon) return winTick()
+		if (view.hasWon || view.player == null) return winTick()
 		frame(1 / n_frames)
 	}
 }
@@ -36,7 +36,7 @@ async function frameLoop() {
 	}
 }
 function setup() {
-	frameLoop()
-	view.particles.push(new ProgressBar())
+	setTimeout(frameLoop, 1000)
+	view.particles.push(new ProgressBar(view))
 }
 setup()

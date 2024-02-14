@@ -5,10 +5,11 @@
 		"target": "ES2022",
 		"jsx": "react",
 		"allowImportingTsExtensions": true,
-		"strictNullChecks": false,
+		"strictNullChecks": true,
 		"strictFunctionTypes": true,
 		"strict": true,
-		"checkJs": true
+		"checkJs": true,
+		"strictPropertyInitialization": true
 	},
 	"exclude": [
 		"node_modules",
