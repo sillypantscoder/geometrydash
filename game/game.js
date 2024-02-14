@@ -1,3 +1,6 @@
+var view = new GameView()
+view.loadLevel()
+
 /**
  * @param {number} amount
  */
@@ -15,6 +18,12 @@ function frame(amount) {
 	view.player?.finishTick(amount)
 }
 function aFrames() {
+	if (view.deathTime > 0) {
+		view.deathTime -= 1
+		if (view.deathTime <= 0) {
+			view.player = new Player(view)
+		}
+	}
 	var n_frames = 1
 	if (view.player) n_frames = Math.ceil(Math.abs(view.player.vy * 4) + 1)
 	// view.particles.push(new RectDisplay(new Rect(view.player.x - 1, 0, 0.1, n_frames), "pink"))
@@ -30,9 +39,6 @@ async function frameLoop() {
 }
 function setup() {
 	setTimeout(frameLoop, 1000)
-	if (view instanceof GameView) view.particles.push(new ProgressBar(view))
+	view.particles.push(new ProgressBar(view))
 }
 setup()
-
-var view = new GameView()
-view.loadLevel()

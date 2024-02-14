@@ -300,6 +300,7 @@ class Player extends SceneItem {
 	destroy() {
 		super.destroy()
 		if (this.view instanceof GameView) {
+			this.view.deathTime = 30
 			this.view.particles.push(new DeathParticleMain(this.view, this.x + 0.5, this.y + 0.5))
 			for (var i = 0; i < 20; i++) {
 				this.view.particles.push(new DeathParticleExtra(this.view, this.x + 0.5, this.y + 0.5))
@@ -1766,6 +1767,7 @@ class View {
 class GameView extends View {
 	constructor() {
 		super()
+		this.deathTime = 0
 		/** @type {Particle[]} */
 		this.particles = []
 		this.isPressing = false
@@ -1823,6 +1825,7 @@ class GameView extends View {
 	win() {
 		this.hasWon = true
 		this.player?.elm.remove()
+		this.player = null
 		this.particles.push(new LevelCompleteSign(this))
 		this.sendVerification()
 	}
