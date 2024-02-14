@@ -181,13 +181,13 @@ class Stage extends SceneItem {
 	tick(amount) {
 		this.bgColor.tick(amount)
 		this.stageColor.tick(amount)
-		if (view.player) {
+		if (this.view.player) {
 			// Camera X
-			if (view.player.x) {
-				this.lastX = Math.max(0, view.player.x - 20)
+			if (this.view.player.x) {
+				this.lastX = Math.max(0, this.view.player.x - 20)
 			}
 			// Camera Y
-			var ty = view.player.y - 5
+			var ty = this.view.player.y - 5
 			if (ty < 0) ty = 0
 			var ypad = 7
 			this.lastY = ((this.lastY * 80) + ty) / 81
@@ -204,8 +204,8 @@ class Stage extends SceneItem {
 		this.lastY = 0
 		this.bgColor = InterpolatedColor.fromRGB(levelMeta.settings.colorbg)
 		this.stageColor = InterpolatedColor.fromRGB(levelMeta.settings.colorstage)
-		for (var i = 0; i < view.tiles.length; i++) {
-			var t = view.tiles[i]
+		for (var i = 0; i < this.view.tiles.length; i++) {
+			var t = this.view.tiles[i]
 			if (t instanceof Trigger) {
 				t.activated = false
 			}
@@ -255,9 +255,9 @@ class Player extends SceneItem {
 	 */
 	tick(amount) {
 		// Move forwards
-		if (levelMeta.settings.platformer && view instanceof GameView) {
-			if (view.isPressingLeft) this.x -= 0.1 * amount
-			if (view.isPressingRight) this.x += 0.1 * amount
+		if (levelMeta.settings.platformer && this.view instanceof GameView) {
+			if (this.view.isPressingLeft) this.x -= 0.1 * amount
+			if (this.view.isPressingRight) this.x += 0.1 * amount
 		} else {
 			this.x += 0.1 * amount
 		}
@@ -294,8 +294,8 @@ class Player extends SceneItem {
 			}
 		}
 		this.mode.checkJump(amount)
-		if (this.x > view.stageWidth) view.win()
-		if (debugMode && Math.abs(this.vy) > 0.3) RectDisplay.create(this)
+		if (this.x > this.view.stageWidth) this.view.win()
+		if (debugMode && Math.abs(this.vy) > 0.3) RectDisplay.create(this.view, this)
 	}
 	destroy() {
 		super.destroy()
@@ -309,8 +309,8 @@ class Player extends SceneItem {
 		this.view.player = null
 	}
 	setStartPos() {
-		for (var i = 0; i < view.tiles.length; i++) {
-			var t = view.tiles[i]
+		for (var i = 0; i < this.view.tiles.length; i++) {
+			var t = this.view.tiles[i]
 			if (t instanceof StartPosBlock) {
 				var rect = t.getRect()
 				this.x = rect.x
@@ -348,7 +348,7 @@ class GameMode {
 	 */
 	checkJump(_amount) {}
 	getMax() {
-		if (this.player.y > view.stageHeight) {
+		if (this.player.y > this.player.view.stageHeight) {
 			this.player.destroy()
 		}
 	}
@@ -391,7 +391,7 @@ class CubeMode extends GameMode {
 		} else {
 			this.player.rotation += 5 * amount * this.player.gravity
 		}
-		if (view instanceof GameView && view.isPressing) {
+		if (this.player.view instanceof GameView && this.player.view.isPressing) {
 			if (this.player.specialJump != null) {
 				this.player.specialJump()
 			} else if (this.player.groundHeight != null) {
@@ -410,7 +410,7 @@ class ShipMode extends GameMode {
 	 */
 	checkJump(_amount) {
 		this.player.rotation = this.player.vy * -100
-		if (view instanceof GameView && view.isPressing) {
+		if (this.player.view instanceof GameView && this.player.view.isPressing) {
 			if (this.player.specialJump != null) {
 				this.player.specialJump()
 			} else {
@@ -483,12 +483,12 @@ class BallMode extends GameMode {
 				}
 			}
 		}
-		if (view instanceof GameView && view.isPressing) {
+		if (this.player.view instanceof GameView && this.player.view.isPressing) {
 			if (this.player.specialJump != null) {
 				this.player.specialJump()
 			} else if (this.player.groundHeight != null) {
 				this.player.gravity *= -1
-				view.isPressing = false
+				this.player.view.isPressing = false
 			}
 		}
 	}
@@ -752,7 +752,7 @@ class LevelCompleteSign extends Particle {
 		this.hasButtons = true
 		var e = document.createElement("div")
 		e.innerHTML = `<div onclick='view.restart()'><img src="../assets/ui/Restart.svg" class="finish-button"></div><div><a href="../home/index.html"><img src="../assets/ui/Home.svg" class="finish-button"></a></div>`
-		view.stage.elm.appendChild(e)
+		this.view.stage.elm.appendChild(e)
 		e.setAttribute("style", `opacity: 0; transition: opacity 0.7s linear;`)
 		requestAnimationFrame(() => {
 			e.setAttribute("style", `opacity: 1; transition: opacity 0.7s linear;`)
@@ -760,7 +760,7 @@ class LevelCompleteSign extends Particle {
 	}
 	destroy() {
 		super.destroy()
-		view.stage.elm.children[0].remove()
+		this.view.stage.elm.children[0].remove()
 	}
 }
 class ProgressBar extends Particle {
@@ -807,8 +807,11 @@ class RectDisplay extends Particle {
 		super.tick(amount)
 		if (this.time >= 5) this.destroy()
 	}
-	/** @param {Tile | Player} item */
-	static create(item) {
+	/**
+	 * @param {View} view
+	 * @param {Tile | Player} item
+	 */
+	static create(view, item) {
 		var color = "lime"
 		var r = item instanceof Player ? item.getDeathRect() : item.getRect()
 		if (r.hasInvalid()) return
@@ -926,7 +929,7 @@ class Tile extends SceneItem {
 		this.rotation = rotation
 		this.groups = groups
 		// this.enabled = false
-		if (debugMode) RectDisplay.create(this)
+		if (debugMode) RectDisplay.create(this.view, this)
 	}
 	/**
 	 * @param {View} view
@@ -981,9 +984,9 @@ class Tile extends SceneItem {
 	 * @param {number} amount
 	 */
 	tick(amount) {
-		if (view.player && Math.abs(this.x - view.player.x) < 40) {
+		if (this.view.player && Math.abs(this.x - this.view.player.x) < 40) {
 			if (viewType == "game") {
-				this.collide(view.player)
+				this.collide(this.view.player)
 			}
 			super.tick(amount)
 		}
@@ -1059,7 +1062,7 @@ class TileDeath extends Tile {
 			player.destroy()
 			if (debugMode) {
 				setTimeout(() => {
-					if (view instanceof GameView) view.particles.push(new RectDisplay(view, player.getDeathRect(), "orange"))
+					if (this.view instanceof GameView) this.view.particles.push(new RectDisplay(this.view, player.getDeathRect(), "orange"))
 				}, 100)
 			}
 			this.enabled = true
@@ -1150,8 +1153,8 @@ class Orb extends Tile {
 		if (this.timeout > 0) this.timeout -= amount
 		super.tick(amount)
 		// Spawn particles
-		if (this.hasParticles && view instanceof GameView && Math.random() < amount) {
-			view.particles.push(new OrbParticle(view, this.x + 0.5, this.y + 0.5, this.particleColor))
+		if (this.hasParticles && this.view instanceof GameView && Math.random() < amount) {
+			this.view.particles.push(new OrbParticle(this.view, this.x + 0.5, this.y + 0.5, this.particleColor))
 		}
 	}
 	/**
@@ -1167,7 +1170,7 @@ class Orb extends Tile {
 			var target = this
 			player.specialJump = () => {
 				target.timeout = 10
-				if (view instanceof GameView) view.particles.push(new OrbActivateParticle(view, target.x + 0.5, target.y + 0.5, target.particleColor))
+				if (this.view instanceof GameView) this.view.particles.push(new OrbActivateParticle(this.view, target.x + 0.5, target.y + 0.5, target.particleColor))
 				target.activate(player)
 			}
 		}
@@ -1451,8 +1454,8 @@ class ColorTrigger extends Trigger {
 	trigger() {
 		/** @type {InterpolatedColor} */
 		var section = {
-			"stage": view.stage.stageColor,
-			"bg": view.stage.bgColor
+			"stage": this.view.stage.stageColor,
+			"bg": this.view.stage.bgColor
 		}[this.section]
 		section.interpolate(this.color[0], this.color[1], this.color[2], this.duration)
 	}
@@ -1570,7 +1573,7 @@ class Portal extends Tile {
 	constructor(view, x, y, dw, dh, realheight, rotation, groups) {
 		super(view, x, y, dw, dh, rotation, groups)
 		this.realheight = realheight
-		if (debugMode) RectDisplay.create(this)
+		if (debugMode) RectDisplay.create(this.view, this)
 	}
 	getRect() {
 		return super.getRect().relative(0, (this.realheight * -0.5) + 0.5, 1, this.realheight);
@@ -1746,15 +1749,15 @@ class View {
 		x.addEventListener("loadend", () => {
 			var level = JSON.parse(x.responseText)
 			levelMeta.completion = level.completion
-			view.importObjects(level.objects)
+			t.importObjects(level.objects)
 			levelMeta.name = level.name
 			levelMeta.description = level.description
 			levelMeta.settings.colorbg = level.settings.colorbg
 			levelMeta.settings.colorstage = level.settings.colorstage
 			levelMeta.settings.gamemode = level.settings.gamemode
 			levelMeta.settings.platformer = level.settings.platformer
-			view.stage.reset()
-			view.player = new Player(t)
+			t.stage.reset()
+			t.player = new Player(t)
 		})
 		x.send()
 	}
@@ -1972,10 +1975,3 @@ var levelMeta = {
 }
 // @ts-ignore
 var debugMode = url_query.debug == "true"
-/** @type {View} */
-var view = new ({
-	"game": GameView,
-	"editor": View
-// @ts-ignore
-}[viewType])();
-view.loadLevel()

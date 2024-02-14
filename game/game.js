@@ -33,3 +33,6 @@ function setup() {
 	if (view instanceof GameView) view.particles.push(new ProgressBar(view))
 }
 setup()
+
+var view = new GameView()
+view.loadLevel()

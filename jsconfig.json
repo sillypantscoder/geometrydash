@@ -17,8 +17,8 @@
 	],
 	"include": [
 		"common/*",
-		"editor/*",
-		"game/*",
-		"home/*"
+		// "editor/*",
+		// "game/*",
+		// "home/*"
 	]
 }
