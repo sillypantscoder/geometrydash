@@ -33,10 +33,12 @@ function rotatePoint(cx, cy, x, y, angle) {
 
 class SceneItem {
 	/**
+	 * @param {View} view
 	 * @param {number} x The starting X position.
 	 * @param {number} y The starting Y position.
 	 */
-	constructor(x, y) {
+	constructor(view, x, y) {
+		this.view = view
 		/** @type {HTMLDivElement} */
 		this.elm = document.createElement("div")
 		this.elm.classList.add("regularPos")
@@ -161,8 +163,11 @@ class InterpolatedColor {
 	}
 }
 class Stage extends SceneItem {
-	constructor() {
-		super(0, 0)
+	/**
+	 * @param {View} view
+	 */
+	constructor(view) {
+		super(view, 0, 0)
 		this.elm.classList.remove("regularPos")
 		this.elm.classList.add("stage")
 		this.bgColor = InterpolatedColor.fromRGB(levelMeta.settings.colorbg)
@@ -211,8 +216,11 @@ class Stage extends SceneItem {
 	}
 }
 class Player extends SceneItem {
-	constructor() {
-		super(-3, 0)
+	/**
+	 * @param {View} view
+	 */
+	constructor(view) {
+		super(view, -3, 0)
 		this.setStartPos()
 		this.elm.classList.add("player")
 		/** @type {number} */
@@ -291,14 +299,14 @@ class Player extends SceneItem {
 	}
 	destroy() {
 		super.destroy()
-		if (view instanceof GameView) {
-			view.particles.push(new DeathParticleMain(this.x + 0.5, this.y + 0.5))
+		if (this.view instanceof GameView) {
+			this.view.particles.push(new DeathParticleMain(this.view, this.x + 0.5, this.y + 0.5))
 			for (var i = 0; i < 20; i++) {
-				view.particles.push(new DeathParticleExtra(this.x + 0.5, this.y + 0.5))
+				this.view.particles.push(new DeathParticleExtra(this.view, this.x + 0.5, this.y + 0.5))
 			}
-			view.sendVerification()
+			this.view.sendVerification()
 		}
-		view.player = null
+		this.view.player = null
 	}
 	setStartPos() {
 		for (var i = 0; i < view.tiles.length; i++) {
@@ -363,7 +371,7 @@ class CubeMode extends GameMode {
 			var targetRotation = (Math.floor((this.player.rotation - 45) / 90) * 90) + 90
 			this.player.rotation = (targetRotation + (this.player.rotation * 2)) / 3
 			if (this.player.gravity < 0) {
-				if (view instanceof GameView) view.particles.push(new SlideParticle(this.player.x, this.player.y + 1))
+				if (this.player.view instanceof GameView) this.player.view.particles.push(new SlideParticle(this.player.view, this.player.x, this.player.y + 1))
 				var ph = this.player.getGeneralRect().h
 				if (this.player.y + ph > this.player.groundHeight) {
 					this.player.y -= 0.1
@@ -372,7 +380,7 @@ class CubeMode extends GameMode {
 					}
 				}
 			} else {
-				if (view instanceof GameView) view.particles.push(new SlideParticle(this.player.x, this.player.y))
+				if (this.player.view instanceof GameView) this.player.view.particles.push(new SlideParticle(this.player.view, this.player.x, this.player.y))
 				if (this.player.y < this.player.groundHeight) {
 					this.player.y += 0.1
 					if (this.player.y > this.player.groundHeight) {
@@ -412,7 +420,7 @@ class ShipMode extends GameMode {
 			this.player.vy -= 0.005 * this.player.gravity
 		}
 		if (this.player.gravity < 0) {
-			if (view instanceof GameView) view.particles.push(new SlideParticle(this.player.x + 0.05, this.player.y + 0.8))
+			if (this.player.view instanceof GameView) this.player.view.particles.push(new SlideParticle(this.player.view, this.player.x + 0.05, this.player.y + 0.8))
 			if (this.player.groundHeight != null) {
 				var ph = this.player.getGeneralRect().h
 				if (this.player.y + ph > this.player.groundHeight) {
@@ -424,7 +432,7 @@ class ShipMode extends GameMode {
 				}
 			}
 		} else {
-			if (view instanceof GameView) view.particles.push(new SlideParticle(this.player.x + 0.05, this.player.y + 0.2))
+			if (this.player.view instanceof GameView) this.player.view.particles.push(new SlideParticle(this.player.view, this.player.x + 0.05, this.player.y + 0.2))
 			if (this.player.groundHeight != null) {
 				if (this.player.y/* + 0.2*/ < this.player.groundHeight) {
 					this.player.vy = 0
@@ -455,7 +463,7 @@ class BallMode extends GameMode {
 		this.player.rotation += 10 * amount * this.player.gravity
 		if (this.player.groundHeight != null) {
 			if (this.player.gravity < 0) {
-				if (view instanceof GameView) view.particles.push(new SlideParticle(this.player.x + 0.3, this.player.y + 1))
+				if (this.player.view instanceof GameView) this.player.view.particles.push(new SlideParticle(this.player.view, this.player.x + 0.3, this.player.y + 1))
 				var ph = this.player.getGeneralRect().h
 				if (this.player.y + ph > this.player.groundHeight) {
 					this.player.vy = 0
@@ -465,7 +473,7 @@ class BallMode extends GameMode {
 					}
 				}
 			} else {
-				if (view instanceof GameView) view.particles.push(new SlideParticle(this.player.x + 0.3, this.player.y))
+				if (this.player.view instanceof GameView) this.player.view.particles.push(new SlideParticle(this.player.view, this.player.x + 0.3, this.player.y))
 				if (this.player.y < this.player.groundHeight) {
 					this.player.vy = 0
 					this.player.y += 0.1
@@ -495,9 +503,9 @@ class WaveMode extends GameMode {
 	 */
 	checkJump(_amount) {
 		this.player.rotation = this.player.vy * -450
-		if (view instanceof GameView) {
-			view.particles.push(new WaveParticle(this.player.x, this.player.y + 0.5 + (-1 * this.player.vy)))
-			if (view.isPressing) {
+		if (this.player.view instanceof GameView) {
+			this.player.view.particles.push(new WaveParticle(this.player.view, this.player.x, this.player.y + 0.5 + (-1 * this.player.vy)))
+			if (this.player.view.isPressing) {
 				this.player.vy = 0.1 * this.player.gravity
 			} else {
 				this.player.vy = -0.1 * this.player.gravity
@@ -517,11 +525,14 @@ class WaveMode extends GameMode {
 }
 class Particle extends SceneItem {
 	/**
+	 * @param {GameView} view
 	 * @param {number} x
 	 * @param {number} y
 	 */
-	constructor(x, y) {
-		super(x, y)
+	constructor(view, x, y) {
+		super(view, x, y)
+		/** @type {GameView} */
+		this.gameview = view
 		this.elm.classList.remove("regularPos")
 		this.elm.classList.add("particle")
 		this.extraStyles[0] = `background: radial-gradient(circle, #0F53 0%, #0F5F 100%);`
@@ -537,19 +548,20 @@ class Particle extends SceneItem {
 	}
 	destroy() {
 		super.destroy()
-		if (view instanceof GameView) view.particles.splice(view.particles.indexOf(this), 1)
+		this.gameview.particles.splice(this.gameview.particles.indexOf(this), 1)
 	}
 }
 class SlideParticle extends Particle {
 	/**
+	 * @param {GameView} view
 	 * @param {number} x
 	 * @param {number} y
 	 */
-	constructor(x, y) {
-		super(x, y)
+	constructor(view, x, y) {
+		super(view, x, y)
 		this.oy = y
 		this.gravity = 1
-		if (view.player != null) this.gravity = view.player.gravity
+		if (this.view.player != null) this.gravity = this.view.player.gravity
 		this.vx = Math.random() / -20
 		this.vy = (Math.random() / 10) * this.gravity
 		this.time = 0
@@ -583,11 +595,12 @@ class SlideParticle extends Particle {
 }
 class WaveParticle extends Particle {
 	/**
+	 * @param {GameView} view
 	 * @param {number} x
 	 * @param {number} y
 	 */
-	constructor(x, y) {
-		super(x, y)
+	constructor(view, x, y) {
+		super(view, x, y)
 		this.time = 0
 		this.extraStyles[2] = `--size: 0.3; border-radius: 50%;`
 	}
@@ -603,11 +616,12 @@ class WaveParticle extends Particle {
 }
 class DeathParticleMain extends Particle {
 	/**
+	 * @param {GameView} view
 	 * @param {number} x
 	 * @param {number} y
 	 */
-	constructor(x, y) {
-		super(x, y)
+	constructor(view, x, y) {
+		super(view, x, y)
 		this.size = 1
 	}
 	/**
@@ -623,11 +637,12 @@ class DeathParticleMain extends Particle {
 }
 class DeathParticleExtra extends Particle {
 	/**
+	 * @param {GameView} view
 	 * @param {number} x
 	 * @param {number} y
 	 */
-	constructor(x, y) {
-		super(x, y)
+	constructor(view, x, y) {
+		super(view, x, y)
 		this.vx = (Math.random() - 0.5) / 3
 		this.vy = (Math.random() - 0.5) / 3
 		this.size = 1
@@ -646,12 +661,13 @@ class DeathParticleExtra extends Particle {
 }
 class OrbParticle extends Particle {
 	/**
+	 * @param {GameView} view
 	 * @param {number} x
 	 * @param {number} y
 	 * @param {string} color
 	 */
-	constructor(x, y, color) {
-		super(x, y)
+	constructor(view, x, y, color) {
+		super(view, x, y)
 		this.center = { x, y }
 		this.deg = Math.random() * 360
 		this.r = 0.6
@@ -682,12 +698,13 @@ class OrbParticle extends Particle {
 }
 class OrbActivateParticle extends Particle {
 	/**
+	 * @param {GameView} view
 	 * @param {number} x
 	 * @param {number} y
 	 * @param {string} color
 	 */
-	constructor(x, y, color) {
-		super(x, y)
+	constructor(view, x, y, color) {
+		super(view, x, y)
 		this.center = { x, y }
 		this.r = 0.75
 		this.v = 0
@@ -706,8 +723,11 @@ class OrbActivateParticle extends Particle {
 	}
 }
 class LevelCompleteSign extends Particle {
-	constructor() {
-		super(0, 0)
+	/**
+	 * @param {GameView} view
+	 */
+	constructor(view) {
+		super(view, 0, 0)
 		this.imgSize = [676, 66]
 		this.time = 0
 		this.elm.innerHTML = `<img src="../assets/game/LevelComplete.png" style="width: 100%; height: 100%;">`
@@ -743,13 +763,12 @@ class LevelCompleteSign extends Particle {
 		view.stage.elm.children[0].remove()
 	}
 }
-class ProgressBar extends SceneItem {
+class ProgressBar extends Particle {
 	/**
 	 * @param {GameView} view
 	 */
 	constructor(view) {
-		super(0, 0)
-		this.view = view
+		super(view, 0, 0)
 		this.elm.classList.add("progress-bar")
 		document.querySelector("#scene")?.insertAdjacentElement("afterend", this.elm)
 	}
@@ -757,21 +776,22 @@ class ProgressBar extends SceneItem {
 	 * @param {number} amount
 	 */
 	tick(amount) {
-		var c = this.view.getCompletion()
-		this.elm.innerHTML = `<div>Attempt ${this.view.attempt}</div><div style="background: linear-gradient(90deg, #AFA ${c}%, #AAF ${c}%, #AAF ${levelMeta.completion.percentage}%, white ${levelMeta.completion.percentage}%);">${c}% complete</div>`
+		var c = this.gameview.getCompletion()
+		this.elm.innerHTML = `<div>Attempt ${this.gameview.attempt}</div><div style="background: linear-gradient(90deg, #AFA ${c}%, #AAF ${c}%, #AAF ${levelMeta.completion.percentage}%, white ${levelMeta.completion.percentage}%);">${c}% complete</div>`
 	}
 	destroy() {
-		this.view.particles.splice(this.view.particles.indexOf(this), 1)
+		this.gameview.particles.splice(this.gameview.particles.indexOf(this), 1)
 		super.destroy()
 	}
 }
 class RectDisplay extends Particle {
 	/**
+	 * @param {GameView} view
 	 * @param {Rect} rect
 	 * @param {string} color
 	 */
-	constructor(rect, color) {
-		super(rect.x, rect.y + 0.5)
+	constructor(view, rect, color) {
+		super(view, rect.x, rect.y + 0.5)
 		this.elm.classList.remove("particle")
 		// this.elm.classList.add(`rect-${rect.x}-${rect.y}-${rect.w}-${rect.h}`)
 		this.extraStyles[0] = `background: ${color};`
@@ -795,7 +815,7 @@ class RectDisplay extends Particle {
 		if (item instanceof Player) return//color = "transparent;outline: 1px solid yellow;"
 		else r = r.rotate(item.rotation, item.x + 0.5, item.y + 0.5)
 		if (item instanceof TileDeath) color = "red"
-		if (view instanceof GameView) view.particles.push(new RectDisplay(r, color))
+		if (view instanceof GameView) view.particles.push(new RectDisplay(view, r, color))
 		if (item.elm.parentNode) item.elm.parentNode.appendChild(item.elm)
 	}
 }
@@ -887,6 +907,7 @@ class Rect {
 }
 class Tile extends SceneItem {
 	/**
+	 * @param {View} view
 	 * @param {number} x
 	 * @param {number} y
 	 * @param {number} dw
@@ -894,8 +915,8 @@ class Tile extends SceneItem {
 	 * @param {number} rotation
 	 * @param {string[]} groups
 	 */
-	constructor(x, y, dw, dh, rotation, groups) {
-		super(x, y)
+	constructor(view, x, y, dw, dh, rotation, groups) {
+		super(view, x, y)
 		this.display_size = [dw, dh]
 		var location = getLocationFromObject("tile", this)
 		var r_location = ["broken"]
@@ -908,12 +929,13 @@ class Tile extends SceneItem {
 		if (debugMode) RectDisplay.create(this)
 	}
 	/**
-	 * @param {typeof Object} type
+	 * @param {View} view
+	 * @param {typeof Tile} type
 	 * @param {object} info
 	 */
-	static load(type, info) {
+	static load(view, type, info) {
 		// @ts-ignore
-		return new type(info.x, info.y, info.rotation, info.groups)
+		return new type(view, info.x, info.y, info.rotation, info.groups)
 	}
 	/**
 	 * @param {number[]} pos
@@ -973,13 +995,14 @@ class Tile extends SceneItem {
 }
 class TileBlock extends Tile {
 	/**
+	 * @param {View} view
 	 * @param {number} x
 	 * @param {number} y
 	 * @param {number} rotation
 	 * @param {string[]} groups
 	 */
-	constructor(x, y, rotation, groups) {
-		super(x, y, 1, 1, rotation, groups)
+	constructor(view, x, y, rotation, groups) {
+		super(view, x, y, 1, 1, rotation, groups)
 	}
 	/**
 	 * @param {Player} player
@@ -1016,13 +1039,14 @@ class TileBlock extends Tile {
 }
 class TileDeath extends Tile {
 	/**
+	 * @param {View} view
 	 * @param {number} x
 	 * @param {number} y
 	 * @param {number} rotation
 	 * @param {string[]} groups
 	 */
-	constructor(x, y, rotation, groups) {
-		super(x, y, 1, 1, rotation, groups)
+	constructor(view, x, y, rotation, groups) {
+		super(view, x, y, 1, 1, rotation, groups)
 	}
 	/**
 	 * @param {Player} player
@@ -1035,7 +1059,7 @@ class TileDeath extends Tile {
 			player.destroy()
 			if (debugMode) {
 				setTimeout(() => {
-					if (view instanceof GameView) view.particles.push(new RectDisplay(player.getDeathRect(), "orange"))
+					if (view instanceof GameView) view.particles.push(new RectDisplay(view, player.getDeathRect(), "orange"))
 				}, 100)
 			}
 			this.enabled = true
@@ -1044,24 +1068,26 @@ class TileDeath extends Tile {
 }
 class BasicBlock extends TileBlock {
 	/**
+	 * @param {View} view
 	 * @param {number} x
 	 * @param {number} y
 	 * @param {number} rotation
 	 * @param {string[]} groups
 	 */
-	constructor(x, y, rotation, groups) {
-		super(x, y, rotation, groups)
+	constructor(view, x, y, rotation, groups) {
+		super(view, x, y, rotation, groups)
 	}
 }
 class HalfBlock extends TileBlock {
 	/**
+	 * @param {View} view
 	 * @param {number} x
 	 * @param {number} y
 	 * @param {number} rotation
 	 * @param {string[]} groups
 	 */
-	constructor(x, y, rotation, groups) {
-		super(x, y, rotation, groups)
+	constructor(view, x, y, rotation, groups) {
+		super(view, x, y, rotation, groups)
 	}
 	getRect() {
 		return super.getRect().relative(0, 0.5, 1, 0.5);
@@ -1069,13 +1095,14 @@ class HalfBlock extends TileBlock {
 }
 class BasicSpike extends TileDeath {
 	/**
+	 * @param {View} view
 	 * @param {number} x
 	 * @param {number} y
 	 * @param {number} rotation
 	 * @param {string[]} groups
 	 */
-	constructor(x, y, rotation, groups) {
-		super(x, y, rotation, groups)
+	constructor(view, x, y, rotation, groups) {
+		super(view, x, y, rotation, groups)
 	}
 	getRect() {
 		return super.getRect().relative(0.2, 0, 0.6, 0.8);
@@ -1083,13 +1110,14 @@ class BasicSpike extends TileDeath {
 }
 class HalfSpike extends TileDeath {
 	/**
+	 * @param {View} view
 	 * @param {number} x
 	 * @param {number} y
 	 * @param {number} rotation
 	 * @param {string[]} groups
 	 */
-	constructor(x, y, rotation, groups) {
-		super(x, y, rotation, groups)
+	constructor(view, x, y, rotation, groups) {
+		super(view, x, y, rotation, groups)
 	}
 	getRect() {
 		return super.getRect().relative(0.2, 0, 0.6, 0.4);
@@ -1097,19 +1125,20 @@ class HalfSpike extends TileDeath {
 }
 class Orb extends Tile {
 	/**
+	 * @param {View} view
 	 * @param {number} x
 	 * @param {number} y
 	 * @param {number} rotation
 	 * @param {string[]} groups
 	 */
-	constructor(x, y, rotation, groups) {
+	constructor(view, x, y, rotation, groups) {
 		var ds = 1
 		var particles = false
 		if (view instanceof GameView) {
 			ds = 0.5
 			particles = true
 		}
-		super(x, y, ds, ds, rotation, groups)
+		super(view, x, y, ds, ds, rotation, groups)
 		this.timeout = 0
 		this.hasParticles = particles
 		this.particleColor = "yellow"
@@ -1122,7 +1151,7 @@ class Orb extends Tile {
 		super.tick(amount)
 		// Spawn particles
 		if (this.hasParticles && view instanceof GameView && Math.random() < amount) {
-			view.particles.push(new OrbParticle(this.x + 0.5, this.y + 0.5, this.particleColor))
+			view.particles.push(new OrbParticle(view, this.x + 0.5, this.y + 0.5, this.particleColor))
 		}
 	}
 	/**
@@ -1138,7 +1167,7 @@ class Orb extends Tile {
 			var target = this
 			player.specialJump = () => {
 				target.timeout = 10
-				if (view instanceof GameView) view.particles.push(new OrbActivateParticle(target.x + 0.5, target.y + 0.5, target.particleColor))
+				if (view instanceof GameView) view.particles.push(new OrbActivateParticle(view, target.x + 0.5, target.y + 0.5, target.particleColor))
 				target.activate(player)
 			}
 		}
@@ -1150,13 +1179,14 @@ class Orb extends Tile {
 }
 class JumpOrb extends Orb {
 	/**
+	 * @param {View} view
 	 * @param {number} x
 	 * @param {number} y
 	 * @param {number} rotation
 	 * @param {string[]} groups
 	 */
-	constructor(x, y, rotation, groups) {
-		super(x, y, rotation, groups)
+	constructor(view, x, y, rotation, groups) {
+		super(view, x, y, rotation, groups)
 	}
 	/**
 	 * @param {Player} player
@@ -1167,13 +1197,14 @@ class JumpOrb extends Orb {
 }
 class GravityOrb extends Orb {
 	/**
+	 * @param {View} view
 	 * @param {number} x
 	 * @param {number} y
 	 * @param {number} rotation
 	 * @param {string[]} groups
 	 */
-	constructor(x, y, rotation, groups) {
-		super(x, y, rotation, groups)
+	constructor(view, x, y, rotation, groups) {
+		super(view, x, y, rotation, groups)
 		this.particleColor = "cyan"
 	}
 	/**
@@ -1186,13 +1217,14 @@ class GravityOrb extends Orb {
 }
 class BlackOrb extends Orb {
 	/**
+	 * @param {View} view
 	 * @param {number} x
 	 * @param {number} y
 	 * @param {number} rotation
 	 * @param {string[]} groups
 	 */
-	constructor(x, y, rotation, groups) {
-		super(x, y, rotation, groups)
+	constructor(view, x, y, rotation, groups) {
+		super(view, x, y, rotation, groups)
 		this.particleColor = "black"
 	}
 	/**
@@ -1204,20 +1236,22 @@ class BlackOrb extends Orb {
 }
 class StartPosBlock extends Tile {
 	/**
+	 * @param {View} view
 	 * @param {number} x
 	 * @param {number} y
 	 */
-	constructor(x, y) {
-		super(x, y, 1, 1, 0, [])
+	constructor(view, x, y) {
+		super(view, x, y, 1, 1, 0, [])
 		if (viewType == "game") this.elm.remove()
 	}
 	/**
-	 * @param {typeof Object} type
+	 * @param {View} view
+	 * @param {typeof StartPosBlock} type
 	 * @param {object} info
 	 */
-	static load(type, info) {
+	static load(view, type, info) {
 		// @ts-ignore
-		return new type(info.x, info.y)
+		return new type(view, info.x, info.y)
 	}
 	/**
 	 * @param {number[]} pos
@@ -1244,13 +1278,14 @@ class StartPosBlock extends Tile {
 }
 class Coin extends Tile {
 	/**
+	 * @param {View} view
 	 * @param {number} x
 	 * @param {number} y
 	 * @param {number} rotation
 	 * @param {string[]} groups
 	 */
-	constructor(x, y, rotation, groups) {
-		super(x, y, 1, 1, rotation, groups)
+	constructor(view, x, y, rotation, groups) {
+		super(view, x, y, 1, 1, rotation, groups)
 		/** @type {number} */
 		this.activated = 0
 		/** @type {boolean} */
@@ -1290,13 +1325,14 @@ class Coin extends Tile {
 }
 class Trigger extends Tile {
 	/**
+	 * @param {View} view
 	 * @param {number} x
 	 * @param {number} y
 	 * @param {boolean} needsTouch
 	 * @param {string[]} groups
 	 */
-	constructor(x, y, needsTouch, groups) {
-		super(x, y, 1, 1, 0, groups)
+	constructor(view, x, y, needsTouch, groups) {
+		super(view, x, y, 1, 1, 0, groups)
 		/** @type {boolean} */
 		this.needsTouch = needsTouch == true
 		/** @type {boolean} */
@@ -1338,6 +1374,7 @@ class Trigger extends Tile {
 }
 class ColorTrigger extends Trigger {
 	/**
+	 * @param {View} view
 	 * @param {number} x
 	 * @param {number} y
 	 * @param {boolean} needsTouch
@@ -1346,8 +1383,8 @@ class ColorTrigger extends Trigger {
 	 * @param {number} duration
 	 * @param {string[]} groups
 	 */
-	constructor(x, y, needsTouch, section, newColor, duration, groups) {
-		super(x, y, needsTouch, groups)
+	constructor(view, x, y, needsTouch, section, newColor, duration, groups) {
+		super(view, x, y, needsTouch, groups)
 		/** @type {"stage" | "bg"} */
 		this.section = section
 		/** @type {number[]} */
@@ -1362,6 +1399,7 @@ class ColorTrigger extends Trigger {
 	}
 	/**
 	 * @param {any[]} pos
+	 * @returns {object}
 	 */
 	static default(pos) {
 		return {
@@ -1374,12 +1412,13 @@ class ColorTrigger extends Trigger {
 		}
 	}
 	/**
-	 * @param {typeof Object} type
+	 * @param {View} view
+	 * @param {typeof Tile} type
 	 * @param {object} info
 	 */
-	static load(type, info) {
+	static load(view, type, info) {
 		// @ts-ignore
-		return new type(info.x, info.y, info.needsTouch, info.section, info.color, info.duration)
+		return new type(view, info.x, info.y, info.needsTouch, info.section, info.color, info.duration)
 	}
 	save() {
 		return {
@@ -1420,13 +1459,14 @@ class ColorTrigger extends Trigger {
 }
 class Pad extends Tile {
 	/**
+	 * @param {View} view
 	 * @param {number} x
 	 * @param {number} y
 	 * @param {number} rotation
 	 * @param {string[]} groups
 	 */
-	constructor(x, y, rotation, groups) {
-		super(x, y, 1, 1, rotation, groups)
+	constructor(view, x, y, rotation, groups) {
+		super(view, x, y, 1, 1, rotation, groups)
 		this.timeout = 0
 	}
 	getRect() {
@@ -1460,13 +1500,14 @@ class Pad extends Tile {
 }
 class JumpPad extends Pad {
 	/**
+	 * @param {View} view
 	 * @param {number} x
 	 * @param {number} y
 	 * @param {number} rotation
 	 * @param {string[]} groups
 	 */
-	constructor(x, y, rotation, groups) {
-		super(x, y, rotation, groups)
+	constructor(view, x, y, rotation, groups) {
+		super(view, x, y, rotation, groups)
 		this.timeout = 0
 	}
 	/**
@@ -1478,13 +1519,14 @@ class JumpPad extends Pad {
 }
 class SmallJumpPad extends Pad {
 	/**
+	 * @param {View} view
 	 * @param {number} x
 	 * @param {number} y
 	 * @param {number} rotation
 	 * @param {string[]} groups
 	 */
-	constructor(x, y, rotation, groups) {
-		super(x, y, rotation, groups)
+	constructor(view, x, y, rotation, groups) {
+		super(view, x, y, rotation, groups)
 	}
 	/**
 	 * @param {Player} player
@@ -1495,13 +1537,14 @@ class SmallJumpPad extends Pad {
 }
 class GravityPad extends Pad {
 	/**
+	 * @param {View} view
 	 * @param {number} x
 	 * @param {number} y
 	 * @param {number} rotation
 	 * @param {string[]} groups
 	 */
-	constructor(x, y, rotation, groups) {
-		super(x, y, rotation, groups)
+	constructor(view, x, y, rotation, groups) {
+		super(view, x, y, rotation, groups)
 	}
 	/**
 	 * @param {Player} player
@@ -1515,6 +1558,7 @@ class GravityPad extends Pad {
 }
 class Portal extends Tile {
 	/**
+	 * @param {View} view
 	 * @param {number} x
 	 * @param {number} y
 	 * @param {number} realheight
@@ -1523,8 +1567,8 @@ class Portal extends Tile {
 	 * @param {number} dh
 	 * @param {string[]} groups
 	 */
-	constructor(x, y, dw, dh, realheight, rotation, groups) {
-		super(x, y, dw, dh, rotation, groups)
+	constructor(view, x, y, dw, dh, realheight, rotation, groups) {
+		super(view, x, y, dw, dh, rotation, groups)
 		this.realheight = realheight
 		if (debugMode) RectDisplay.create(this)
 	}
@@ -1549,14 +1593,15 @@ class Portal extends Tile {
 }
 class GravityPortal extends Portal {
 	/**
+	 * @param {View} view
 	 * @param {number} x
 	 * @param {number} y
 	 * @param {number} rotation
 	 * @param {number} gravity
 	 * @param {string[]} groups
 	 */
-	constructor(x, y, rotation, gravity, groups) {
-		super(x, y, 1, 2.57, 3, rotation, groups)
+	constructor(view, x, y, rotation, gravity, groups) {
+		super(view, x, y, 1, 2.57, 3, rotation, groups)
 		this.gravity = gravity
 	}
 	/**
@@ -1568,36 +1613,39 @@ class GravityPortal extends Portal {
 }
 class GravityPortalDown extends GravityPortal {
 	/**
+	 * @param {View} view
 	 * @param {number} x
 	 * @param {number} y
 	 * @param {number} rotation
 	 * @param {string[]} groups
 	 */
-	constructor(x, y, rotation, groups) {
-		super(x, y, rotation, 1, groups)
+	constructor(view, x, y, rotation, groups) {
+		super(view, x, y, rotation, 1, groups)
 	}
 }
 class GravityPortalUp extends GravityPortal {
 	/**
+	 * @param {View} view
 	 * @param {number} x
 	 * @param {number} y
 	 * @param {number} rotation
 	 * @param {string[]} groups
 	 */
-	constructor(x, y, rotation, groups) {
-		super(x, y, rotation, -1, groups)
+	constructor(view, x, y, rotation, groups) {
+		super(view, x, y, rotation, -1, groups)
 	}
 }
 class GamemodePortal extends Portal {
 	/**
+	 * @param {View} view
 	 * @param {number} x
 	 * @param {number} y
 	 * @param {number} rotation
 	 * @param {typeof GameMode} gamemode
 	 * @param {string[]} groups
 	 */
-	constructor(x, y, rotation, gamemode, groups) {
-		super(x, y, 1.4545, 3.2, 3, rotation, groups)
+	constructor(view, x, y, rotation, gamemode, groups) {
+		super(view, x, y, 1.4545, 3.2, 3, rotation, groups)
 		/** @type {typeof GameMode} */
 		this.mode = gamemode
 	}
@@ -1611,52 +1659,56 @@ class GamemodePortal extends Portal {
 }
 class CubePortal extends GamemodePortal {
 	/**
+	 * @param {View} view
 	 * @param {number} x
 	 * @param {number} y
 	 * @param {number} rotation
 	 * @param {string[]} groups
 	 */
-	constructor(x, y, rotation, groups) {
-		super(x, y, rotation, CubeMode, groups)
+	constructor(view, x, y, rotation, groups) {
+		super(view, x, y, rotation, CubeMode, groups)
 	}
 }
 class ShipPortal extends GamemodePortal {
 	/**
+	 * @param {View} view
 	 * @param {number} x
 	 * @param {number} y
 	 * @param {number} rotation
 	 * @param {string[]} groups
 	 */
-	constructor(x, y, rotation, groups) {
-		super(x, y, rotation, ShipMode, groups)
+	constructor(view, x, y, rotation, groups) {
+		super(view, x, y, rotation, ShipMode, groups)
 	}
 }
 class BallPortal extends GamemodePortal {
 	/**
+	 * @param {View} view
 	 * @param {number} x
 	 * @param {number} y
 	 * @param {number} rotation
 	 * @param {string[]} groups
 	 */
-	constructor(x, y, rotation, groups) {
-		super(x, y, rotation, BallMode, groups)
+	constructor(view, x, y, rotation, groups) {
+		super(view, x, y, rotation, BallMode, groups)
 	}
 }
 class WavePortal extends GamemodePortal {
 	/**
+	 * @param {View} view
 	 * @param {number} x
 	 * @param {number} y
 	 * @param {number} rotation
 	 * @param {string[]} groups
 	 */
-	constructor(x, y, rotation, groups) {
-		super(x, y, rotation, WaveMode, groups)
+	constructor(view, x, y, rotation, groups) {
+		super(view, x, y, rotation, WaveMode, groups)
 	}
 }
 
 class View {
 	constructor() {
-		this.stage = new Stage()
+		this.stage = new Stage(this)
 		/** @type {Tile[]} */
 		this.tiles = []
 		/** @type {Player | null} */
@@ -1669,7 +1721,7 @@ class View {
 			var obj = o[i]
 			var type = getObjectFromLocation("tile", obj.type.split("."))
 			/** @type {Tile} */
-			var c = type.load(type, obj.data)
+			var c = type.load(this, type, obj.data)
 			this.tiles.push(c)
 			this.stageWidth = Math.max(this.stageWidth, c.x + 5)
 			this.stageHeight = Math.max(this.stageHeight, c.y + 15)
@@ -1684,6 +1736,7 @@ class View {
 		}
 	}
 	loadLevel() {
+		var t = this
 		if (levelName == undefined) {
 			levelName = "new_level.json"
 			return
@@ -1701,7 +1754,7 @@ class View {
 			levelMeta.settings.gamemode = level.settings.gamemode
 			levelMeta.settings.platformer = level.settings.platformer
 			view.stage.reset()
-			view.player = new Player()
+			view.player = new Player(t)
 		})
 		x.send()
 	}
@@ -1767,7 +1820,7 @@ class GameView extends View {
 	win() {
 		this.hasWon = true
 		this.player?.elm.remove()
-		this.particles.push(new LevelCompleteSign())
+		this.particles.push(new LevelCompleteSign(this))
 		this.sendVerification()
 	}
 	restart() {
