@@ -10,11 +10,12 @@ function on_click(evt) {
 	var pos = [
 		// @ts-ignore
 		Math.floor(evt.clientX / 20) + document.querySelector("#viewX").valueAsNumber,
-		// @ts-ignore
-		Math.floor(((window.innerHeight * (1 - floorHeight)) - evt.clientY) / 20) + document.querySelector("#viewY").valueAsNumber
+		Math.floor(((window.innerHeight * (1 - floorHeight)) - evt.clientY) / 20) - 1
 	]
 	if (pos[1] < 0) return
 	if (pos[0] < 0) return
+	// @ts-ignore
+	pos[1] += document.querySelector("#viewY").valueAsNumber
 	if (editing != null) deselect()
 	// @ts-ignore
 	var selectedBlock = document.querySelector(".option-element-selected").dataset.value
@@ -65,6 +66,8 @@ function editTile(tile) {
 	if (editing != null) deselect()
 	editing = tile
 	// UI
+	/** @type {HTMLElement} */
+	// @ts-ignore
 	var parent = document.querySelector(".editing")
 	parent.removeAttribute("style")
 	parent.innerHTML = tile.getEdit().join("")
@@ -77,6 +80,8 @@ function editTileList(tiles) {
 	if (tiles.length == 0) return
 	if (tiles.length == 1) return editTile(tiles[0])
 	// UI
+	/** @type {HTMLElement} */
+	// @ts-ignore
 	var parent = document.querySelector(".editing")
 	parent.removeAttribute("style")
 	parent.innerHTML = `<div style="display: inline-block;">Select tile to edit:</div>`
@@ -84,7 +89,10 @@ function editTileList(tiles) {
 		var e = document.createElement("div")
 		e.classList.add("option-element")
 		e.setAttribute("style", `display: inline-block;`)
-		e.innerHTML = `<div style="background: url(../assets/tile/${getLocationFromObject("tile", tiles[i]).join("/")}.svg); width: 1em; height: 1em; display: inline-block;"></div>`
+		var location = ["error"]
+		var r_location = getLocationFromObject("tile", tiles[i])
+		if (r_location) location = [...r_location]
+		e.innerHTML = `<div style="background: url(../assets/tile/${location.join("/")}.svg); width: 1em; height: 1em; display: inline-block;"></div>`
 		parent.appendChild(e)
 		// @ts-ignore
 		e._TileSource = tiles[i]
@@ -98,6 +106,8 @@ function deselect() {
 		SceneItem.prototype.tick.call(tile, 1)
 	}
 	if (editing != null) editing = null
+	/** @type {HTMLElement} */
+	// @ts-ignore
 	var parent = document.querySelector(".editing")
 	parent.setAttribute("style", "display: none;")
 }
@@ -107,7 +117,10 @@ function getExport() {
 	var r = []
 	for (var i = 0; i < view.tiles.length; i++) {
 		var tile = view.tiles[i]
-		var type = getLocationFromObject("tile", tile).join(".")
+		var location = ["error"]
+		var r_location = getLocationFromObject("tile", tile)
+		if (r_location) location = [...r_location]
+		var type = location.join(".")
 		r.push({
 			type,
 			data: tile.save()
@@ -181,6 +194,8 @@ function saveLevel() {
 // }
 function editLevelSettings() {
 	editing = "settings"
+	/** @type {HTMLElement} */
+	// @ts-ignore
 	var parent = document.querySelector(".editing")
 	parent.removeAttribute("style")
 	parent.innerHTML = [
@@ -203,7 +218,7 @@ function updateViewPos() {
 	var x = document.querySelector("#viewX").valueAsNumber
 	// @ts-ignore
 	var y = document.querySelector("#viewY").valueAsNumber
-	document.querySelector('#scene').setAttribute('style', `--move-amount-x: ${x}; --move-amount-y: ${y};`)
+	document.querySelector('#scene')?.setAttribute('style', `--move-amount-x: ${x}; --move-amount-y: ${y};`)
 }
 
 /**
@@ -221,14 +236,14 @@ function addOptionElements(folder) {
 			e.setAttribute("onclick", `this.classList.add("option-element-selected")`)
 			e.innerHTML = `<div style="background: url(../assets/tile/${[...folder, k[i]].join("/")}.svg); background-repeat: no-repeat; background-position: center; width: 1em; height: 1em; display: inline-block;"></div>`
 			e.dataset.value = [...folder, k[i]].join(".")
-			document.querySelector("#blocks").appendChild(e)
+			document.querySelector("#blocks")?.appendChild(e)
 		}
 	}
 }
 
 (() => {
-	document.querySelector("#blocks").addEventListener("click", () => {
-		document.querySelector('.option-element-selected').classList.remove('option-element-selected');
+	document.querySelector("#blocks")?.addEventListener("click", () => {
+		document.querySelector('.option-element-selected')?.classList.remove('option-element-selected');
 	}, true)
 	addOptionElements([])
 })();

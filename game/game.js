@@ -18,7 +18,7 @@ function frame(amount) {
 	view.player?.finishTick(amount)
 }
 function aFrames() {
-	if (view.deathTime > 0) {
+	if ((! view.hasWon) && view.deathTime > 0) {
 		view.deathTime -= 1
 		if (view.deathTime <= 0) {
 			view.player = new Player(view)

@@ -319,10 +319,10 @@ class Player extends SceneItem {
 				return
 			}
 		}
-		this.x = 0
+		this.x = -3
 		this.y = 0
 		if (levelMeta.settings.platformer) {
-			this.x = -3
+			this.x = 0
 		}
 	}
 	setStartMode() {
