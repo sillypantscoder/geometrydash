@@ -1587,7 +1587,7 @@ class Portal extends Tile {
 	 */
 	collide(player) {
 		var playerRect = player.getGeneralRect()
-		var thisRect = this.getRect()
+		var thisRect = this.getRect().rotate(this.rotation, this.x + 0.5, this.y + 0.5)
 		if (playerRect.colliderect(thisRect)) {
 			// this.enabled = true
 			this.activate(player)
