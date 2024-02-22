@@ -264,6 +264,9 @@ class Player extends SceneItem {
 		} else {
 			this.x += 0.1 * amount
 		}
+		if (this.x < 0) {
+			this.x = 0
+		}
 		// Fall
 		this.mode.gravity(amount)
 		// Update Y
@@ -523,8 +526,7 @@ class WaveMode extends GameMode {
 	 * @param {number} h
 	 */
 	hitCeiling(h) {
-		this.player.y = h - 0.1
-		this.player.vy = -0.01
+		this.player.destroy()
 	}
 }
 class Particle extends SceneItem {

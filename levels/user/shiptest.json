@@ -32,7 +32,7 @@
 		{"type": "portal.gravity-down", "data": {"x": 1, "y": 1, "rotation": 90, "groups": []}}
 	],
 	"completion": {
-		"percentage": 0,
+		"percentage": 6,
 		"coins": []
 	},
 	"deleted": false
