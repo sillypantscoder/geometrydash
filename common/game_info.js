@@ -378,7 +378,10 @@ class CubeMode extends GameMode {
 			var targetRotation = (Math.floor((this.player.rotation - 45) / 90) * 90) + 90
 			this.player.rotation = (targetRotation + (this.player.rotation * 2)) / 3
 			if (this.player.gravity < 0) {
-				if (this.player.view instanceof GameView) this.player.view.particles.push(new SlideParticle(this.player.view, this.player.x, this.player.y + 1))
+				if (this.player.view instanceof GameView) {
+					if ((!levelMeta.settings.platformer) || this.player.view.isPressingRight) this.player.view.particles.push(new SlideParticle(this.player.view, this.player.x, this.player.y + 1, 1))
+					if ((levelMeta.settings.platformer) && this.player.view.isPressingLeft) this.player.view.particles.push(new SlideParticle(this.player.view, this.player.x + 1, this.player.y + 1, -1))
+				}
 				var ph = this.player.getGeneralRect().h
 				if (this.player.y + ph > this.player.groundHeight) {
 					this.player.y -= 0.1
@@ -387,7 +390,10 @@ class CubeMode extends GameMode {
 					}
 				}
 			} else {
-				if (this.player.view instanceof GameView) this.player.view.particles.push(new SlideParticle(this.player.view, this.player.x, this.player.y))
+				if (this.player.view instanceof GameView) {
+					if ((!levelMeta.settings.platformer) || this.player.view.isPressingRight) this.player.view.particles.push(new SlideParticle(this.player.view, this.player.x, this.player.y, 1))
+					if ((levelMeta.settings.platformer) && this.player.view.isPressingLeft) this.player.view.particles.push(new SlideParticle(this.player.view, this.player.x + 1, this.player.y, -1))
+				}
 				if (this.player.y < this.player.groundHeight) {
 					this.player.y += 0.1
 					if (this.player.y > this.player.groundHeight) {
@@ -427,7 +433,10 @@ class ShipMode extends GameMode {
 			this.player.vy -= 0.005 * this.player.gravity
 		}
 		if (this.player.gravity < 0) {
-			if (this.player.view instanceof GameView) this.player.view.particles.push(new SlideParticle(this.player.view, this.player.x + 0.05, this.player.y + 0.8))
+			if (this.player.view instanceof GameView) {
+				if ((!levelMeta.settings.platformer) || this.player.view.isPressingRight) this.player.view.particles.push(new SlideParticle(this.player.view, this.player.x + 0.05, this.player.y + 0.8, 1))
+				if ((levelMeta.settings.platformer) && this.player.view.isPressingLeft) this.player.view.particles.push(new SlideParticle(this.player.view, this.player.x + 0.95, this.player.y + 0.8, -1))
+			}
 			if (this.player.groundHeight != null) {
 				var ph = this.player.getGeneralRect().h
 				if (this.player.y + ph > this.player.groundHeight) {
@@ -439,7 +448,10 @@ class ShipMode extends GameMode {
 				}
 			}
 		} else {
-			if (this.player.view instanceof GameView) this.player.view.particles.push(new SlideParticle(this.player.view, this.player.x + 0.05, this.player.y + 0.2))
+			if (this.player.view instanceof GameView) {
+				if ((!levelMeta.settings.platformer) || this.player.view.isPressingRight) this.player.view.particles.push(new SlideParticle(this.player.view, this.player.x + 0.05, this.player.y + 0.2, 1))
+				if ((levelMeta.settings.platformer) && this.player.view.isPressingLeft) this.player.view.particles.push(new SlideParticle(this.player.view, this.player.x + 0.95, this.player.y + 0.2, -1))
+			}
 			if (this.player.groundHeight != null) {
 				if (this.player.y/* + 0.2*/ < this.player.groundHeight) {
 					this.player.vy = 0
@@ -467,10 +479,18 @@ class BallMode extends GameMode {
 	 * @param {number} amount
 	 */
 	checkJump(amount) {
-		this.player.rotation += 10 * amount * this.player.gravity
+		if ((!levelMeta.settings.platformer) || (this.player.view instanceof GameView && this.player.view.isPressingRight)) {
+			this.player.rotation += 10 * amount * this.player.gravity
+		}
+		if (levelMeta.settings.platformer && this.player.view instanceof GameView && this.player.view.isPressingLeft) {
+			this.player.rotation += -10 * amount * this.player.gravity
+		}
 		if (this.player.groundHeight != null) {
 			if (this.player.gravity < 0) {
-				if (this.player.view instanceof GameView) this.player.view.particles.push(new SlideParticle(this.player.view, this.player.x + 0.3, this.player.y + 1))
+				if (this.player.view instanceof GameView) {
+					if ((!levelMeta.settings.platformer) || this.player.view.isPressingRight) this.player.view.particles.push(new SlideParticle(this.player.view, this.player.x + 0.3, this.player.y + 1, 1))
+					if ((levelMeta.settings.platformer) && this.player.view.isPressingLeft) this.player.view.particles.push(new SlideParticle(this.player.view, this.player.x + 0.7, this.player.y + 1, -1))
+				}
 				var ph = this.player.getGeneralRect().h
 				if (this.player.y + ph > this.player.groundHeight) {
 					this.player.vy = 0
@@ -480,7 +500,10 @@ class BallMode extends GameMode {
 					}
 				}
 			} else {
-				if (this.player.view instanceof GameView) this.player.view.particles.push(new SlideParticle(this.player.view, this.player.x + 0.3, this.player.y))
+				if (this.player.view instanceof GameView) {
+					if ((!levelMeta.settings.platformer) || this.player.view.isPressingRight) this.player.view.particles.push(new SlideParticle(this.player.view, this.player.x + 0.3, this.player.y, 1))
+					if ((levelMeta.settings.platformer) && this.player.view.isPressingLeft) this.player.view.particles.push(new SlideParticle(this.player.view, this.player.x + 0.7, this.player.y, -1))
+				}
 				if (this.player.y < this.player.groundHeight) {
 					this.player.vy = 0
 					this.player.y += 0.1
@@ -562,13 +585,14 @@ class SlideParticle extends Particle {
 	 * @param {GameView} view
 	 * @param {number} x
 	 * @param {number} y
+	 * @param {number} direction
 	 */
-	constructor(view, x, y) {
+	constructor(view, x, y, direction) {
 		super(view, x, y)
 		this.oy = y
 		this.gravity = 1
 		if (this.view.player != null) this.gravity = this.view.player.gravity
-		this.vx = Math.random() / -20
+		this.vx = (Math.random() / -20) * direction
 		this.vy = (Math.random() / 10) * this.gravity
 		this.time = 0
 		this.extraStyles[2] = `--size: 0.1;`
