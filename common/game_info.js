@@ -283,7 +283,7 @@ class Player extends SceneItem {
 		}
 		this.mode.getMax()
 		// Update styles
-		this.extraStyles[0] = "background: url(../assets/game/player/" + getLocationFromObject("gamemode", this.mode) + ".svg);"
+		this.extraStyles[0] = `background: url(data:image/svg+xml;base64,${btoa(this.mode.getIcon())});`
 		this.extraStyles[1] = `transform: rotate(${this.rotation}deg) scaleY(${this.gravity});`
 		this.needsRedraw = true;
 		super.tick(amount)
@@ -344,6 +344,10 @@ class GameMode {
 		/** @type {Player} */
 		this.player = player
 	}
+	/** @returns {string} */
+	getIcon() {
+		throw new Error("Aaaaaa! You're not supposed to do that!");
+	}
 	/**
 	 * @param {number} amount
 	 */
@@ -370,6 +374,26 @@ class GameMode {
 	}
 }
 class CubeMode extends GameMode {
+	getIcon() {
+		return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 18 18">
+	<style>
+		.outline {
+			fill: black;
+		}
+		.middle {
+			fill: #00ff21;
+		}
+		.inside {
+			fill: #00f2ff;
+		}
+	</style>
+	<path class="outline" d="M 0 0 L 18 0 L 18 18 L 0 18 Z M 1 1 L 1 17 L 17 17 L 17 1 Z" />
+	<path class="middle" d="M 1 1 L 17 1 L 17 17 L 1 17 Z M 5 5 L 5 13 L 13 13 L 13 5 Z" />
+	<path class="outline" d="M 6 6 L 12 6 L 12 12 L 6 12 Z M 7 7 L 7 11 L 11 11 L 11 7 Z" />
+	<path class="outline" d="M 4 4 L 14 4 L 14 14 L 4 14 Z M 5 5 L 5 13 L 13 13 L 13 5 Z" />
+	<rect class="inside" x="7" y="7" width="4" height="4" />
+</svg>`
+	}
 	/**
 	 * @param {number} amount
 	 */
@@ -414,6 +438,53 @@ class CubeMode extends GameMode {
 	}
 }
 class ShipMode extends GameMode {
+	/**
+	 * @param {Player} player
+	 */
+	constructor(player) {
+		super(player)
+		this.parent = new CubeMode(player)
+	}
+	getIcon() {
+		return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="-11 -4 37 37">
+	<style>
+		.outline {
+			fill: black;
+		}
+		.middle {
+			fill: #00ff21;
+		}
+		.inside {
+			fill: #00f2ff;
+		}
+	</style>
+	<g>
+		${this.parent.getIcon()}
+	</g>
+	<g>
+		<g>
+			<path class="outline" d="M -2 9 L 2 9 L 2 14 L 20 16 L 20 20 L -2 20 Z M -1 10 L -1 19 L 19 19 L 19 17 L 1 15 L 1 10 Z" />
+			<path class="inside" d="M -1 10 L -1 19 L 19 19 L 19 17 L 1 15 L 1 10 Z" />
+		</g>
+		<g>
+			<path class="outline" d="M 0 20 L 0 27 L 16 27 L 16 20 L 15 20 L 15 26 L 1 26 L 1 20 Z" />
+			<rect class="middle" x="1" y="20" width="14" height="6" />
+		</g>
+		<g>
+			<path class="outline" d="M 20 17 L 26 18 L 26 25 L 16 27 L 16 20 L 17 20 L 17 26 L 25 24 L 25 19 L 20 18 Z" />
+			<path class="middle" d="M 20 18 L 25 19 L 25 24 L 17 26 L 17 20 L 20 20 Z" />
+		</g>
+		<g>
+			<path class="outline" d="M 0 26 L 0 27 L -7 29 L -7 17 L -2 18 L -2 19 L -6 18 L -6 28 Z" />
+			<path class="middle" d="M -6 18 L -2 19 L -2 20 L 0 20 L 0 26 L -6 28 Z" />
+		</g>
+		<g>
+			<path class="outline" d="M -7 18 L -7 19 L -10 19 L -10 27 L -7 27 L -7 28 L -11 28 L -11 18 Z" />
+			<rect class="middle" x="-10" y="19" width="3" height="8" />
+		</g>
+	</g>
+</svg>`
+	}
 	/**
 	 * @param {number} _amount
 	 */
@@ -475,6 +546,27 @@ class ShipMode extends GameMode {
 	}
 }
 class BallMode extends GameMode {
+	getIcon() {
+		return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 18 18">
+	<style>
+		.outline {
+			fill: black;
+		}
+		.middle {
+			fill: #00ff21;
+		}
+		.inside {
+			fill: #00f2ff;
+		}
+	</style>
+	<!-- <path class="middle" d="M 0 8 L 3 6 L 3 3 L 8 4 L 9 0 L 14 5 L 18 5 L 16 11 L 18 14 L 12 18 L 10 16 L 7 18 L 5 17 L 7 13 L 0 14 L 4 9 Z" /> -->
+	<!-- <path class="inside" d="M 6 7 L 5 6 L 9 6 L 9 3 L 13 7 L 17 7 L 13 11 L 16 13 L 11 16 L 10 13 L 7 17 L 8 11 L 3 13 L 7 8 L 2 8 Z" /> -->
+	<path class="outline" d="M 9.78 17.97 L 9.7 16.97 L 15.89 14.79 L 15.13 14.14 L 17.97 8.22 L 16.97 8.3 L 14.79 2.11 L 14.14 2.87 L 8.22 0.03 L 8.3 1.03 L 2.11 3.21 L 2.87 3.86 L 0.03 9.78 L 1.03 9.7 L 3.21 15.89 L 3.86 15.13 Z" />
+	<path class="middle" d="M 9 17 L 9 16 L 14.66 14.66 L 13.95 13.95 L 17 9 L 16 9 L 14.66 3.34 L 13.95 4.05 L 9 1 L 9 2 L 3.34 3.34 L 4.05 4.05 L 1 9 L 2 9 L 3.34 14.66 L 4.05 13.95 Z" />
+	<path class="outline" d="M 9.44 13.98 L 9.35 12.98 L 12.83 12.21 L 12.06 11.57 L 13.98 8.56 L 12.98 8.65 L 12.21 5.17 L 11.57 5.94 L 8.56 4.02 L 8.65 5.02 L 5.17 5.79 L 5.94 6.43 L 4.02 9.44 L 5.02 9.35 L 5.79 12.83 L 6.43 12.06 Z" />
+	<path class="inside" d="M 9 13 L 9 12 L 11.83 11.83 L 11.12 11.12 L 13 9 L 12 9 L 11.83 6.17 L 11.12 6.88 L 9 5 L 9 6 L 6.17 6.17 L 6.88 6.88 L 5 9 L 6 9 L 6.17 11.83 L 6.88 11.12 Z" />
+</svg>`
+	}
 	/**
 	 * @param {number} amount
 	 */
@@ -524,6 +616,27 @@ class BallMode extends GameMode {
 	}
 }
 class WaveMode extends GameMode {
+	/** @returns {string} */
+	getIcon() {
+		return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="4 2 14 14">
+	<style>
+		.outline {
+			fill: black;
+		}
+		.middle {
+			fill: #00ff21;
+		}
+		.inside {
+			fill: #00f2ff;
+		}
+	</style>
+	<path class="outline" d="M 9 7 L 4 7 L 5 9 L 4 11 L 9 11 Z" />
+	<path class="middle" d="M 5 7.5 L 8.4 7.5 L 9 9 L 8.4 10.5 L 5 10.5 L 5.8 9 Z" />
+	<!--  -->
+	<path class="outline" d="M 7 4 L 9 9 L 7 14 L 18 9 Z" />
+	<path class="inside" d="M 8.5 5.5 L 10 9 L 8.5 12.5 L 16.5 9 Z" />
+</svg>`
+	}
 	/**
 	 * @param {number} _amount
 	 */
@@ -1409,7 +1522,7 @@ class Coin extends Tile {
 	 * @param {number} amount
 	 */
 	tick(amount) {
-		if (this.alreadygot) this.extraStyles[0] = `background: url(${btoa(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">
+		if (this.alreadygot) this.extraStyles[0] = `background: url(data:image/svg+xml;base64,${btoa(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">
 	<path d="M 0.5 10 A 1 1 0 0 0 19.5 10 A 1 1 0 0 0 0.5 10 Z" fill="none" stroke="black" stroke-width="1" stroke-dasharray="1" />
 	<path d="M 12 8 L 14 7 A 5 5 0 1 0 14 13 L 12 12 A 3 3 0 1 1 12 8 Z" fill="white" stroke="black" stroke-width="0.3" />
 </svg>`) /* I hate Python for the fact that you can't do this with f-strings */}) no-repeat;`
