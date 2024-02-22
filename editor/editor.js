@@ -1,3 +1,6 @@
+var view = new View()
+view.loadLevel()
+
 /** @type {SceneItem | null | string} */
 var editing = null
 
@@ -36,7 +39,7 @@ function on_click(evt) {
 			if (tile.x == pos[0] && tile.y == pos[1]) {
 				tile.rotation = (tile.rotation + 90) % 360
 				tile.needsRedraw = true
-				SceneItem.prototype.tick.call(tile, 1)
+				tile.update()
 			}
 		}
 	} else if (selectedBlock == ".edit") {
@@ -54,9 +57,9 @@ function on_click(evt) {
 		var type = getObjectFromLocation("tile", selectedBlock.split("."))
 		var args = type.default(pos)
 		/** @type {Tile} */
-		var newTile = type.load(type, args)
+		var newTile = type.load(view, type, args)
 		view.tiles.push(newTile)
-		SceneItem.prototype.tick.call(newTile, 1)
+		newTile.update()
 	}
 }
 // @ts-ignore
@@ -72,7 +75,7 @@ function editTile(tile) {
 	parent.removeAttribute("style")
 	parent.innerHTML = tile.getEdit().join("")
 	tile.needsRedraw = true
-	SceneItem.prototype.tick.call(tile, 1)
+	tile.update()
 }
 /** @param {Tile[]} tiles */
 function editTileList(tiles) {
@@ -103,7 +106,7 @@ function deselect() {
 	if (editing instanceof Tile) {
 		var tile = editing
 		editing = null
-		SceneItem.prototype.tick.call(tile, 1)
+		tile.update()
 	}
 	if (editing != null) editing = null
 	/** @type {HTMLElement} */

@@ -59,9 +59,12 @@ class SceneItem {
 	 */
 	tick(_amount) {
 		if (this.needsRedraw) {
-			this.elm.setAttribute("style", `--x: ${this.x}; --y: ${this.y}; transform: rotate(${this.rotation}deg);${this.extraStyles.map((v) => v==undefined ? "" : ` ${v}`).join("")}`)
+			this.update()
 			this.needsRedraw = false
 		}
+	}
+	update() {
+		this.elm.setAttribute("style", `--x: ${this.x}; --y: ${this.y}; transform: rotate(${this.rotation}deg);${this.extraStyles.map((v) => v==undefined ? "" : ` ${v}`).join("")}`)
 	}
 	destroy() {
 		this.elm.remove()
@@ -184,7 +187,7 @@ class Stage extends SceneItem {
 		if (this.view.player) {
 			// Camera X
 			if (this.view.player.x) {
-				this.lastX = Math.max(0, this.view.player.x - 20)
+				this.lastX = Math.max(0, this.view.player.x - 10)
 			}
 			// Camera Y
 			var ty = this.view.player.y - 5
@@ -968,14 +971,14 @@ class Tile extends SceneItem {
 	getEdit() {
 		return [
 			`<div><button onclick="editing.destroy(); view.tiles.splice(view.tiles.indexOf(editing), 1); deselect();">Remove Tile</button></div>`,
-			`<div>Tile Rotation: <select oninput="editing.rotation = Number(this.value); SceneItem.prototype.tick.call(editing, 1);">
+			`<div>Tile Rotation: <select oninput="editing.rotation = Number(this.value); editing.update();">
 	<option value="0"${this.rotation==0 ? " selected" : ""}>&nbsp;&uarr; 0</option>
 	<option value="90"${this.rotation==90 ? " selected" : ""}>&rarr; 90</option>
 	<option value="180"${this.rotation==180 ? " selected" : ""}>&nbsp;&darr; 180</option>
 	<option value="270"${this.rotation==270 ? " selected" : ""}>&larr; 270</option>
 </select></div>`,
-			`<div>X: <input type="number" value="${this.x}" min="0" oninput="editing.x = this.valueAsNumber; SceneItem.prototype.tick.call(editing, 1);"></div>`,
-			`<div>Y: <input type="number" value="${this.y}" min="0" oninput="editing.y = this.valueAsNumber; SceneItem.prototype.tick.call(editing, 1);"></div>`
+			`<div>X: <input type="number" value="${this.x}" min="0" oninput="editing.x = this.valueAsNumber; editing.update();"></div>`,
+			`<div>Y: <input type="number" value="${this.y}" min="0" oninput="editing.y = this.valueAsNumber; editing.update();"></div>`
 		]
 	}
 	getRect() {
@@ -1275,8 +1278,8 @@ class StartPosBlock extends Tile {
 	getEdit() {
 		return [
 			`<div><button onclick="editing.destroy(); view.tiles.splice(view.tiles.indexOf(editing), 1); deselect();">Remove Tile</button></div>`,
-			`<div>X: <input type="number" value="${this.x}" min="0" oninput="editing.x = Math.round(this.valueAsNumber); SceneItem.prototype.tick.call(editing, 1);"></div>`,
-			`<div>Y: <input type="number" value="${this.y}" min="0" oninput="editing.y = Math.round(this.valueAsNumber); SceneItem.prototype.tick.call(editing, 1);"></div>`
+			`<div>X: <input type="number" value="${this.x}" min="0" oninput="editing.x = Math.round(this.valueAsNumber); editing.update();"></div>`,
+			`<div>Y: <input type="number" value="${this.y}" min="0" oninput="editing.y = Math.round(this.valueAsNumber); editing.update();"></div>`
 		]
 	}
 }
