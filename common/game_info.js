@@ -246,11 +246,20 @@ class Player extends SceneItem {
 	}
 	getBlockRects() {
 		var margin = 0.2
+		const maxY = this.getGeneralRect().relative(0, 1 - margin, 1, margin)
+		const minY = this.getGeneralRect().relative(0, 0, 1, margin)
+		const top = this.gravity > 0 ? maxY : minY
+		const bottom = this.gravity > 0 ? minY : maxY
+		// return {
+		// 	bounce: top,
+		// 	move: bottom,
+		// 	platformCollide: this.getGeneralRect().relative(0, margin, 1, 1 - (margin * 2)),
+		// 	death: this.getGeneralRect().relative(margin, margin, 1 - (margin * 2), 1 - (margin * 2)),
+		// }
 		return {
-			death: levelMeta.settings.platformer ?
-				this.getGeneralRect().relative(0, margin, 1, 1 - (margin * 2)) :
-				this.getGeneralRect().relative(margin, margin, 1 - (margin * 2), 1 - (margin * 2)),
-			move: this.gravity > 0 ? this.getGeneralRect().relative(0, 0, 1, margin) : this.getGeneralRect().relative(0, 1 - margin, 1, margin)
+			collide: this.getGeneralRect().relative(0, margin, 1, 1 - (margin * 2)),
+			top: top.relative(margin, 0, 1 - (margin * 2), 1),
+			bottom
 		}
 	}
 	/**
@@ -458,7 +467,7 @@ class ShipMode extends GameMode {
 			fill: #00f2ff;
 		}
 	</style>
-	<g>
+	<g transform="scale(0.4)">
 		${this.parent.getIcon()}
 	</g>
 	<g>
@@ -1056,24 +1065,29 @@ class Tile extends SceneItem {
 	 * @param {View} view
 	 * @param {number} x
 	 * @param {number} y
-	 * @param {string} svg
 	 * @param {number} dw
 	 * @param {number} dh
 	 * @param {number} rotation
 	 * @param {string[]} groups
 	 */
-	constructor(view, x, y, svg, dw, dh, rotation, groups) {
+	constructor(view, x, y, dw, dh, rotation, groups) {
 		super(view, x, y)
 		this.display_size = [dw, dh]
 		var location = getLocationFromObject("tile", this)
 		var r_location = ["broken"]
 		if (location != null) r_location = [...location]
-		this.extraStyles[0] = `background: url(data:image/svg+xml;base64,${btoa(svg)}) no-repeat;`
+		this.extraStyles[0] = `background: url(data:image/svg+xml;base64,${btoa(this.getImage())}) no-repeat;`
 		this.extraStyles[1] = `--dw: ${dw}; --dh: ${dh};`
 		this.rotation = rotation
 		this.groups = groups
 		// this.enabled = false
 		if (debugMode) RectDisplay.create(this.view, this)
+	}
+	/** @returns {string} */
+	getImage() {
+		return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">
+	<path d="M 0 0 L 20 0 L 20 20 L 0 20 Z M 1 1 L 1 19 L 19 19 L 19 1 Z" fill="white" />
+</svg>`
 	}
 	/**
 	 * @param {View} view
@@ -1145,12 +1159,11 @@ class TileBlock extends Tile {
 	 * @param {View} view
 	 * @param {number} x
 	 * @param {number} y
-	 * @param {string} svg
 	 * @param {number} rotation
 	 * @param {string[]} groups
 	 */
-	constructor(view, x, y, svg, rotation, groups) {
-		super(view, x, y, svg, 1, 1, rotation, groups)
+	constructor(view, x, y, rotation, groups) {
+		super(view, x, y, 1, 1, rotation, groups)
 	}
 	/**
 	 * @param {Player} player
@@ -1158,24 +1171,29 @@ class TileBlock extends Tile {
 	collide(player) {
 		var playerRects = player.getBlockRects()
 		var thisRect = this.getRect().rotate(this.rotation, this.x + 0.5, this.y + 0.5)
-		if (playerRects.death.colliderect(thisRect)) {
-			if (! levelMeta.settings.platformer) {
-				// If the player is right in the middle of this, they die.
-				player.destroy()
+		if (playerRects.collide.colliderect(thisRect)) {
+			// The player has collided with either the top or side of this block.
+			if (playerRects.top.colliderect(thisRect)) {
+				// The player has collided with the top of this block.
+				player.mode.hitCeiling(thisRect.y)
 			} else {
-				var playerUnder = playerRects.death.relative(0.2, -1, 0.6, 3).colliderect(thisRect)
-				if (playerUnder && (playerRects.death.y + playerRects.death.h) * player.gravity < (thisRect.y + 0.1) * player.gravity) {
-					// Player hit the ceiling!
-					player.mode.hitCeiling(thisRect.y)
-				} else if (playerRects.death.centerX() < thisRect.centerX()) {
-					// Player is to the left of this block
-					player.x = thisRect.x - playerRects.death.w
+				// The player hit the side of this block
+				// If we are not in platformer mode, then the player has died.
+				if (! levelMeta.settings.platformer) {
+					player.destroy() // :(
 				} else {
-					// Player is to the right of this block
-					player.x = thisRect.x + thisRect.w
+					// Otherwise, we need to move the player so they are not colliding with this block.
+					if (playerRects.collide.centerX() < thisRect.centerX()) {
+						// Player is to the left of this block
+						player.x = thisRect.x - playerRects.collide.w
+					} else {
+						// Player is to the right of this block
+						player.x = thisRect.x + thisRect.w
+					}
 				}
 			}
-		} else if (playerRects.move.colliderect(thisRect)) {
+		}
+		if (playerRects.bottom.colliderect(thisRect)) {
 			// If the player is almost on top of this block, push them.
 			if (player.gravity > 0) {
 				player.groundHeight = thisRect.y + thisRect.h
@@ -1190,12 +1208,11 @@ class TileDeath extends Tile {
 	 * @param {View} view
 	 * @param {number} x
 	 * @param {number} y
-	 * @param {string} svg
 	 * @param {number} rotation
 	 * @param {string[]} groups
 	 */
-	constructor(view, x, y, svg, rotation, groups) {
-		super(view, x, y, svg, 1, 1, rotation, groups)
+	constructor(view, x, y, rotation, groups) {
+		super(view, x, y, 1, 1, rotation, groups)
 	}
 	/**
 	 * @param {Player} player
@@ -1224,7 +1241,10 @@ class BasicBlock extends TileBlock {
 	 * @param {string[]} groups
 	 */
 	constructor(view, x, y, rotation, groups) {
-		super(view, x, y, `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">
+		super(view, x, y, rotation, groups)
+	}
+	getImage() {
+		return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">
 	<defs>
 		<linearGradient id="mainGradient" gradientTransform="rotate(90)">
 			<stop offset="0%" stop-color="#000F" />
@@ -1233,7 +1253,7 @@ class BasicBlock extends TileBlock {
 	</defs>
 	<path d="M 0 0 L 20 0 L 20 20 L 0 20 Z M 1 1 L 1 19 L 19 19 L 19 1 Z" fill="white" />
 	<rect x="1" y="1" width="18" height="18" fill="url(#mainGradient)" />
-</svg>`, rotation, groups)
+</svg>`
 	}
 }
 class HalfBlock extends TileBlock {
@@ -1245,7 +1265,10 @@ class HalfBlock extends TileBlock {
 	 * @param {string[]} groups
 	 */
 	constructor(view, x, y, rotation, groups) {
-		super(view, x, y, `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">
+		super(view, x, y, rotation, groups)
+	}
+	getImage() {
+		return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">
 	<defs>
 		<linearGradient id="mainGradient" gradientTransform="rotate(90)">
 			<stop offset="0%" stop-color="#000F" />
@@ -1254,7 +1277,7 @@ class HalfBlock extends TileBlock {
 	</defs>
 	<path d="M 0 0 L 20 0 L 20 10 L 0 10 Z M 1 1 L 1 9 L 19 9 L 19 1 Z" fill="white" />
 	<rect x="1" y="1" width="18" height="8" fill="url(#mainGradient)" />
-</svg>`, rotation, groups)
+</svg>`
 	}
 	getRect() {
 		return super.getRect().relative(0, 0.5, 1, 0.5);
@@ -1269,7 +1292,10 @@ class BasicSpike extends TileDeath {
 	 * @param {string[]} groups
 	 */
 	constructor(view, x, y, rotation, groups) {
-		super(view, x, y, `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 10 10">
+		super(view, x, y, rotation, groups)
+	}
+	getImage() {
+		return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 10 10">
 	<defs>
 		<linearGradient id="mainGradient" gradientTransform="rotate(90)">
 			<stop offset="0%" stop-color="#000F" />
@@ -1278,7 +1304,7 @@ class BasicSpike extends TileDeath {
 	</defs>
 	<path d="M 5 0 L 10 10 L 0 10 Z M 5 1.5 L 1 9.4 L 9 9.4 Z" fill="white" />
 	<path d="M 5 1.5 L 1 9.4 L 9 9.4 Z" fill="url(#mainGradient)" />
-</svg>`, rotation, groups)
+</svg>`
 	}
 	getRect() {
 		return super.getRect().relative(0.2, 0, 0.6, 0.8);
@@ -1293,7 +1319,10 @@ class HalfSpike extends TileDeath {
 	 * @param {string[]} groups
 	 */
 	constructor(view, x, y, rotation, groups) {
-		super(view, x, y, `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 10 10">
+		super(view, x, y, rotation, groups)
+	}
+	getImage() {
+		return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 10 10">
 	<defs>
 		<linearGradient id="mainGradient" gradientTransform="rotate(90)">
 			<stop offset="0%" stop-color="#000F" />
@@ -1302,7 +1331,7 @@ class HalfSpike extends TileDeath {
 	</defs>
 	<path d="M 5 5 L 10 10 L 0 10 Z M 5 5.8 L 1 9.6 L 9 9.6 Z" fill="white" />
 	<path d="M 5 5.8 L 1 9.6 L 9 9.6 Z" fill="url(#mainGradient)" />
-</svg>`, rotation, groups)
+</svg>`
 	}
 	getRect() {
 		return super.getRect().relative(0.2, 0, 0.6, 0.4);
@@ -1313,18 +1342,17 @@ class Orb extends Tile {
 	 * @param {View} view
 	 * @param {number} x
 	 * @param {number} y
-	 * @param {string} svg
 	 * @param {number} rotation
 	 * @param {string[]} groups
 	 */
-	constructor(view, x, y, svg, rotation, groups) {
+	constructor(view, x, y, rotation, groups) {
 		var ds = 1
 		var particles = false
 		if (view instanceof GameView) {
 			ds = 0.5
 			particles = true
 		}
-		super(view, x, y, svg, ds, ds, rotation, groups)
+		super(view, x, y, ds, ds, rotation, groups)
 		this.timeout = 0
 		this.hasParticles = particles
 		this.particleColor = "yellow"
@@ -1372,10 +1400,13 @@ class JumpOrb extends Orb {
 	 * @param {string[]} groups
 	 */
 	constructor(view, x, y, rotation, groups) {
-		super(view, x, y, `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 10 10">
+		super(view, x, y, rotation, groups)
+	}
+	getImage() {
+		return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 10 10">
 	<path d="M 5 0 A 1 1 0 0 0 5 10 A 1 1 0 0 0 5 0 Z M 5 1 A 1 1 0 0 1 5 9 A 1 1 0 0 1 5 1 Z" fill="#FF8" />
 	<path d="M 5 2 A 1 1 0 0 0 5 8 A 1 1 0 0 0 5 2 Z" fill="#FF0" />
-</svg>`, rotation, groups)
+</svg>`
 	}
 	/**
 	 * @param {Player} player
@@ -1393,11 +1424,14 @@ class GravityOrb extends Orb {
 	 * @param {string[]} groups
 	 */
 	constructor(view, x, y, rotation, groups) {
-		super(view, x, y, `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 10 10">
+		super(view, x, y, rotation, groups)
+		this.particleColor = "cyan"
+	}
+	getImage() {
+		return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 10 10">
 	<path d="M 5 0 A 1 1 0 0 0 5 10 A 1 1 0 0 0 5 0 Z M 5 1 A 1 1 0 0 1 5 9 A 1 1 0 0 1 5 1 Z" fill="#DFF" />
 	<path d="M 5 2 A 1 1 0 0 0 5 8 A 1 1 0 0 0 5 2 Z" fill="#0FF" />
-</svg>`, rotation, groups)
-		this.particleColor = "cyan"
+</svg>`
 	}
 	/**
 	 * @param {Player} player
@@ -1416,11 +1450,15 @@ class BlackOrb extends Orb {
 	 * @param {string[]} groups
 	 */
 	constructor(view, x, y, rotation, groups) {
-		super(view, x, y, `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 10 10">
+		super(view, x, y, rotation, groups)
+		this.particleColor = "black"
+	}
+	getImage() {
+		return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 10 10">
 	<path d="M 5 0 A 1 1 0 0 0 5 10 A 1 1 0 0 0 5 0 Z M 5 1 A 1 1 0 0 1 5 9 A 1 1 0 0 1 5 1 Z" fill="#DDD" />
 	<path d="M 5 2 A 1 1 0 0 0 5 8 A 1 1 0 0 0 5 2 Z" fill="#000" />
-</svg>`, rotation, groups)
-		this.particleColor = "black"
+</svg>`
+		// TODO: Should have dashed outline + spinny
 	}
 	/**
 	 * @param {Player} player
@@ -1436,11 +1474,14 @@ class StartPosBlock extends Tile {
 	 * @param {number} y
 	 */
 	constructor(view, x, y) {
-		super(view, x, y, `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">
+		super(view, x, y, 1, 1, 0, [])
+		if (viewType == "game") this.elm.remove()
+	}
+	getImage() {
+		return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">
 	<path d="M 1 1 L 19 1 L 19 19 L 1 19 Z M 4 4 L 4 17 L 16 17 L 16 4 Z" fill="white" />
 	<path d="M 5 5 L 10 10 L 5 15 Z M 10 5 L 15 10 L 10 15 Z" fill="green" />
-</svg>`, 1, 1, 0, [])
-		if (viewType == "game") this.elm.remove()
+</svg>`
 	}
 	/**
 	 * @param {View} view
@@ -1483,7 +1524,14 @@ class Coin extends Tile {
 	 * @param {string[]} groups
 	 */
 	constructor(view, x, y, rotation, groups) {
-		super(view, x, y, `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">
+		super(view, x, y, 1, 1, rotation, groups)
+		/** @type {number} */
+		this.activated = 0
+		/** @type {boolean} */
+		this.alreadygot = false
+	}
+	getImage() {
+		return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">
 	<defs>
 		<linearGradient id="ringGradient">
 			<stop offset="0%" stop-color="#ffb14a" />
@@ -1498,11 +1546,7 @@ class Coin extends Tile {
 	<path d="M 1 10 A 1 1 0 0 0 19 10 A 1 1 0 0 0 1 10 Z M 3 10 A 1 1 0 0 1 17 10 A 1 1 0 0 1 3 10 Z" fill="url(#ringGradient)" />
 	<circle cx="10" cy="10" r="7" fill="url(#innerGradient)" />
 	<path d="M 12 8 L 14 7 A 5 5 0 1 0 14 13 L 12 12 A 3 3 0 1 1 12 8 Z" fill="url(#ringGradient)" stroke="#422b0c" stroke-width="0.3" />
-</svg>`, 1, 1, rotation, groups)
-		/** @type {number} */
-		this.activated = 0
-		/** @type {boolean} */
-		this.alreadygot = false
+</svg>`
 	}
 	/**
 	 * @param {Player} player
@@ -1544,12 +1588,11 @@ class Trigger extends Tile {
 	 * @param {View} view
 	 * @param {number} x
 	 * @param {number} y
-	 * @param {string} svg
 	 * @param {boolean} needsTouch
 	 * @param {string[]} groups
 	 */
-	constructor(view, x, y, svg, needsTouch, groups) {
-		super(view, x, y, svg, 1, 1, 0, groups)
+	constructor(view, x, y, needsTouch, groups) {
+		super(view, x, y, 1, 1, 0, groups)
 		/** @type {boolean} */
 		this.needsTouch = needsTouch == true
 		/** @type {boolean} */
@@ -1601,10 +1644,7 @@ class ColorTrigger extends Trigger {
 	 * @param {string[]} groups
 	 */
 	constructor(view, x, y, needsTouch, section, newColor, duration, groups) {
-		super(view, x, y, `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 10 10">
-	<path d="M 5 0 A 1 1 0 0 0 5 10 A 1 1 0 0 0 5 0 Z M 5 1 A 1 1 0 0 1 5 9 A 1 1 0 0 1 5 1 Z" fill="yellow" />
-	<path d="M 5 1 A 1 1 0 0 0 5 9 A 1 1 0 0 0 5 1 Z M 5 2 A 1 1 0 0 1 5 8 A 1 1 0 0 1 5 2 Z" fill="white" />
-</svg>`, needsTouch, groups)
+		super(view, x, y, needsTouch, groups)
 		/** @type {"stage" | "bg"} */
 		this.section = section
 		/** @type {number[]} */
@@ -1616,6 +1656,12 @@ class ColorTrigger extends Trigger {
 		/** @type {number} */
 		this.duration = duration
 		if (this.extraStyles[0]) this.extraStyles[0] = this.extraStyles[0].substring(0, this.extraStyles[0].length - 1) + `, radial-gradient(circle, var(--trigger-color) 50%, transparent 50%);`
+	}
+	getImage() {
+		return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 10 10">
+	<path d="M 5 0 A 1 1 0 0 0 5 10 A 1 1 0 0 0 5 0 Z M 5 1 A 1 1 0 0 1 5 9 A 1 1 0 0 1 5 1 Z" fill="yellow" />
+	<path d="M 5 1 A 1 1 0 0 0 5 9 A 1 1 0 0 0 5 1 Z M 5 2 A 1 1 0 0 1 5 8 A 1 1 0 0 1 5 2 Z" fill="white" />
+</svg>`
 	}
 	/**
 	 * @param {any[]} pos
@@ -1682,12 +1728,11 @@ class Pad extends Tile {
 	 * @param {View} view
 	 * @param {number} x
 	 * @param {number} y
-	 * @param {string} svg
 	 * @param {number} rotation
 	 * @param {string[]} groups
 	 */
-	constructor(view, x, y, svg, rotation, groups) {
-		super(view, x, y, svg, 1, 1, rotation, groups)
+	constructor(view, x, y, rotation, groups) {
+		super(view, x, y, 1, 1, rotation, groups)
 		this.timeout = 0
 	}
 	getRect() {
@@ -1728,11 +1773,14 @@ class JumpPad extends Pad {
 	 * @param {string[]} groups
 	 */
 	constructor(view, x, y, rotation, groups) {
-		super(view, x, y, `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">
+		super(view, x, y, rotation, groups)
+		this.timeout = 0
+	}
+	getImage() {
+		return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">
 	<path d="M 0 20 Q 10 10 20 20 Z" fill="#FFC" />
 	<path d="M 3 19 L 17 19 Q 10 14 3 19 Z" fill="#FF0" />
-</svg>`, rotation, groups)
-		this.timeout = 0
+</svg>`
 	}
 	/**
 	 * @param {Player} player
@@ -1750,10 +1798,13 @@ class SmallJumpPad extends Pad {
 	 * @param {string[]} groups
 	 */
 	constructor(view, x, y, rotation, groups) {
-		super(view, x, y, `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">
+		super(view, x, y, rotation, groups)
+	}
+	getImage() {
+		return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">
 	<path d="M 0 20 Q 10 10 20 20 Z" fill="#FCF" />
 	<path d="M 3 19 L 17 19 Q 10 14 3 19 Z" fill="#F0F" />
-</svg>`, rotation, groups)
+</svg>`
 	}
 	/**
 	 * @param {Player} player
@@ -1771,10 +1822,13 @@ class GravityPad extends Pad {
 	 * @param {string[]} groups
 	 */
 	constructor(view, x, y, rotation, groups) {
-		super(view, x, y, `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">
+		super(view, x, y, rotation, groups)
+	}
+	getImage() {
+		return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">
 	<path d="M 0 20 Q 10 10 20 20 Z" fill="#CFF" />
 	<path d="M 3 19 L 17 19 Q 10 14 3 19 Z" fill="#0FF" />
-</svg>`, rotation, groups)
+</svg>`
 	}
 	/**
 	 * @param {Player} player
@@ -1791,15 +1845,14 @@ class Portal extends Tile {
 	 * @param {View} view
 	 * @param {number} x
 	 * @param {number} y
-	 * @param {string} svg
 	 * @param {number} realheight
 	 * @param {number} rotation
 	 * @param {number} dw
 	 * @param {number} dh
 	 * @param {string[]} groups
 	 */
-	constructor(view, x, y, svg, dw, dh, realheight, rotation, groups) {
-		super(view, x, y, svg, dw, dh, rotation, groups)
+	constructor(view, x, y, dw, dh, realheight, rotation, groups) {
+		super(view, x, y, dw, dh, rotation, groups)
 		this.realheight = realheight
 		if (debugMode) RectDisplay.create(this.view, this)
 	}
@@ -1827,14 +1880,24 @@ class GravityPortal extends Portal {
 	 * @param {View} view
 	 * @param {number} x
 	 * @param {number} y
-	 * @param {string} colorLeft
-	 * @param {string} colorRight
 	 * @param {number} rotation
 	 * @param {number} gravity
 	 * @param {string[]} groups
 	 */
-	constructor(view, x, y, colorLeft, colorRight, rotation, gravity, groups) {
-		super(view, x, y, `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 7 18">
+	constructor(view, x, y, rotation, gravity, groups) {
+		super(view, x, y, 1, 2.57, 3, rotation, groups)
+		this.gravity = gravity
+	}
+	/** @returns {string} */
+	getImage() {
+		throw new Error("Aaaaa! There does not exist a color for this gravity portal!!!")
+	}
+	/**
+	 * @param {string} colorLeft
+	 * @param {string} colorRight
+	 */
+	getImageTemplate(colorLeft, colorRight) {
+		return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 7 18">
 	<defs>
 		<linearGradient id="mainGradient" gradientTransform="rotate(0)">
 			<stop offset="0%" stop-color="${colorLeft}" />
@@ -1849,8 +1912,7 @@ class GravityPortal extends Portal {
 	<g>
 		<path d="M 0 9 A 3 9 0 0 1 3 0 A 3 9 0 0 1 6 9 A 3 9 0 0 1 3 18 A 3 9 0 0 1 0 9 Z M 1 9 A 2 8 0 0 0 3 17 A 2 8 0 0 0 5 9 A 2 8 0 0 0 3 1 A 2 8 0 0 0 1 9 Z" fill="url(#mainGradient)" />
 	</g>
-</svg>`, 1, 2.57, 3, rotation, groups)
-		this.gravity = gravity
+</svg>`
 	}
 	/**
 	 * @param {Player} player
@@ -1868,7 +1930,10 @@ class GravityPortalDown extends GravityPortal {
 	 * @param {string[]} groups
 	 */
 	constructor(view, x, y, rotation, groups) {
-		super(view, x, y, "#94ffff", "#00b4ff", rotation, 1, groups)
+		super(view, x, y, rotation, 1, groups)
+	}
+	getImage() {
+		return this.getImageTemplate("#94ffff", "#00b4ff")
 	}
 }
 class GravityPortalUp extends GravityPortal {
@@ -1880,7 +1945,10 @@ class GravityPortalUp extends GravityPortal {
 	 * @param {string[]} groups
 	 */
 	constructor(view, x, y, rotation, groups) {
-		super(view, x, y, "#fff9bd", "#ffe954", rotation, -1, groups)
+		super(view, x, y, rotation, -1, groups)
+	}
+	getImage() {
+		return this.getImageTemplate("#fff9bd", "#ffe954")
 	}
 }
 class GamemodePortal extends Portal {
@@ -1888,14 +1956,25 @@ class GamemodePortal extends Portal {
 	 * @param {View} view
 	 * @param {number} x
 	 * @param {number} y
-	 * @param {string} colorLeft
-	 * @param {string} colorRight
 	 * @param {number} rotation
 	 * @param {typeof GameMode} gamemode
 	 * @param {string[]} groups
 	 */
-	constructor(view, x, y, colorLeft, colorRight, rotation, gamemode, groups) {
-		super(view, x, y, `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 -2 10 22">
+	constructor(view, x, y, rotation, gamemode, groups) {
+		super(view, x, y, 1.4545, 3.2, 3, rotation, groups)
+		/** @type {typeof GameMode} */
+		this.mode = gamemode
+	}
+	/** @returns {string} */
+	getImage() {
+		throw new Error("Aaaaa! There does not exist a color for this game mode portal!!!")
+	}
+	/**
+	 * @param {string} colorLeft
+	 * @param {string} colorRight
+	 */
+	getImageTemplate(colorLeft, colorRight) {
+		return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 -2 10 22">
 	<defs>
 		<linearGradient id="mainGradient" gradientTransform="rotate(0)">
 			<stop offset="0%" stop-color="${colorLeft}" />
@@ -1949,9 +2028,7 @@ class GamemodePortal extends Portal {
 		<circle cx="8" cy="12" r="1" fill="url(#mainGradient)" />
 		<circle cx="5.5" cy="19" r="1" fill="url(#mainGradient)" />
 	</g>
-</svg>`, 1.4545, 3.2, 3, rotation, groups)
-		/** @type {typeof GameMode} */
-		this.mode = gamemode
+</svg>`
 	}
 	/**
 	 * @param {Player} player
@@ -1970,7 +2047,10 @@ class CubePortal extends GamemodePortal {
 	 * @param {string[]} groups
 	 */
 	constructor(view, x, y, rotation, groups) {
-		super(view, x, y, "#80ff9d", "#38ff63", rotation, CubeMode, groups)
+		super(view, x, y, rotation, CubeMode, groups)
+	}
+	getImage() {
+		return this.getImageTemplate("#80ff9d", "#38ff63")
 	}
 }
 class ShipPortal extends GamemodePortal {
@@ -1982,7 +2062,10 @@ class ShipPortal extends GamemodePortal {
 	 * @param {string[]} groups
 	 */
 	constructor(view, x, y, rotation, groups) {
-		super(view, x, y, "#ff94bd", "#ff429d", rotation, ShipMode, groups)
+		super(view, x, y, rotation, ShipMode, groups)
+	}
+	getImage() {
+		return this.getImageTemplate("#ff94bd", "#ff429d")
 	}
 }
 class BallPortal extends GamemodePortal {
@@ -1994,7 +2077,10 @@ class BallPortal extends GamemodePortal {
 	 * @param {string[]} groups
 	 */
 	constructor(view, x, y, rotation, groups) {
-		super(view, x, y, "#ff692b", "#ff4a00", rotation, BallMode, groups)
+		super(view, x, y, rotation, BallMode, groups)
+	}
+	getImage() {
+		return this.getImageTemplate("#ff692b", "#ff4a00")
 	}
 }
 class WavePortal extends GamemodePortal {
@@ -2006,7 +2092,10 @@ class WavePortal extends GamemodePortal {
 	 * @param {string[]} groups
 	 */
 	constructor(view, x, y, rotation, groups) {
-		super(view, x, y, "#00bcff", "#00aae8", rotation, WaveMode, groups)
+		super(view, x, y, rotation, WaveMode, groups)
+	}
+	getImage() {
+		return this.getImageTemplate("#00bcff", "#00aae8")
 	}
 }
 
