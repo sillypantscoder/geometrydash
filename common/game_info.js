@@ -246,19 +246,14 @@ class Player extends SceneItem {
 	}
 	getBlockRects() {
 		var margin = 0.2
-		const maxY = this.getGeneralRect().relative(0, 1 - margin, 1, margin)
-		const minY = this.getGeneralRect().relative(0, 0, 1, margin)
+		var general = this.getGeneralRect()
+		const maxY = general.relative(0, 1 - margin, 1, margin)
+		const minY = general.relative(0, 0, 1, margin)
 		const top = this.gravity > 0 ? maxY : minY
 		const bottom = this.gravity > 0 ? minY : maxY
-		// return {
-		// 	bounce: top,
-		// 	move: bottom,
-		// 	platformCollide: this.getGeneralRect().relative(0, margin, 1, 1 - (margin * 2)),
-		// 	death: this.getGeneralRect().relative(margin, margin, 1 - (margin * 2), 1 - (margin * 2)),
-		// }
 		return {
-			collide: this.getGeneralRect().relative(0, margin, 1, 1 - (margin * 2)),
-			top: top.relative(margin, 0, 1 - (margin * 2), 1),
+			collide: general.relative(0, margin, 1, 1 - (margin * 2)),
+			sides: general.relative(-margin, 0, 1 + (margin * 2), 1 - (margin * 2)),
 			bottom
 		}
 	}
@@ -441,7 +436,7 @@ class CubeMode extends GameMode {
 			if (this.player.specialJump != null) {
 				this.player.specialJump()
 			} else if (this.player.groundHeight != null) {
-				this.player.vy = 0.34 * this.player.gravity
+				this.player.vy = 0.33 * this.player.gravity
 			}
 		}
 	}
@@ -1173,10 +1168,7 @@ class TileBlock extends Tile {
 		var thisRect = this.getRect().rotate(this.rotation, this.x + 0.5, this.y + 0.5)
 		if (playerRects.collide.colliderect(thisRect)) {
 			// The player has collided with either the top or side of this block.
-			if (playerRects.top.colliderect(thisRect)) {
-				// The player has collided with the top of this block.
-				player.mode.hitCeiling(thisRect.y)
-			} else {
+			if (playerRects.sides.colliderect(thisRect)) {
 				// The player hit the side of this block
 				// If we are not in platformer mode, then the player has died.
 				if (! levelMeta.settings.platformer) {
@@ -1191,9 +1183,11 @@ class TileBlock extends Tile {
 						player.x = thisRect.x + thisRect.w
 					}
 				}
+			} else {
+				// The player has collided with the top of this block.
+				player.mode.hitCeiling(thisRect.y)
 			}
-		}
-		if (playerRects.bottom.colliderect(thisRect)) {
+		} else if (playerRects.bottom.colliderect(thisRect)) {
 			// If the player is almost on top of this block, push them.
 			if (player.gravity > 0) {
 				player.groundHeight = thisRect.y + thisRect.h
