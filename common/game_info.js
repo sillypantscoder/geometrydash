@@ -287,7 +287,8 @@ class Player extends SceneItem {
 		}
 		this.mode.getMax()
 		// Update styles
-		this.extraStyles[0] = `background: url(data:image/svg+xml;base64,${btoa(this.mode.getIcon())});`
+		// @ts-ignore
+		this.extraStyles[0] = `background: url(data:image/svg+xml;base64,${btoa(this.mode.constructor.getIcon())});`
 		this.extraStyles[1] = `transform: rotate(${this.rotation}deg) scaleY(${this.gravity});`
 		this.needsRedraw = true;
 		super.tick(amount)
@@ -349,7 +350,7 @@ class GameMode {
 		this.player = player
 	}
 	/** @returns {string} */
-	getIcon() {
+	static getIcon() {
 		throw new Error("Aaaaaa! You're not supposed to do that!");
 	}
 	/**
@@ -378,7 +379,7 @@ class GameMode {
 	}
 }
 class CubeMode extends GameMode {
-	getIcon() {
+	static getIcon() {
 		return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 18 18">
 	<style>
 		.outline {
@@ -442,14 +443,7 @@ class CubeMode extends GameMode {
 	}
 }
 class ShipMode extends GameMode {
-	/**
-	 * @param {Player} player
-	 */
-	constructor(player) {
-		super(player)
-		this.parent = new CubeMode(player)
-	}
-	getIcon() {
+	static getIcon() {
 		return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="-11 -4 37 37">
 	<style>
 		.outline {
@@ -463,7 +457,7 @@ class ShipMode extends GameMode {
 		}
 	</style>
 	<g transform="scale(0.4)">
-		${this.parent.getIcon()}
+		${CubeMode.getIcon()}
 	</g>
 	<g>
 		<g>
@@ -550,7 +544,7 @@ class ShipMode extends GameMode {
 	}
 }
 class BallMode extends GameMode {
-	getIcon() {
+	static getIcon() {
 		return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 18 18">
 	<style>
 		.outline {
@@ -621,7 +615,7 @@ class BallMode extends GameMode {
 }
 class WaveMode extends GameMode {
 	/** @returns {string} */
-	getIcon() {
+	static getIcon() {
 		return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="4 2 14 14">
 	<style>
 		.outline {
@@ -1071,7 +1065,8 @@ class Tile extends SceneItem {
 		var location = getLocationFromObject("tile", this)
 		var r_location = ["broken"]
 		if (location != null) r_location = [...location]
-		this.extraStyles[0] = `background: url(data:image/svg+xml;base64,${btoa(this.getImage())}) no-repeat;`
+		// @ts-ignore
+		this.extraStyles[0] = `background: url(data:image/svg+xml;base64,${btoa(this.constructor.getImage())}) no-repeat;`
 		this.extraStyles[1] = `--dw: ${dw}; --dh: ${dh};`
 		this.rotation = rotation
 		this.groups = groups
@@ -1079,7 +1074,7 @@ class Tile extends SceneItem {
 		if (debugMode) RectDisplay.create(this.view, this)
 	}
 	/** @returns {string} */
-	getImage() {
+	static getImage() {
 		return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">
 	<path d="M 0 0 L 20 0 L 20 20 L 0 20 Z M 1 1 L 1 19 L 19 19 L 19 1 Z" fill="white" />
 </svg>`
@@ -1237,7 +1232,7 @@ class BasicBlock extends TileBlock {
 	constructor(view, x, y, rotation, groups) {
 		super(view, x, y, rotation, groups)
 	}
-	getImage() {
+	static getImage() {
 		return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">
 	<defs>
 		<linearGradient id="mainGradient" gradientTransform="rotate(90)">
@@ -1261,7 +1256,7 @@ class HalfBlock extends TileBlock {
 	constructor(view, x, y, rotation, groups) {
 		super(view, x, y, rotation, groups)
 	}
-	getImage() {
+	static getImage() {
 		return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">
 	<defs>
 		<linearGradient id="mainGradient" gradientTransform="rotate(90)">
@@ -1288,7 +1283,7 @@ class BasicSpike extends TileDeath {
 	constructor(view, x, y, rotation, groups) {
 		super(view, x, y, rotation, groups)
 	}
-	getImage() {
+	static getImage() {
 		return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 10 10">
 	<defs>
 		<linearGradient id="mainGradient" gradientTransform="rotate(90)">
@@ -1315,7 +1310,7 @@ class HalfSpike extends TileDeath {
 	constructor(view, x, y, rotation, groups) {
 		super(view, x, y, rotation, groups)
 	}
-	getImage() {
+	static getImage() {
 		return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 10 10">
 	<defs>
 		<linearGradient id="mainGradient" gradientTransform="rotate(90)">
@@ -1396,7 +1391,7 @@ class JumpOrb extends Orb {
 	constructor(view, x, y, rotation, groups) {
 		super(view, x, y, rotation, groups)
 	}
-	getImage() {
+	static getImage() {
 		return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 10 10">
 	<path d="M 5 0 A 1 1 0 0 0 5 10 A 1 1 0 0 0 5 0 Z M 5 1 A 1 1 0 0 1 5 9 A 1 1 0 0 1 5 1 Z" fill="#FF8" />
 	<path d="M 5 2 A 1 1 0 0 0 5 8 A 1 1 0 0 0 5 2 Z" fill="#FF0" />
@@ -1421,7 +1416,7 @@ class GravityOrb extends Orb {
 		super(view, x, y, rotation, groups)
 		this.particleColor = "cyan"
 	}
-	getImage() {
+	static getImage() {
 		return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 10 10">
 	<path d="M 5 0 A 1 1 0 0 0 5 10 A 1 1 0 0 0 5 0 Z M 5 1 A 1 1 0 0 1 5 9 A 1 1 0 0 1 5 1 Z" fill="#DFF" />
 	<path d="M 5 2 A 1 1 0 0 0 5 8 A 1 1 0 0 0 5 2 Z" fill="#0FF" />
@@ -1447,7 +1442,7 @@ class BlackOrb extends Orb {
 		super(view, x, y, rotation, groups)
 		this.particleColor = "black"
 	}
-	getImage() {
+	static getImage() {
 		return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 10 10">
 	<path d="M 5 0 A 1 1 0 0 0 5 10 A 1 1 0 0 0 5 0 Z M 5 1 A 1 1 0 0 1 5 9 A 1 1 0 0 1 5 1 Z" fill="#DDD" />
 	<path d="M 5 2 A 1 1 0 0 0 5 8 A 1 1 0 0 0 5 2 Z" fill="#000" />
@@ -1471,7 +1466,7 @@ class StartPosBlock extends Tile {
 		super(view, x, y, 1, 1, 0, [])
 		if (viewType == "game") this.elm.remove()
 	}
-	getImage() {
+	static getImage() {
 		return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">
 	<path d="M 1 1 L 19 1 L 19 19 L 1 19 Z M 4 4 L 4 17 L 16 17 L 16 4 Z" fill="white" />
 	<path d="M 5 5 L 10 10 L 5 15 Z M 10 5 L 15 10 L 10 15 Z" fill="green" />
@@ -1524,7 +1519,7 @@ class Coin extends Tile {
 		/** @type {boolean} */
 		this.alreadygot = false
 	}
-	getImage() {
+	static getImage() {
 		return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">
 	<defs>
 		<linearGradient id="ringGradient">
@@ -1651,7 +1646,7 @@ class ColorTrigger extends Trigger {
 		this.duration = duration
 		if (this.extraStyles[0]) this.extraStyles[0] = this.extraStyles[0].substring(0, this.extraStyles[0].length - 1) + `, radial-gradient(circle, var(--trigger-color) 50%, transparent 50%);`
 	}
-	getImage() {
+	static getImage() {
 		return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 10 10">
 	<path d="M 5 0 A 1 1 0 0 0 5 10 A 1 1 0 0 0 5 0 Z M 5 1 A 1 1 0 0 1 5 9 A 1 1 0 0 1 5 1 Z" fill="yellow" />
 	<path d="M 5 1 A 1 1 0 0 0 5 9 A 1 1 0 0 0 5 1 Z M 5 2 A 1 1 0 0 1 5 8 A 1 1 0 0 1 5 2 Z" fill="white" />
@@ -1770,7 +1765,7 @@ class JumpPad extends Pad {
 		super(view, x, y, rotation, groups)
 		this.timeout = 0
 	}
-	getImage() {
+	static getImage() {
 		return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">
 	<path d="M 0 20 Q 10 10 20 20 Z" fill="#FFC" />
 	<path d="M 3 19 L 17 19 Q 10 14 3 19 Z" fill="#FF0" />
@@ -1794,7 +1789,7 @@ class SmallJumpPad extends Pad {
 	constructor(view, x, y, rotation, groups) {
 		super(view, x, y, rotation, groups)
 	}
-	getImage() {
+	static getImage() {
 		return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">
 	<path d="M 0 20 Q 10 10 20 20 Z" fill="#FCF" />
 	<path d="M 3 19 L 17 19 Q 10 14 3 19 Z" fill="#F0F" />
@@ -1818,7 +1813,7 @@ class GravityPad extends Pad {
 	constructor(view, x, y, rotation, groups) {
 		super(view, x, y, rotation, groups)
 	}
-	getImage() {
+	static getImage() {
 		return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">
 	<path d="M 0 20 Q 10 10 20 20 Z" fill="#CFF" />
 	<path d="M 3 19 L 17 19 Q 10 14 3 19 Z" fill="#0FF" />
@@ -1883,14 +1878,14 @@ class GravityPortal extends Portal {
 		this.gravity = gravity
 	}
 	/** @returns {string} */
-	getImage() {
+	static getImage() {
 		throw new Error("Aaaaa! There does not exist a color for this gravity portal!!!")
 	}
 	/**
 	 * @param {string} colorLeft
 	 * @param {string} colorRight
 	 */
-	getImageTemplate(colorLeft, colorRight) {
+	static getImageTemplate(colorLeft, colorRight) {
 		return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 7 18">
 	<defs>
 		<linearGradient id="mainGradient" gradientTransform="rotate(0)">
@@ -1926,7 +1921,7 @@ class GravityPortalDown extends GravityPortal {
 	constructor(view, x, y, rotation, groups) {
 		super(view, x, y, rotation, 1, groups)
 	}
-	getImage() {
+	static getImage() {
 		return this.getImageTemplate("#94ffff", "#00b4ff")
 	}
 }
@@ -1941,7 +1936,7 @@ class GravityPortalUp extends GravityPortal {
 	constructor(view, x, y, rotation, groups) {
 		super(view, x, y, rotation, -1, groups)
 	}
-	getImage() {
+	static getImage() {
 		return this.getImageTemplate("#fff9bd", "#ffe954")
 	}
 }
@@ -1960,14 +1955,14 @@ class GamemodePortal extends Portal {
 		this.mode = gamemode
 	}
 	/** @returns {string} */
-	getImage() {
+	static getImage() {
 		throw new Error("Aaaaa! There does not exist a color for this game mode portal!!!")
 	}
 	/**
 	 * @param {string} colorLeft
 	 * @param {string} colorRight
 	 */
-	getImageTemplate(colorLeft, colorRight) {
+	static getImageTemplate(colorLeft, colorRight) {
 		return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 -2 10 22">
 	<defs>
 		<linearGradient id="mainGradient" gradientTransform="rotate(0)">
@@ -2043,7 +2038,7 @@ class CubePortal extends GamemodePortal {
 	constructor(view, x, y, rotation, groups) {
 		super(view, x, y, rotation, CubeMode, groups)
 	}
-	getImage() {
+	static getImage() {
 		return this.getImageTemplate("#80ff9d", "#38ff63")
 	}
 }
@@ -2058,7 +2053,7 @@ class ShipPortal extends GamemodePortal {
 	constructor(view, x, y, rotation, groups) {
 		super(view, x, y, rotation, ShipMode, groups)
 	}
-	getImage() {
+	static getImage() {
 		return this.getImageTemplate("#ff94bd", "#ff429d")
 	}
 }
@@ -2073,7 +2068,7 @@ class BallPortal extends GamemodePortal {
 	constructor(view, x, y, rotation, groups) {
 		super(view, x, y, rotation, BallMode, groups)
 	}
-	getImage() {
+	static getImage() {
 		return this.getImageTemplate("#ff692b", "#ff4a00")
 	}
 }
@@ -2088,7 +2083,7 @@ class WavePortal extends GamemodePortal {
 	constructor(view, x, y, rotation, groups) {
 		super(view, x, y, rotation, WaveMode, groups)
 	}
-	getImage() {
+	static getImage() {
 		return this.getImageTemplate("#00bcff", "#00aae8")
 	}
 }

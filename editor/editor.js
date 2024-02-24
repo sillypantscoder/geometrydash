@@ -92,10 +92,8 @@ function editTileList(tiles) {
 		var e = document.createElement("div")
 		e.classList.add("option-element")
 		e.setAttribute("style", `display: inline-block;`)
-		var location = ["error"]
-		var r_location = getLocationFromObject("tile", tiles[i])
-		if (r_location) location = [...r_location]
-		e.innerHTML = `<div style="background: url(../assets/tile/${location.join("/")}.svg); width: 1em; height: 1em; display: inline-block;"></div>`
+		// @ts-ignore
+		e.innerHTML = `<div style="background: url(data:image/svg+xml;base64,${btoa(tiles[i].constructor.getImage())}); width: 1em; height: 1em; display: inline-block;"></div>`
 		parent.appendChild(e)
 		// @ts-ignore
 		e._TileSource = tiles[i]
@@ -237,7 +235,7 @@ function addOptionElements(folder) {
 			var e = document.createElement("span")
 			e.classList.add("option-element")
 			e.setAttribute("onclick", `this.classList.add("option-element-selected")`)
-			e.innerHTML = `<div style="background: url(../assets/tile/${[...folder, k[i]].join("/")}.svg); background-repeat: no-repeat; background-position: center; width: 1em; height: 1em; display: inline-block;"></div>`
+			e.innerHTML = `<div style="background: url(data:image/svg+xml;base64,${btoa(items[k[i]].getImage())}); background-repeat: no-repeat; background-position: center; width: 1em; height: 1em; display: inline-block;"></div>`
 			e.dataset.value = [...folder, k[i]].join(".")
 			document.querySelector("#blocks")?.appendChild(e)
 		}
