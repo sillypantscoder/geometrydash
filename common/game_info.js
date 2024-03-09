@@ -1691,7 +1691,7 @@ class ColorTrigger extends Trigger {
 		]
 		/** @type {number} */
 		this.duration = duration
-		// if (this.extraStyles[0]) this.extraStyles[0] = this.extraStyles[0].substring(0, this.extraStyles[0].length - 1) + `, radial-gradient(circle, var(--trigger-color) 50%, transparent 50%);`
+		this.extraStyles[0] = `background: url(data:image/svg+xml;base64,${btoa(this.getImage())}) no-repeat;`
 	}
 	static getImage() {
 		return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 10 10">
@@ -1712,7 +1712,8 @@ class ColorTrigger extends Trigger {
 	<text x="5" y="7.25" style="font-size: 4px; font-weight: bold;">${{
 		"ground": "G",
 		"bg": "BG"
-	}[this.section]}</text>
+	}[this.section]}</text>${this.needsTouch?`
+	<rect x="0" y="0" width="10" height="10" fill="none" stroke="lime" stroke-width="0.3" />`:``}
 </svg>`
 	}
 	/**
@@ -1724,7 +1725,7 @@ class ColorTrigger extends Trigger {
 			x: pos[0],
 			y: pos[1],
 			needsTouch: false,
-			section: "stage",
+			section: "ground",
 			color: [255, 0, 0],
 			duration: 0
 		}
@@ -1752,7 +1753,7 @@ class ColorTrigger extends Trigger {
 		return [
 			...super.getEdit(),
 			`<div>Section: <select oninput="editing.section = this.value">
-	<option value="stage"${this.section=="ground" ? " selected" : ""}>Grouns</option>
+	<option value="ground"${this.section=="ground" ? " selected" : ""}>Ground</option>
 	<option value="bg"${this.section=="bg" ? " selected" : ""}>Background</option>
 </select></div>`,
 			`<div>Color: <input type="color" value="${getHexFromRGB(this.color)}" oninput="editing.color = getRGBFromHex(this.value)"></div>`,

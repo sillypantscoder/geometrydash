@@ -93,7 +93,7 @@ function editTileList(tiles) {
 		e.classList.add("option-element")
 		e.setAttribute("style", `display: inline-block;`)
 		// @ts-ignore
-		e.innerHTML = `<div style="background: url(data:image/svg+xml;base64,${btoa(tiles[i].constructor.getImage())}); width: 1em; height: 1em; display: inline-block;"></div>`
+		e.innerHTML = `<div style="background: url(data:image/svg+xml;base64,${btoa(tiles[i].getImage())}); width: 1em; height: 1em; display: inline-block;"></div>`
 		parent.appendChild(e)
 		// @ts-ignore
 		e._TileSource = tiles[i]

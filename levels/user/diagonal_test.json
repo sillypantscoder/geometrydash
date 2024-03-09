@@ -124,9 +124,7 @@
 		{"type": "block.half-block", "data": {"x": 43, "y": 1, "rotation": 180, "groups": []}},
 		{"type": "block.half-block", "data": {"x": 44, "y": 1.1, "rotation": 180, "groups": []}},
 		{"type": "block.half-block", "data": {"x": 45, "y": 1.2, "rotation": 180, "groups": []}},
-		{"type": "jump.orb.jump", "data": {"x": 14, "y": 11.5, "rotation": 0, "groups": []}},
-		{"type": "special.trigger.color", "data": {"x": 28, "y": 10.1, "needsTouch": true, "section": "ground", "color": [255, 0, 0], "duration": 0}},
-		{"type": "special.trigger.color", "data": {"x": 28, "y": 10.1, "needsTouch": true, "section": "bg", "color": [255, 0, 0], "duration": 0}}
+		{"type": "jump.orb.jump", "data": {"x": 14, "y": 11.5, "rotation": 0, "groups": []}}
 	],
 	"completion": {
 		"percentage": 0,
