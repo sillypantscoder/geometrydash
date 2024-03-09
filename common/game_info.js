@@ -177,6 +177,31 @@ class Stage extends SceneItem {
 		this.stageColor = InterpolatedColor.fromRGB(levelMeta.settings.colorstage)
 		this.lastX = 0
 		this.lastY = 0
+		// Filter
+		this.filterParent = document.createElementNS("http://www.w3.org/2000/svg", "svg")
+		document.body.appendChild(this.filterParent)
+		this.filterElm = document.createElementNS("http://www.w3.org/2000/svg", "filter")
+		this.filterParent.appendChild(this.filterElm)
+		this.filter = document.createElementNS("http://www.w3.org/2000/svg", "feColorMatrix")
+		this.filterElm.appendChild(this.filter)
+		this.filterElm.id = "main-key-filter"
+		this.filter.setAttribute("type", "matrix")
+		this.keys = {
+			red: [0, 0],
+			green: [0, 0],
+			blue: [0, 0]
+		}
+		this.updateMatrixValues()
+	}
+	updateMatrixValues() {
+		var r = this.keys.red[1]==0 ? 1 : this.keys.red[0] / this.keys.red[1]
+		var g = this.keys.green[1]==0 ? 1 : this.keys.green[0] / this.keys.green[1]
+		var b = this.keys.blue[1]==0 ? 1 : this.keys.blue[0] / this.keys.blue[1]
+		this.filter.setAttribute("values",
+`${r} 0 0 0 0\
+ 0 ${g} 0 0 0\
+ 0 0 ${b} 0 0\
+ 0 0 0 1 0`)
 	}
 	/**
 	 * @param {number} amount
@@ -186,9 +211,7 @@ class Stage extends SceneItem {
 		this.stageColor.tick(amount)
 		if (this.view.player) {
 			// Camera X
-			if (this.view.player.x) {
-				this.lastX = Math.max(0, this.view.player.x - 10)
-			}
+			this.lastX = Math.max(0, this.view.player.x - 10)
 			// Camera Y
 			var ty = this.view.player.y - 5
 			if (ty < 0) ty = 0
@@ -215,7 +238,15 @@ class Stage extends SceneItem {
 			if (t instanceof Coin) {
 				t.activated = 0
 			}
+			if (t instanceof Key) {
+				t.activation = 0
+				t.needsRedraw = true
+			}
 		}
+		this.keys.red[0] = 0
+		this.keys.green[0] = 0
+		this.keys.blue[0] = 0
+		this.updateMatrixValues()
 	}
 }
 class Player extends SceneItem {
@@ -375,7 +406,12 @@ class GameMode {
 	 * @param {number} _h The height of the ceiling
 	 */
 	hitCeiling(_h) {
-		this.player.destroy()
+		if (levelMeta.settings.platformer) {
+			this.player.y = _h + (-1) + (this.player.gravity<0 ? 2 : 0)
+			this.player.vy = -0.01 * this.player.gravity
+		} else {
+			this.player.destroy()
+		}
 	}
 }
 class CubeMode extends GameMode {
@@ -2087,6 +2123,141 @@ class WavePortal extends GamemodePortal {
 		return this.getImageTemplate("#00bcff", "#00aae8")
 	}
 }
+class Key extends Tile {
+	/**
+	 * @param {View} view
+	 * @param {number} x
+	 * @param {number} y
+	 * @param {string[]} groups
+	 */
+	constructor(view, x, y, groups) {
+		super(view, x, y, 1, 6/8, 0, groups)
+		/** @type {number} */
+		this.activation = 0
+		/** @type {number} */
+		this.vx = 0
+		/** @type {number} */
+		this.vy = 0
+	}
+	static getImage() {
+		return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 8 6">
+	<path d="M 2 0 A 2 3 0 0 0 2 6 A 2 3 0 0 0 4 3.8 L 5.5 3.8 L 5.5 5.5 L 6.5 5.5 L 6.5 3.8 L 8 3.8 L 8 2.2 L 4 2.2 A 2 3 0 0 0 2 0 Z M 2 1.5 A 0.7 1 0 0 1 2 4.5 A 0.7 1 0 0 1 2 1.5 Z" fill="white" />
+</svg>`
+	}
+	/**
+	 * @param {View} view
+	 * @param {typeof StartPosBlock} type
+	 * @param {object} info
+	 */
+	static load(view, type, info) {
+		// @ts-ignore
+		return new type(view, info.x, info.y, info.groups)
+	}
+	/**
+	 * @param {number[]} pos
+	 */
+	static default(pos) {
+		return {
+			x: pos[0],
+			y: pos[1],
+			groups: []
+		}
+	}
+	save() {
+		return {
+			x: this.x,
+			y: this.y,
+			groups: []
+		}
+	}
+	getEdit() {
+		return [
+			`<div><button onclick="editing.destroy(); view.tiles.splice(view.tiles.indexOf(editing), 1); deselect();">Remove Tile</button></div>`,
+			`<div>X: <input type="number" value="${this.x}" min="0" oninput="editing.x = Math.round(this.valueAsNumber); editing.update();"></div>`,
+			`<div>Y: <input type="number" value="${this.y}" min="0" oninput="editing.y = Math.round(this.valueAsNumber); editing.update();"></div>`
+		]
+	}
+	/**
+	 * @param {Player} player
+	 */
+	collide(player) {
+		if (this.activation > 0) {
+			return
+		}
+		var playerRect = player.getGeneralRect()
+		var thisRect = this.getRect()
+		if (playerRect.colliderect(thisRect)) {
+			this.activation = 1
+			this.vx = (Math.random() - 0.5) * 0.15
+			this.vy = 0.2
+			this.collect()
+		}
+	}
+	/**
+	 * @param {number} amount
+	 */
+	tick(amount) {
+		this.extraStyles[3] = `opacity: ${map(this.activation, 0, 30, 1, 0)};`
+		this.needsRedraw = true
+		if (this.activation > 0) {
+			if (this.activation < 30) {
+				this.x += this.vx * amount
+				this.y += this.vy * amount
+				this.vy -= 0.02 * amount
+				this.activation += amount
+			}
+		}
+		super.tick(amount)
+	}
+	collect() {}
+}
+class ColorKey extends Key {
+	/**
+	 * @param {View} view
+	 * @param {number} x
+	 * @param {number} y
+	 * @param {string[]} groups
+	 */
+	constructor(view, x, y, groups) {
+		super(view, x, y, groups)
+		/** @type {"red" | "green" | "blue"} */
+		// @ts-ignore
+		this.color = this.constructor.getColor()
+		if (view instanceof GameView) view.stage.keys[this.color][1] += 1
+		view.stage.updateMatrixValues()
+	}
+	static getImage() {
+		return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 8 6">
+	<path d="M 2 0 A 2 3 0 0 0 2 6 A 2 3 0 0 0 4 3.8 L 5.5 3.8 L 5.5 5.5 L 6.5 5.5 L 6.5 3.8 L 8 3.8 L 8 2.2 L 4 2.2 A 2 3 0 0 0 2 0 Z M 2 1.5 A 0.7 1 0 0 1 2 4.5 A 0.7 1 0 0 1 2 1.5 Z" stroke="black" stroke-width="0.3" fill="${this.getColor()}" />
+</svg>`
+	}
+	/** @returns {string} */
+	static getColor() {
+		throw new Error("You need to specify a color for the key")
+	}
+	collect() {
+		view.stage.keys[this.color][0] += 1
+		view.stage.updateMatrixValues()
+	}
+}
+class RedKey extends ColorKey {
+	/** @returns {string} */
+	static getColor() {
+		return "red"
+	}
+}
+class GreenKey extends ColorKey {
+	/** @returns {string} */
+	static getColor() {
+		return "green"
+	}
+}
+class BlueKey extends ColorKey {
+	/** @returns {string} */
+	static getColor() {
+		return "blue"
+	}
+}
 
 class View {
 	constructor() {
@@ -2326,7 +2497,12 @@ var registries = {
 				"color": ColorTrigger
 			},
 			"start-pos": StartPosBlock,
-			"coin": Coin
+			"coin": Coin,
+			"key": {
+				"red": RedKey,
+				"green": GreenKey,
+				"blue": BlueKey
+			}
 		}
 	},
 	"gamemode": {
