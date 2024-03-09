@@ -284,7 +284,7 @@ class Player extends SceneItem {
 		const bottom = this.gravity > 0 ? minY : maxY
 		return {
 			collide: general.relative(0, margin, 1, 1 - (margin * 2)),
-			sides: general.relative(-margin, 0, 1 + (margin * 2), 1 - (margin * 2)),
+			top,
 			bottom
 		}
 	}
@@ -371,6 +371,13 @@ class Player extends SceneItem {
 		var c = getObjectFromLocation("gamemode", [levelMeta.settings.gamemode])
 		this.mode = new c(this)
 	}
+	canDieFromCeiling() {
+		if (levelMeta.settings.platformer) {
+			return false
+		} else {
+			return this.mode.canDieFromCeiling()
+		}
+	}
 }
 class GameMode {
 	/**
@@ -403,15 +410,10 @@ class GameMode {
 		return new Rect(this.player.x, this.player.y, 1, 1)
 	}
 	/**
-	 * @param {number} _h The height of the ceiling
+	 * Return whether the player can die from hitting the ceiling.
 	 */
-	hitCeiling(_h) {
-		if (levelMeta.settings.platformer) {
-			this.player.y = _h + (-1) + (this.player.gravity<0 ? 2 : 0)
-			this.player.vy = -0.01 * this.player.gravity
-		} else {
-			this.player.destroy()
-		}
+	canDieFromCeiling() {
+		return false
 	}
 }
 class CubeMode extends GameMode {
@@ -477,6 +479,9 @@ class CubeMode extends GameMode {
 			}
 		}
 	}
+	canDieFromCeiling() {
+		return true
+	}
 }
 class ShipMode extends GameMode {
 	static getIcon() {
@@ -527,7 +532,9 @@ class ShipMode extends GameMode {
 	 * @param {number} _amount
 	 */
 	checkJump(_amount) {
+		// Update rotation
 		this.player.rotation = this.player.vy * -100
+		// Handle jump
 		if (this.player.view instanceof GameView && this.player.view.isPressing) {
 			if (this.player.specialJump != null) {
 				this.player.specialJump()
@@ -537,11 +544,14 @@ class ShipMode extends GameMode {
 		} else {
 			this.player.vy -= 0.005 * this.player.gravity
 		}
+		// Gravity specific things.
 		if (this.player.gravity < 0) {
+			// Create particles
 			if (this.player.view instanceof GameView) {
 				if ((!levelMeta.settings.platformer) || this.player.view.isPressingRight) this.player.view.particles.push(new SlideParticle(this.player.view, this.player.x + 0.05, this.player.y + 0.8, 1))
 				if ((levelMeta.settings.platformer) && this.player.view.isPressingLeft) this.player.view.particles.push(new SlideParticle(this.player.view, this.player.x + 0.95, this.player.y + 0.8, -1))
 			}
+			// Move the player up until they are on top of the ground
 			if (this.player.groundHeight != null) {
 				var ph = this.player.getGeneralRect().h
 				if (this.player.y + ph > this.player.groundHeight) {
@@ -571,13 +581,6 @@ class ShipMode extends GameMode {
 	// getRect() {
 	// 	return super.getRect().relative(0, 0.1, 1, 0.8)
 	// }
-	/**
-	 * @param {number} h
-	 */
-	hitCeiling(h) {
-		this.player.y = h + (-0.8) + (this.player.gravity<0 ? 1.6 : 0)
-		this.player.vy = -0.01 * this.player.gravity
-	}
 }
 class BallMode extends GameMode {
 	static getIcon() {
@@ -691,12 +694,6 @@ class WaveMode extends GameMode {
 	}
 	getRect() {
 		return super.getRect().relative(0, 0.1, 1, 0.8)
-	}
-	/**
-	 * @param {number} h
-	 */
-	hitCeiling(h) {
-		this.player.destroy()
 	}
 }
 class Particle extends SceneItem {
@@ -1198,25 +1195,34 @@ class TileBlock extends Tile {
 		var playerRects = player.getBlockRects()
 		var thisRect = this.getRect().rotate(this.rotation, this.x + 0.5, this.y + 0.5)
 		if (playerRects.collide.colliderect(thisRect)) {
-			// The player has collided with either the top or side of this block.
-			if (playerRects.sides.colliderect(thisRect)) {
-				// The player hit the side of this block
-				// If we are not in platformer mode, then the player has died.
-				if (! levelMeta.settings.platformer) {
-					player.destroy() // :(
-				} else {
-					// Otherwise, we need to move the player so they are not colliding with this block.
-					if (playerRects.collide.centerX() < thisRect.centerX()) {
-						// Player is to the left of this block
-						player.x = thisRect.x - playerRects.collide.w
-					} else {
-						// Player is to the right of this block
-						player.x = thisRect.x + thisRect.w
-					}
-				}
+			// The player has collided with either the side of this block.
+			// If we are not in platformer mode, then the player has died.
+			if (! levelMeta.settings.platformer) {
+				player.destroy() // :(
 			} else {
-				// The player has collided with the top of this block.
-				player.mode.hitCeiling(thisRect.y)
+				// Otherwise, we need to move the player so they are not colliding with this block.
+				if (playerRects.collide.centerX() < thisRect.centerX()) {
+					// Player is to the left of this block
+					player.x = thisRect.x - playerRects.collide.w
+				} else {
+					// Player is to the right of this block
+					player.x = thisRect.x + thisRect.w
+				}
+			}
+		} else if (playerRects.top.colliderect(thisRect)) {
+			// If the player is hitting the ceiling, first find out if they can die.
+			if (player.canDieFromCeiling()) {
+				// The player will die a moment later when the "collide" rect is activated.
+				// No need to kill the player manually here.
+			} else {
+				if (player.gravity > 0) {
+					// Move the top of the player down to the bottom of this block.
+					player.y = thisRect.y - player.getGeneralRect().h
+				} else {
+					// Move the bottom of the player up to the top of this block.
+					player.y = thisRect.y + thisRect.h
+				}
+				player.vy = 0
 			}
 		} else if (playerRects.bottom.colliderect(thisRect)) {
 			// If the player is almost on top of this block, push them.
