@@ -13,7 +13,7 @@ function on_click(evt) {
 	var pos = [
 		// @ts-ignore
 		Math.floor(evt.clientX / 20) + document.querySelector("#viewX").valueAsNumber,
-		Math.floor(((window.innerHeight * (1 - floorHeight)) - evt.clientY) / 20) - 1
+		Math.floor(((window.innerHeight * (1 - floorHeight)) - evt.clientY) / 20)// - 1
 	]
 	if (pos[1] < 0) return
 	if (pos[0] < 0) return
@@ -203,7 +203,7 @@ function editLevelSettings() {
 		`Level Name: <input type="text" oninput="levelMeta.name = this.value">`,
 		`Level Description:<br><textarea oninput="levelMeta.description = this.value"></textarea>`,
 		`Starting Background Color: <input type="color" value="${getHexFromRGB(levelMeta.settings.colorbg)}" oninput="levelMeta.settings.colorbg = getRGBFromHex(this.value)"></div>`,
-		`Starting Stage Color: <input type="color" value="${getHexFromRGB(levelMeta.settings.colorstage)}" oninput="levelMeta.settings.colorstage = getRGBFromHex(this.value)"></div>`,
+		`Starting Ground Color: <input type="color" value="${getHexFromRGB(levelMeta.settings.colorground)}" oninput="levelMeta.settings.colorground = getRGBFromHex(this.value)"></div>`,
 		`Starting Gamemode: <select oninput="levelMeta.settings.gamemode = this.value">${Object.keys(registries.gamemode).map((v) => `
 	<option value="${v}"${levelMeta.settings.gamemode==v ? " selected" : ""}>${v}</option>`)}
 </select>`,

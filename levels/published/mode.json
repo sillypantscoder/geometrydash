@@ -3,7 +3,7 @@
 	"description": "A level to test out the different gamemodes.",
 	"settings": {
 		"colorbg": [0, 125, 255],
-		"colorstage": [0, 125, 255],
+		"colorground": [0, 125, 255],
 		"gamemode": "ship",
 		"platformer": false
 	},
@@ -463,7 +463,7 @@
 		{"type": "death.basic-spike", "data": {"x": 25, "y": 9, "rotation": 270, "groups": []}}
 	],
 	"completion": {
-		"percentage": 87,
+		"percentage": 0,
 		"coins": [false]
 	},
 	"deleted": false

@@ -174,7 +174,7 @@ class Stage extends SceneItem {
 		this.elm.classList.remove("regularPos")
 		this.elm.classList.add("stage")
 		this.bgColor = InterpolatedColor.fromRGB(levelMeta.settings.colorbg)
-		this.stageColor = InterpolatedColor.fromRGB(levelMeta.settings.colorstage)
+		this.groundColor = InterpolatedColor.fromRGB(levelMeta.settings.colorground)
 		this.lastX = 0
 		this.lastY = 0
 		// Filter
@@ -208,7 +208,7 @@ class Stage extends SceneItem {
 	 */
 	tick(amount) {
 		this.bgColor.tick(amount)
-		this.stageColor.tick(amount)
+		this.groundColor.tick(amount)
 		if (this.view.player) {
 			// Camera X
 			this.lastX = Math.max(0, this.view.player.x - 10)
@@ -223,13 +223,13 @@ class Stage extends SceneItem {
 		/** @type {HTMLDivElement} */
 		// @ts-ignore
 		var viewport = this.elm.parentNode
-		viewport.setAttribute("style", `--move-amount-x: ${this.lastX}; --move-amount-y: ${this.lastY}; --bg-color: ${this.bgColor.getHex()}; --stage-color: ${this.stageColor.getHex()};`)
+		viewport.setAttribute("style", `--move-amount-x: ${this.lastX}; --move-amount-y: ${this.lastY}; --bg-color: ${this.bgColor.getHex()}; --stage-color: ${this.groundColor.getHex()};`)
 		super.tick(amount)
 	}
 	reset() {
 		this.lastY = 0
 		this.bgColor = InterpolatedColor.fromRGB(levelMeta.settings.colorbg)
-		this.stageColor = InterpolatedColor.fromRGB(levelMeta.settings.colorstage)
+		this.groundColor = InterpolatedColor.fromRGB(levelMeta.settings.colorground)
 		for (var i = 0; i < this.view.tiles.length; i++) {
 			var t = this.view.tiles[i]
 			if (t instanceof Trigger) {
@@ -1099,7 +1099,7 @@ class Tile extends SceneItem {
 		var r_location = ["broken"]
 		if (location != null) r_location = [...location]
 		// @ts-ignore
-		this.extraStyles[0] = `background: url(data:image/svg+xml;base64,${btoa(this.constructor.getImage())}) no-repeat;`
+		this.extraStyles[0] = `background: url(data:image/svg+xml;base64,${btoa(this.getImage())}) no-repeat;`
 		this.extraStyles[1] = `--dw: ${dw}; --dh: ${dh};`
 		this.rotation = rotation
 		this.groups = groups
@@ -1111,6 +1111,11 @@ class Tile extends SceneItem {
 		return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">
 	<path d="M 0 0 L 20 0 L 20 20 L 0 20 Z M 1 1 L 1 19 L 19 19 L 19 1 Z" fill="white" />
 </svg>`
+	}
+	/** @returns {string} */
+	getImage() {
+		// @ts-ignore
+		return this.constructor.getImage()
 	}
 	/**
 	 * @param {View} view
@@ -1669,14 +1674,14 @@ class ColorTrigger extends Trigger {
 	 * @param {number} x
 	 * @param {number} y
 	 * @param {boolean} needsTouch
-	 * @param {"stage" | "bg"} section
+	 * @param {"ground" | "bg"} section
 	 * @param {number[]} newColor
 	 * @param {number} duration
 	 * @param {string[]} groups
 	 */
 	constructor(view, x, y, needsTouch, section, newColor, duration, groups) {
 		super(view, x, y, needsTouch, groups)
-		/** @type {"stage" | "bg"} */
+		/** @type {"ground" | "bg"} */
 		this.section = section
 		/** @type {number[]} */
 		this.color = [
@@ -1686,12 +1691,28 @@ class ColorTrigger extends Trigger {
 		]
 		/** @type {number} */
 		this.duration = duration
-		if (this.extraStyles[0]) this.extraStyles[0] = this.extraStyles[0].substring(0, this.extraStyles[0].length - 1) + `, radial-gradient(circle, var(--trigger-color) 50%, transparent 50%);`
+		// if (this.extraStyles[0]) this.extraStyles[0] = this.extraStyles[0].substring(0, this.extraStyles[0].length - 1) + `, radial-gradient(circle, var(--trigger-color) 50%, transparent 50%);`
 	}
 	static getImage() {
 		return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 10 10">
-	<path d="M 5 0 A 1 1 0 0 0 5 10 A 1 1 0 0 0 5 0 Z M 5 1 A 1 1 0 0 1 5 9 A 1 1 0 0 1 5 1 Z" fill="yellow" />
-	<path d="M 5 1 A 1 1 0 0 0 5 9 A 1 1 0 0 0 5 1 Z M 5 2 A 1 1 0 0 1 5 8 A 1 1 0 0 1 5 2 Z" fill="white" />
+	<style>text { text-anchor: middle; font-size: 2px; fill: white; font-family: sans-serif; }</style>
+	<circle cx="5" cy="4" r="2" fill="red" />
+	<circle cx="3" cy="7.5" r="2" fill="blue" />
+	<circle cx="7" cy="7.5" r="2" fill="green" />
+	<text x="5" y="1.7">Color</text>
+</svg>`
+	}
+	getImage() {
+		return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 10 10">
+	<style>text { text-anchor: middle; font-size: 2px; fill: white; font-family: sans-serif; }</style>
+	<circle cx="5" cy="4" r="2" fill="red" />
+	<circle cx="3" cy="7.5" r="2" fill="blue" />
+	<circle cx="7" cy="7.5" r="2" fill="green" />
+	<text x="5" y="1.7">Color</text>
+	<text x="5" y="7.25" style="font-size: 4px; font-weight: bold;">${{
+		"ground": "G",
+		"bg": "BG"
+	}[this.section]}</text>
 </svg>`
 	}
 	/**
@@ -1731,24 +1752,24 @@ class ColorTrigger extends Trigger {
 		return [
 			...super.getEdit(),
 			`<div>Section: <select oninput="editing.section = this.value">
-	<option value="stage"${this.section=="stage" ? " selected" : ""}>Stage</option>
+	<option value="stage"${this.section=="ground" ? " selected" : ""}>Grouns</option>
 	<option value="bg"${this.section=="bg" ? " selected" : ""}>Background</option>
 </select></div>`,
 			`<div>Color: <input type="color" value="${getHexFromRGB(this.color)}" oninput="editing.color = getRGBFromHex(this.value)"></div>`,
 			`<div>Duration (60ths of a second): <input type="number" value="${this.duration}" min="1" oninput="editing.duration = this.valueAsNumber"></div>`
 		]
 	}
-	/**
-	 * @param {number} amount
-	 */
-	tick(amount) {
-		this.extraStyles[2] = `--trigger-color: rgb(${this.color.join(", ")});`
-		super.tick(amount)
-	}
+	// /**
+	//  * @param {number} amount
+	//  */
+	// tick(amount) {
+	// 	this.extraStyles[2] = `--trigger-color: rgb(${this.color.join(", ")});`
+	// 	super.tick(amount)
+	// }
 	trigger() {
 		/** @type {InterpolatedColor} */
 		var section = {
-			"stage": this.view.stage.stageColor,
+			"ground": this.view.stage.groundColor,
 			"bg": this.view.stage.bgColor
 		}[this.section]
 		section.interpolate(this.color[0], this.color[1], this.color[2], this.duration)
@@ -2309,7 +2330,7 @@ class View {
 			levelMeta.name = level.name
 			levelMeta.description = level.description
 			levelMeta.settings.colorbg = level.settings.colorbg
-			levelMeta.settings.colorstage = level.settings.colorstage
+			levelMeta.settings.colorground = level.settings.colorground
 			levelMeta.settings.gamemode = level.settings.gamemode
 			levelMeta.settings.platformer = level.settings.platformer
 			t.stage.reset()
@@ -2332,6 +2353,7 @@ class GameView extends View {
 		this.stageHeight = 0
 		this.hasWon = false
 		this.attempt = 0
+		this.lastPlayerX = 0
 		// Add event listeners
 		var _v = this
 		document.addEventListener("keydown", (e) => {
@@ -2378,6 +2400,7 @@ class GameView extends View {
 		}
 	}
 	win() {
+		this.lastPlayerX = this.stageWidth
 		this.hasWon = true
 		this.player?.elm.remove()
 		this.player = null
@@ -2392,8 +2415,8 @@ class GameView extends View {
 		this.particles.push(new ProgressBar(this))
 	}
 	getCompletion() {
-		if (this.player == null) return 0
-		var pc = Math.floor((this.player.x / this.stageWidth) * 100)
+		if (this.player) this.lastPlayerX = this.player.x
+		var pc = Math.floor((this.lastPlayerX / this.stageWidth) * 100)
 		if (pc < 0) return 0
 		if (pc > 100) return 100
 		return pc
@@ -2526,7 +2549,7 @@ var levelMeta = {
 	"description": "",
 	"settings": {
 		"colorbg": [0, 125, 255],
-		"colorstage": [0, 125, 255],
+		"colorground": [0, 125, 255],
 		"gamemode": "cube",
 		"platformer": false
 	},

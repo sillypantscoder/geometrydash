@@ -3,7 +3,7 @@
 	"description": "A combination of A Random Level and Gravity Test",
 	"settings": {
 		"colorbg": [0, 125, 255],
-		"colorstage": [0, 125, 255],
+		"colorground": [0, 125, 255],
 		"gamemode": "cube",
 		"platformer": true
 	},
@@ -79,16 +79,16 @@
 		{"type": "jump.orb.jump", "data": {"x": 23, "y": 3, "rotation": 0, "groups": []}},
 		{"type": "jump.orb.jump", "data": {"x": 25, "y": 4, "rotation": 0, "groups": []}},
 		{"type": "jump.orb.jump", "data": {"x": 27, "y": 5, "rotation": 0, "groups": []}},
-		{"type": "special.trigger.color", "data": {"x": 19, "y": 1, "needsTouch": false, "section": "stage", "color": [255, 0, 0], "duration": 0}},
-		{"type": "special.trigger.color", "data": {"x": 21, "y": 2, "needsTouch": false, "section": "stage", "color": [255, 128, 0], "duration": 0}},
-		{"type": "special.trigger.color", "data": {"x": 23, "y": 3, "needsTouch": false, "section": "stage", "color": [255, 255, 0], "duration": 0}},
-		{"type": "special.trigger.color", "data": {"x": 25, "y": 4, "needsTouch": false, "section": "stage", "color": [0, 255, 0], "duration": 0}},
-		{"type": "special.trigger.color", "data": {"x": 27, "y": 5, "needsTouch": false, "section": "stage", "color": [0, 0, 255], "duration": 0}},
-		{"type": "special.trigger.color", "data": {"x": 29, "y": 7, "needsTouch": false, "section": "stage", "color": [128, 0, 255], "duration": 0}},
+		{"type": "special.trigger.color", "data": {"x": 19, "y": 1, "needsTouch": false, "section": "ground", "color": [255, 0, 0], "duration": 0}},
+		{"type": "special.trigger.color", "data": {"x": 21, "y": 2, "needsTouch": false, "section": "ground", "color": [255, 128, 0], "duration": 0}},
+		{"type": "special.trigger.color", "data": {"x": 23, "y": 3, "needsTouch": false, "section": "ground", "color": [255, 255, 0], "duration": 0}},
+		{"type": "special.trigger.color", "data": {"x": 25, "y": 4, "needsTouch": false, "section": "ground", "color": [0, 255, 0], "duration": 0}},
+		{"type": "special.trigger.color", "data": {"x": 27, "y": 5, "needsTouch": false, "section": "ground", "color": [0, 0, 255], "duration": 0}},
+		{"type": "special.trigger.color", "data": {"x": 29, "y": 7, "needsTouch": false, "section": "ground", "color": [128, 0, 255], "duration": 0}},
 		{"type": "special.trigger.color", "data": {"x": 9, "y": 2, "needsTouch": false, "section": "bg", "color": [255, 0, 0], "duration": 500}},
-		{"type": "special.trigger.color", "data": {"x": 33, "y": 5, "needsTouch": false, "section": "stage", "color": [255, 0, 0], "duration": 60}},
-		{"type": "special.trigger.color", "data": {"x": 31, "y": 6, "needsTouch": false, "section": "stage", "color": [255, 0, 255], "duration": 0}},
-		{"type": "special.trigger.color", "data": {"x": 9, "y": 2, "needsTouch": false, "section": "stage", "color": [255, 0, 255], "duration": 60}},
+		{"type": "special.trigger.color", "data": {"x": 33, "y": 5, "needsTouch": false, "section": "ground", "color": [255, 0, 0], "duration": 60}},
+		{"type": "special.trigger.color", "data": {"x": 31, "y": 6, "needsTouch": false, "section": "ground", "color": [255, 0, 255], "duration": 0}},
+		{"type": "special.trigger.color", "data": {"x": 9, "y": 2, "needsTouch": false, "section": "ground", "color": [255, 0, 255], "duration": 60}},
 		{"type": "death.half-spike", "data": {"x": 18, "y": 0, "rotation": 0, "groups": []}},
 		{"type": "death.half-spike", "data": {"x": 19, "y": 0, "rotation": 0, "groups": []}},
 		{"type": "death.half-spike", "data": {"x": 20, "y": 0, "rotation": 0, "groups": []}},
@@ -290,8 +290,8 @@
 		{"type": "portal.gravity-down", "data": {"x": 38, "y": 21, "rotation": 270, "groups": []}}
 	],
 	"completion": {
-		"percentage": 100,
-		"coins": [true, true, true]
+		"percentage": 0,
+		"coins": [false, false, false]
 	},
 	"deleted": false
 }

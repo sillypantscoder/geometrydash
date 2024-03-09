@@ -3,7 +3,7 @@
 	"description": "A really hard ship level",
 	"settings": {
 		"colorbg": [0, 0, 0],
-		"colorstage": [0, 0, 0],
+		"colorground": [0, 0, 0],
 		"gamemode": "ship",
 		"platformer": false
 	},
@@ -289,7 +289,7 @@
 		{"type": "death.half-spike", "data": {"x": 58, "y": 13, "rotation": 180, "groups": []}}
 	],
 	"completion": {
-		"percentage": 100,
+		"percentage": 0,
 		"coins": []
 	},
 	"deleted": false
