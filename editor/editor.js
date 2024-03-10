@@ -59,6 +59,7 @@ function on_click(evt) {
 		/** @type {Tile} */
 		var newTile = type.load(view, type, args)
 		view.tiles.push(newTile)
+		editTile(newTile)
 		newTile.update()
 	}
 }

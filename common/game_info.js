@@ -64,7 +64,11 @@ class SceneItem {
 		}
 	}
 	update() {
-		this.elm.setAttribute("style", `--x: ${this.x}; --y: ${this.y}; transform: rotate(${this.rotation}deg);${this.extraStyles.map((v) => v==undefined ? "" : ` ${v}`).join("")}`)
+		if (window.editing == this) {
+			this.elm.setAttribute("style", `--x: ${this.x}; --y: ${this.y}; transform: rotate(${this.rotation}deg); box-shadow: 0px 2px 5px 3px orange; z-index: 1000;${this.extraStyles.map((v) => v==undefined ? "" : ` ${v}`).join("")}`)
+		} else {
+			this.elm.setAttribute("style", `--x: ${this.x}; --y: ${this.y}; transform: rotate(${this.rotation}deg);${this.extraStyles.map((v) => v==undefined ? "" : ` ${v}`).join("")}`)
+		}
 	}
 	destroy() {
 		this.elm.remove()
@@ -86,15 +90,17 @@ class InterpolatedVariable {
 	}
 	/**
 	 * @param {number} amount
+	 * @returns {boolean} Whether the value has changed.
 	 */
 	tick(amount) {
-		if (this.totalTicks == -1) return
+		if (this.totalTicks == -1) return false
 		this.ticks += amount
 		if (this.ticks >= this.totalTicks) {
 			this.ticks = 0
 			this.totalTicks = -1
 			this.startValue = this.endValue
 		}
+		return true
 	}
 	/**
 	 * @param {number} newValue
@@ -163,6 +169,40 @@ class InterpolatedColor {
 	 */
 	static fromRGB(values) {
 		return new InterpolatedColor(values[0], values[1], values[2])
+	}
+}
+class VariableAnimation {
+	/**
+	 * @param {(newValue: number) => void} setter
+	 * @param {number} amount
+	 * @param {number} totalTicks
+	 */
+	constructor(setter, amount, totalTicks) {
+		if (totalTicks == 0) debugger;
+		/** @type {(newValue: number) => void} */
+		this.setter = setter
+		/** @type {number} */
+		this.endValue = amount
+		/** @type {number} */
+		this.ticks = 0
+		/** @type {number} */
+		this.totalTicks = totalTicks
+	}
+	/**
+	 * @param {number} amount
+	 * @returns {boolean} Whether the animation has finished.
+	 */
+	tick(amount) {
+		var oldValue = this.get()
+		this.ticks += amount
+		var shiftAmount = this.get() - oldValue
+		// if (Number.isNaN(shiftAmount)) debugger;
+		this.setter(shiftAmount)
+		return this.ticks >= this.totalTicks
+	}
+	/** @returns {number} */
+	get() {
+		return (this.ticks / this.totalTicks) * this.endValue
 	}
 }
 class Stage extends SceneItem {
@@ -1094,6 +1134,8 @@ class Tile extends SceneItem {
 	 */
 	constructor(view, x, y, dw, dh, rotation, groups) {
 		super(view, x, y)
+		/** @type {{ type: "x" | "y", animation: VariableAnimation }[]} */
+		this.animations = []
 		this.display_size = [dw, dh]
 		var location = getLocationFromObject("tile", this)
 		var r_location = ["broken"]
@@ -1160,7 +1202,8 @@ class Tile extends SceneItem {
 	<option value="270"${this.rotation==270 ? " selected" : ""}>&larr; 270</option>
 </select></div>`,
 			`<div>X: <input type="number" value="${this.x}" min="0" oninput="editing.x = this.valueAsNumber; editing.update();"></div>`,
-			`<div>Y: <input type="number" value="${this.y}" min="0" oninput="editing.y = this.valueAsNumber; editing.update();"></div>`
+			`<div>Y: <input type="number" value="${this.y}" min="0" oninput="editing.y = this.valueAsNumber; editing.update();"></div>`,
+			`<div>Groups (separated by spaces):<input type="text" value="${this.groups.join(" ")}" oninput="editing.groups = this.value.length==0 ? [] : this.value.split(' ')"></div>`
 		]
 	}
 	getRect() {
@@ -1170,6 +1213,14 @@ class Tile extends SceneItem {
 	 * @param {number} amount
 	 */
 	tick(amount) {
+		for (var i = 0; i < this.animations.length; i++) {
+			var f = this.animations[i].animation.tick(amount)
+			if (f) {
+				this.animations.splice(i, 1)
+				i -= 1;
+			}
+			this.needsRedraw = true
+		}
 		if (this.view.player && Math.abs(this.x - this.view.player.x) < 40) {
 			if (viewType == "game") {
 				this.collide(this.view.player)
@@ -1776,6 +1827,119 @@ class ColorTrigger extends Trigger {
 		section.interpolate(this.color[0], this.color[1], this.color[2], this.duration)
 	}
 }
+class MoveTrigger extends Trigger {
+	/**
+	 * @param {View} view
+	 * @param {number} x
+	 * @param {number} y
+	 * @param {boolean} needsTouch
+	 * @param {string} targetGroup
+	 * @param {number} xAmount
+	 * @param {number} yAmount
+	 * @param {number} duration
+	 * @param {string[]} groups
+	 */
+	constructor(view, x, y, needsTouch, targetGroup, xAmount, yAmount, duration, groups) {
+		super(view, x, y, needsTouch, groups)
+		/** @type {string} */
+		this.targetGroup = targetGroup
+		/** @type {number} */
+		this.xAmount = xAmount
+		/** @type {number} */
+		this.yAmount = yAmount
+		/** @type {number} */
+		this.duration = duration
+		this.extraStyles[0] = `background: url(data:image/svg+xml;base64,${btoa(this.getImage())}) no-repeat;`
+	}
+	static getImage() {
+		return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 10 10">
+	<style>text { text-anchor: middle; font-size: 2px; fill: white; font-family: sans-serif; }</style>
+	<circle cx="5" cy="6" r="3" fill="magenta" stroke="black" stroke-width="0.5" />
+	<text x="5" y="1.7">Move</text>
+</svg>`
+	}
+	getImage() {
+		return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 10 10">
+	<style>text { text-anchor: middle; font-size: 2px; fill: white; font-family: sans-serif; }</style>
+	<circle cx="5" cy="6" r="3" fill="magenta" stroke="black" stroke-width="0.5" />
+	<text x="5" y="1.7">Move</text>
+	<text x="5" y="7.25" style="font-size: 4px; font-weight: bold;">${this.targetGroup}</text>${this.needsTouch?`
+	<rect x="0" y="0" width="10" height="10" fill="none" stroke="lime" stroke-width="0.3" />`:``}
+</svg>`
+	}
+	/**
+	 * @param {any[]} pos
+	 * @returns {object}
+	 */
+	static default(pos) {
+		return {
+			x: pos[0],
+			y: pos[1],
+			needsTouch: false,
+			targetGroup: "",
+			xAmount: 0,
+			yAmount: 0,
+			duration: 0,
+			groups: []
+		}
+	}
+	/**
+	 * @param {View} view
+	 * @param {typeof Tile} type
+	 * @param {object} info
+	 */
+	static load(view, type, info) {
+		// @ts-ignore
+		return new type(view, info.x, info.y, info.needsTouch, info.targetGroup, info.xAmount, info.yAmount, info.duration, info.groups)
+	}
+	save() {
+		return {
+			x: this.x,
+			y: this.y,
+			needsTouch: this.needsTouch,
+			targetGroup: this.targetGroup,
+			xAmount: this.xAmount,
+			yAmount: this.yAmount,
+			duration: this.duration,
+			groups: this.groups
+		}
+	}
+	getEdit() {
+		return [
+			...super.getEdit(),
+			`<div>Target Group: <input type="text" value="${this.targetGroup}" oninput="editing.targetGroup = this.value"></div>`,
+			`<div>X Amount: <input type="number" value="${this.xAmount}" oninput="editing.xAmount = this.valueAsNumber"></div>`,
+			`<div>Y Amount: <input type="number" value="${this.yAmount}" oninput="editing.yAmount = this.valueAsNumber"></div>`,
+			`<div>Duration (60ths of a second): <input type="number" value="${this.duration}" min="1" oninput="editing.duration = this.valueAsNumber"></div>`
+		]
+	}
+	trigger() {
+		for (var i = 0; i < this.view.tiles.length; i++) {
+			var t = this.view.tiles[i]
+			if (! t.groups.includes(this.targetGroup)) continue;
+			((t, xAmount, yAmount, duration) => {
+				if (duration == 0) {
+					t.x += xAmount
+					t.y += yAmount
+					t.needsRedraw = true
+					return
+				}
+				if (xAmount != 0) {
+					t.animations.push({
+						type: "x",
+						animation: new VariableAnimation((n) => t.x+=n, xAmount, duration)
+					})
+				}
+				if (yAmount != 0) {
+					t.animations.push({
+						type: "y",
+						animation: new VariableAnimation((n) => t.y+=n, yAmount, duration)
+					})
+				}
+			})(t, this.xAmount, this.yAmount, this.duration)
+		}
+	}
+}
 class Pad extends Tile {
 	/**
 	 * @param {View} view
@@ -2294,12 +2458,13 @@ class View {
 		this.tiles = []
 		/** @type {Player | null} */
 		this.player = null
+		/** @type {{ type: string, data: object }[]} */
+		this.originalObjects = []
 	}
-	/** @param {{ type: string, data: object }[]} o */
-	importObjects(o) {
+	importObjects() {
 		var coin_no = 0
-		for (var i = 0; i < o.length; i++) {
-			var obj = o[i]
+		for (var i = 0; i < this.originalObjects.length; i++) {
+			var obj = this.originalObjects[i]
 			var type = getObjectFromLocation("tile", obj.type.split("."))
 			/** @type {Tile} */
 			var c = type.load(this, type, obj.data)
@@ -2327,7 +2492,8 @@ class View {
 		x.addEventListener("loadend", () => {
 			var level = JSON.parse(x.responseText)
 			levelMeta.completion = level.completion
-			t.importObjects(level.objects)
+			this.originalObjects = level.objects
+			this.importObjects()
 			levelMeta.name = level.name
 			levelMeta.description = level.description
 			levelMeta.settings.colorbg = level.settings.colorbg
@@ -2524,7 +2690,8 @@ var registries = {
 		},
 		"special": {
 			"trigger": {
-				"color": ColorTrigger
+				"color": ColorTrigger,
+				"move": MoveTrigger
 			},
 			"start-pos": StartPosBlock,
 			"coin": Coin,
