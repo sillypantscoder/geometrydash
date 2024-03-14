@@ -1137,16 +1137,16 @@ class Tile extends SceneItem {
 		/** @type {{ type: "x" | "y", animation: VariableAnimation }[]} */
 		this.animations = []
 		this.display_size = [dw, dh]
-		var location = getLocationFromObject("tile", this)
-		var r_location = ["broken"]
-		if (location != null) r_location = [...location]
-		// @ts-ignore
-		this.extraStyles[0] = `background: url(data:image/svg+xml;base64,${btoa(this.getImage())}) no-repeat;`
+		this.updateImage()
 		this.extraStyles[1] = `--dw: ${dw}; --dh: ${dh};`
 		this.rotation = rotation
 		this.groups = groups
 		// this.enabled = false
 		if (debugMode) RectDisplay.create(this.view, this)
+	}
+	updateImage() {
+		this.extraStyles[0] = `background: url(data:image/svg+xml;base64,${btoa(this.getImage())}) no-repeat;`
+		this.update()
 	}
 	/** @returns {string} */
 	static getImage() {
@@ -1742,28 +1742,39 @@ class ColorTrigger extends Trigger {
 		]
 		/** @type {number} */
 		this.duration = duration
-		this.extraStyles[0] = `background: url(data:image/svg+xml;base64,${btoa(this.getImage())}) no-repeat;`
+		this.updateImage()
 	}
 	static getImage() {
 		return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 10 10">
-	<style>text { text-anchor: middle; font-size: 2px; fill: white; font-family: sans-serif; }</style>
-	<circle cx="5" cy="4" r="2" fill="red" />
-	<circle cx="3" cy="7.5" r="2" fill="blue" />
-	<circle cx="7" cy="7.5" r="2" fill="green" />
-	<text x="5" y="1.7">Color</text>
+	<style>text { text-anchor: middle; font-size: 4px; fill: white; font-family: sans-serif; }</style>
+	<circle cx="5" cy="4.5" r="2" fill="red" />
+	<circle cx="3" cy="8" r="2" fill="blue" />
+	<circle cx="7" cy="8" r="2" fill="green" />
+	<text x="5" y="3">Color</text>
 </svg>`
 	}
 	getImage() {
+		var area = {
+			"ground": "G",
+			"bg": "BG"
+		}[this.section]
+		if (area == undefined) area = "?"
+		var e = document.createElement("span")
+		e.setAttribute("style", `padding: 1px; font-weight: bold;`)
+		e.innerText = area
+		document.body.appendChild(e)
+		var box = e.getBoundingClientRect()
+		e.remove()
+		var aspectratio = box.height / box.width
+		var size = aspectratio * 10
+		size = Math.min(size, 8)
 		return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 10 10">
-	<style>text { text-anchor: middle; font-size: 2px; fill: white; font-family: sans-serif; }</style>
-	<circle cx="5" cy="4" r="2" fill="red" />
-	<circle cx="3" cy="7.5" r="2" fill="blue" />
-	<circle cx="7" cy="7.5" r="2" fill="green" />
-	<text x="5" y="1.7">Color</text>
-	<text x="5" y="7.25" style="font-size: 4px; font-weight: bold;">${{
-		"ground": "G",
-		"bg": "BG"
-	}[this.section]}</text>${this.needsTouch?`
+	<style>text { text-anchor: middle; font-size: 4px; fill: white; font-family: sans-serif; }</style>
+	<circle cx="5" cy="4.5" r="2" fill="red" />
+	<circle cx="3" cy="8" r="2" fill="blue" />
+	<circle cx="7" cy="8" r="2" fill="green" />
+	<text x="5" y="3">Color</text>
+	<text x="5" y="${9.3 - ((10 - size) / 2)}" style="font-size: ${size - 0.5}px; font-weight: bold;">${area}</text>${this.needsTouch?`
 	<rect x="0" y="0" width="10" height="10" fill="none" stroke="lime" stroke-width="0.3" />`:``}
 </svg>`
 	}
@@ -1778,7 +1789,8 @@ class ColorTrigger extends Trigger {
 			needsTouch: false,
 			section: "ground",
 			color: [255, 0, 0],
-			duration: 0
+			duration: 0,
+			groups: []
 		}
 	}
 	/**
@@ -1788,7 +1800,7 @@ class ColorTrigger extends Trigger {
 	 */
 	static load(view, type, info) {
 		// @ts-ignore
-		return new type(view, info.x, info.y, info.needsTouch, info.section, info.color, info.duration)
+		return new type(view, info.x, info.y, info.needsTouch, info.section, info.color, info.duration, info.groups)
 	}
 	save() {
 		return {
@@ -1803,7 +1815,7 @@ class ColorTrigger extends Trigger {
 	getEdit() {
 		return [
 			...super.getEdit(),
-			`<div>Section: <select oninput="editing.section = this.value">
+			`<div>Section: <select oninput="editing.section = this.value; editing.updateImage()">
 	<option value="ground"${this.section=="ground" ? " selected" : ""}>Ground</option>
 	<option value="bg"${this.section=="bg" ? " selected" : ""}>Background</option>
 </select></div>`,
@@ -1849,21 +1861,31 @@ class MoveTrigger extends Trigger {
 		this.yAmount = yAmount
 		/** @type {number} */
 		this.duration = duration
-		this.extraStyles[0] = `background: url(data:image/svg+xml;base64,${btoa(this.getImage())}) no-repeat;`
+		this.updateImage()
 	}
 	static getImage() {
 		return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 10 10">
-	<style>text { text-anchor: middle; font-size: 2px; fill: white; font-family: sans-serif; }</style>
-	<circle cx="5" cy="6" r="3" fill="magenta" stroke="black" stroke-width="0.5" />
-	<text x="5" y="1.7">Move</text>
+	<style>text { text-anchor: middle; font-size: 4px; fill: white; font-family: sans-serif; }</style>
+	<circle cx="5" cy="6.5" r="3.25" fill="magenta" stroke="black" stroke-width="0.5" />
+	<text x="5" y="3">Move</text>
 </svg>`
 	}
 	getImage() {
+		if (this.targetGroup == undefined) this.targetGroup = "?"
+		var e = document.createElement("span")
+		e.setAttribute("style", `padding: 1px; font-weight: bold;`)
+		e.innerText = this.targetGroup
+		document.body.appendChild(e)
+		var box = e.getBoundingClientRect()
+		e.remove()
+		var aspectratio = box.height / box.width
+		var size = aspectratio * 10
+		size = Math.min(size, 8)
 		return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 10 10">
-	<style>text { text-anchor: middle; font-size: 2px; fill: white; font-family: sans-serif; }</style>
-	<circle cx="5" cy="6" r="3" fill="magenta" stroke="black" stroke-width="0.5" />
-	<text x="5" y="1.7">Move</text>
-	<text x="5" y="7.25" style="font-size: 4px; font-weight: bold;">${this.targetGroup}</text>${this.needsTouch?`
+	<style>text { text-anchor: middle; font-size: 4px; fill: white; font-family: sans-serif; }</style>
+	<circle cx="5" cy="6.5" r="3.25" fill="magenta" stroke="black" stroke-width="0.5" />
+	<text x="5" y="3">Move</text>
+	<text x="5" y="${9.3 - ((10 - size) / 2)}" style="font-size: ${size - 0.5}px; font-weight: bold;">${this.targetGroup}</text>${this.needsTouch?`
 	<rect x="0" y="0" width="10" height="10" fill="none" stroke="lime" stroke-width="0.3" />`:``}
 </svg>`
 	}
@@ -1907,7 +1929,7 @@ class MoveTrigger extends Trigger {
 	getEdit() {
 		return [
 			...super.getEdit(),
-			`<div>Target Group: <input type="text" value="${this.targetGroup}" oninput="editing.targetGroup = this.value"></div>`,
+			`<div>Target Group: <input type="text" value="${this.targetGroup}" oninput="editing.targetGroup = this.value; editing.updateImage()"></div>`,
 			`<div>X Amount: <input type="number" value="${this.xAmount}" oninput="editing.xAmount = this.valueAsNumber"></div>`,
 			`<div>Y Amount: <input type="number" value="${this.yAmount}" oninput="editing.yAmount = this.valueAsNumber"></div>`,
 			`<div>Duration (60ths of a second): <input type="number" value="${this.duration}" min="1" oninput="editing.duration = this.valueAsNumber"></div>`

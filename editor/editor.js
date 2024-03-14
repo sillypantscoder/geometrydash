@@ -5,6 +5,7 @@ view.loadLevel()
 var editing = null
 
 var floorHeight = 0.25
+var tileSize = 30
 
 /**
  * @param {MouseEvent} evt
@@ -12,8 +13,8 @@ var floorHeight = 0.25
 function on_click(evt) {
 	var pos = [
 		// @ts-ignore
-		Math.floor(evt.clientX / 20) + document.querySelector("#viewX").valueAsNumber,
-		Math.floor(((window.innerHeight * (1 - floorHeight)) - evt.clientY) / 20)// - 1
+		Math.floor(evt.clientX / tileSize) + document.querySelector("#viewX").valueAsNumber,
+		Math.floor(((window.innerHeight * (1 - floorHeight)) - evt.clientY) / tileSize)// - 1
 	]
 	if (pos[1] < 0) return
 	if (pos[0] < 0) return
@@ -236,7 +237,7 @@ function addOptionElements(folder) {
 			var e = document.createElement("span")
 			e.classList.add("option-element")
 			e.setAttribute("onclick", `this.classList.add("option-element-selected")`)
-			e.innerHTML = `<div style="background: url(data:image/svg+xml;base64,${btoa(items[k[i]].getImage())}); background-repeat: no-repeat; background-position: center; width: 1em; height: 1em; display: inline-block;"></div>`
+			e.innerHTML = `<div style="background: url(data:image/svg+xml;base64,${btoa(items[k[i]].getImage())}); background-repeat: no-repeat; background-position: center; width: 1.3em; height: 1.3em; display: inline-block;"></div>`
 			e.dataset.value = [...folder, k[i]].join(".")
 			document.querySelector("#blocks")?.appendChild(e)
 		}

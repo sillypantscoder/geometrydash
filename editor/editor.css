@@ -1,5 +1,5 @@
 #scene {
-	--tile-size: 20px;
+	--tile-size: 30px;
 	/* special editor background */
 	background: url(../assets/editor/grid.png), url(../assets/game/Background.png), #007dff;
 	background-size: var(--tile-size), cover, auto;
