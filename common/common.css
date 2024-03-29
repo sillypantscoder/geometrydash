@@ -38,12 +38,12 @@ body {
 #scene > div.regularPos {
 	--x: 0;
 	--y: 0;
-	--dw: 1;
+	--dw: 1; /* Display width/height */
 	--dh: 1;
 	/* Y calculation */
-	--tile-height-off-ground: calc(var(--y) * var(--tile-size));
+	--world-y: calc(var(--y) * var(--tile-size));
 	--offset-from-tile-height: calc(calc(calc(var(--dh) - 1) / 2) * var(--tile-size));
-	--display-height-off-ground: calc(var(--tile-height-off-ground) - var(--offset-from-tile-height));
+	--display-height-off-ground: calc(var(--world-y) - var(--offset-from-tile-height));
 	--world-height: calc(var(--floor-height) + var(--display-height-off-ground));
 	bottom: calc(var(--world-height) + calc(-1 * var(--camera-y)));
 	/* X calculation */

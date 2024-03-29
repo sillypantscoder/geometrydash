@@ -41,7 +41,6 @@
 		{"type": "death.basic-spike", "data": {"x": 34, "y": 0, "rotation": 0, "groups": []}},
 		{"type": "death.basic-spike", "data": {"x": 35, "y": 0, "rotation": 0, "groups": []}},
 		{"type": "block.half-block", "data": {"x": 31, "y": 3, "rotation": 0, "groups": []}},
-		{"type": "special.start-pos", "data": {"x": 25, "y": 1}},
 		{"type": "block.half-block", "data": {"x": 34, "y": 2, "rotation": 0, "groups": []}},
 		{"type": "block.half-block", "data": {"x": 35, "y": 2, "rotation": 0, "groups": []}},
 		{"type": "block.half-block", "data": {"x": 36, "y": 2, "rotation": 0, "groups": []}},
@@ -55,7 +54,7 @@
 		{"type": "block.basic-block", "data": {"x": 37, "y": 8, "rotation": 180, "groups": []}}
 	],
 	"completion": {
-		"percentage": 0,
+		"percentage": 81,
 		"coins": []
 	},
 	"deleted": false

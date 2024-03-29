@@ -1005,11 +1005,14 @@ class RectDisplay extends Particle {
 	 * @param {string} color
 	 */
 	constructor(view, rect, color) {
-		super(view, rect.x, rect.y + 0.5)
+		super(view, rect.x, rect.y)
+		this.rect = rect
+		this.extraStyles[1] = undefined
+		this.extraStyles[2] = `--dw: ${rect.w}; --dh: ${rect.h};`
 		this.elm.classList.remove("particle")
+		this.elm.classList.add("regularPos")
 		// this.elm.classList.add(`rect-${rect.x}-${rect.y}-${rect.w}-${rect.h}`)
 		this.extraStyles[0] = `background: ${color};`
-		this.extraStyles[2] = `bottom: calc(25% + calc(${rect.y + 0.5} * var(--tile-size))); left: calc(calc(${rect.x} * var(--tile-size)) + calc(-1 * calc(var(--move-amount) * var(--tile-size)))); width: calc(${rect.w} * var(--tile-size)); height: calc(${rect.h} * var(--tile-size));`
 		this.time = 0
 	}
 	/**
@@ -1020,6 +1023,9 @@ class RectDisplay extends Particle {
 		this.extraStyles[1] = `opacity: ${map(this.time, 0, 5, 1, 0)};`
 		super.tick(amount)
 		if (this.time >= 5) this.destroy()
+	}
+	update() {
+		this.elm.setAttribute("style", `--display-top-left: calc(var(--tile-size) * ${this.rect.x}); --display-height-off-ground: calc(var(--tile-size) * ${this.rect.y}); ${this.extraStyles.map((v) => v==undefined ? "" : ` ${v}`).join("")}`)
 	}
 	/**
 	 * @param {View} view
