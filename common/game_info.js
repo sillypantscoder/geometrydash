@@ -3,6 +3,10 @@ if (window.viewType == undefined) {
 	var viewType = "game"
 }
 
+var tileSize = 0.04 * Math.min(window.innerWidth, window.innerHeight);
+
+var floorHeight = 0.25
+
 /**
  * @param {number} n
  * @param {number} in_min
@@ -36,39 +40,53 @@ class SceneItem {
 	 * @param {View} view
 	 * @param {number} x The starting X position.
 	 * @param {number} y The starting Y position.
+	 * @param {number} dw The display width of the item.
+	 * @param {number} dh The display height of the item.
 	 */
-	constructor(view, x, y) {
+	constructor(view, x, y, dw, dh) {
 		this.view = view
 		/** @type {HTMLDivElement} */
 		this.elm = document.createElement("div")
-		this.elm.classList.add("regularPos")
+		// this.elm.classList.add("regularPos")
 		document.querySelector("#scene")?.appendChild(this.elm)
 		/** @type {number} */
 		this.x = x
 		/** @type {number} */
 		this.y = y
 		/** @type {number} */
+		this.dw = dw
+		/** @type {number} */
+		this.dh = dh
+		/** @type {number} */
 		this.rotation = 0
 		/** @type {(string | undefined)[]} */
 		this.extraStyles = []
-		/** @type {boolean} */
-		this.needsRedraw = true
 	}
 	/**
 	 * @param {number} _amount
 	 */
 	tick(_amount) {
-		if (this.needsRedraw) {
-			this.update()
-			this.needsRedraw = false
-		}
+		this.update()
 	}
 	update() {
-		if (window.editing == this) {
-			this.elm.setAttribute("style", `--x: ${this.x}; --y: ${this.y}; transform: rotate(${this.rotation}deg); box-shadow: 0px 2px 5px 3px orange; z-index: 1000;${this.extraStyles.map((v) => v==undefined ? "" : ` ${v}`).join("")}`)
-		} else {
-			this.elm.setAttribute("style", `--x: ${this.x}; --y: ${this.y}; transform: rotate(${this.rotation}deg);${this.extraStyles.map((v) => v==undefined ? "" : ` ${v}`).join("")}`)
-		}
+		const worldY = this.y * tileSize;
+		const worldX = this.x * tileSize;
+		const offsetFromTileHeight = ((this.dh - 1) / 2) * tileSize;
+		const displayHeightOffGround = worldY - offsetFromTileHeight;
+		const worldHeight = floorHeight + displayHeightOffGround;
+		const offsetFromTileWidth = ((this.dw - 1) / 2) * tileSize;
+		const displayTopLeft = worldX - offsetFromTileWidth;
+		this.elm.setAttribute("style",
+			// `--x: ${this.x}; ` +
+			// `--y: ${this.y}; ` +
+			`left: ${displayTopLeft - (this.view.cameraX * tileSize)}px; ` +
+			`bottom: ${worldHeight - (this.view.cameraY * tileSize)}px; ` +
+			`width: ${this.dw * tileSize}px; ` +
+			`height: ${this.dh * tileSize}px; ` +
+			`transform: rotate(${this.rotation}deg);` +
+			(window.editing==this ? " box-shadow: 0px 2px 5px 3px orange; z-index: 1000;" : "") +
+			this.extraStyles.map((v) => v==undefined ? "" : ` ${v}`).join("")
+		)
 	}
 	destroy() {
 		this.elm.remove()
@@ -210,13 +228,11 @@ class Stage extends SceneItem {
 	 * @param {View} view
 	 */
 	constructor(view) {
-		super(view, 0, 0)
+		super(view, 0, 0, 0, 0)
 		this.elm.classList.remove("regularPos")
 		this.elm.classList.add("stage")
 		this.bgColor = InterpolatedColor.fromRGB(levelMeta.settings.colorbg)
 		this.groundColor = InterpolatedColor.fromRGB(levelMeta.settings.colorground)
-		this.lastX = 0
-		this.lastY = 0
 		// Filter
 		this.filterParent = document.createElementNS("http://www.w3.org/2000/svg", "svg")
 		document.body.appendChild(this.filterParent)
@@ -251,23 +267,24 @@ class Stage extends SceneItem {
 		this.groundColor.tick(amount)
 		if (this.view.player) {
 			// Camera X
-			this.lastX = Math.max(0, this.view.player.x - 10)
+			this.view.cameraX = Math.max(0, this.view.player.x - 10)
 			// Camera Y
 			var ty = this.view.player.y - 5
 			if (ty < 0) ty = 0
 			var ypad = 7
-			this.lastY = ((this.lastY * 80) + ty) / 81
-			if (this.lastY < ty - ypad) this.lastY = ty - ypad
-			if (this.lastY > ty + ypad) this.lastY = ty + ypad
+			this.view.cameraY = ((this.view.cameraY * 80) + ty) / 81
+			if (this.view.cameraY < ty - ypad) this.view.cameraY = ty - ypad
+			if (this.view.cameraY > ty + ypad) this.view.cameraY = ty + ypad
 		}
 		/** @type {HTMLDivElement} */
 		// @ts-ignore
 		var viewport = this.elm.parentNode
-		viewport.setAttribute("style", `--move-amount-x: ${this.lastX}; --move-amount-y: ${this.lastY}; --bg-color: ${this.bgColor.getHex()}; --stage-color: ${this.groundColor.getHex()};`)
+		viewport.setAttribute("style", `--tile-size: ${tileSize}px; --floor-height: ${floorHeight}vh; --move-amount-x: ${this.view.cameraX}; --move-amount-y: ${this.view.cameraY}; --bg-color: ${this.bgColor.getHex()}; --stage-color: ${this.groundColor.getHex()};`)
 		super.tick(amount)
 	}
 	reset() {
-		this.lastY = 0
+		this.view.cameraY = 0
+		this.view.cameraX = 0
 		this.bgColor = InterpolatedColor.fromRGB(levelMeta.settings.colorbg)
 		this.groundColor = InterpolatedColor.fromRGB(levelMeta.settings.colorground)
 		for (var i = 0; i < this.view.tiles.length; i++) {
@@ -280,7 +297,6 @@ class Stage extends SceneItem {
 			}
 			if (t instanceof Key) {
 				t.activation = 0
-				t.needsRedraw = true
 			}
 		}
 		this.keys.red[0] = 0
@@ -294,7 +310,7 @@ class Player extends SceneItem {
 	 * @param {View} view
 	 */
 	constructor(view) {
-		super(view, -3, 0)
+		super(view, -3, 0, 1, 1)
 		this.setStartPos()
 		this.elm.classList.add("player")
 		/** @type {number} */
@@ -316,7 +332,7 @@ class Player extends SceneItem {
 		return this.getGeneralRect().relative(0.1, 0.1, 0.8, 0.8)
 	}
 	getBlockRects() {
-		var margin = 0.2
+		var margin = 0.3
 		var general = this.getGeneralRect()
 		const maxY = general.relative(0, 1 - margin, 1, margin)
 		const minY = general.relative(0, 0, 1, margin)
@@ -361,7 +377,6 @@ class Player extends SceneItem {
 		// @ts-ignore
 		this.extraStyles[0] = `background: url(data:image/svg+xml;base64,${btoa(this.mode.constructor.getIcon())});`
 		this.extraStyles[1] = `transform: rotate(${this.rotation}deg) scaleY(${this.gravity});`
-		this.needsRedraw = true;
 		super.tick(amount)
 	}
 	/**
@@ -486,8 +501,8 @@ class CubeMode extends GameMode {
 			this.player.rotation = (targetRotation + (this.player.rotation * 2)) / 3
 			if (this.player.gravity < 0) {
 				if (this.player.view instanceof GameView) {
-					if ((!levelMeta.settings.platformer) || this.player.view.isPressingRight) this.player.view.particles.push(new SlideParticle(this.player.view, this.player.x, this.player.y + 1, 1))
-					if ((levelMeta.settings.platformer) && this.player.view.isPressingLeft) this.player.view.particles.push(new SlideParticle(this.player.view, this.player.x + 1, this.player.y + 1, -1))
+					if ((!levelMeta.settings.platformer) || this.player.view.isPressingRight) this.player.view.particles.push(new SlideParticle(this.player.view, this.player.x - 0.5, this.player.y + 0.5, 1))
+					if ((levelMeta.settings.platformer) && this.player.view.isPressingLeft) this.player.view.particles.push(new SlideParticle(this.player.view, this.player.x + 0.5, this.player.y + 0.5, -1))
 				}
 				var ph = this.player.getGeneralRect().h
 				if (this.player.y + ph > this.player.groundHeight) {
@@ -498,8 +513,8 @@ class CubeMode extends GameMode {
 				}
 			} else {
 				if (this.player.view instanceof GameView) {
-					if ((!levelMeta.settings.platformer) || this.player.view.isPressingRight) this.player.view.particles.push(new SlideParticle(this.player.view, this.player.x, this.player.y, 1))
-					if ((levelMeta.settings.platformer) && this.player.view.isPressingLeft) this.player.view.particles.push(new SlideParticle(this.player.view, this.player.x + 1, this.player.y, -1))
+					if ((!levelMeta.settings.platformer) || this.player.view.isPressingRight) this.player.view.particles.push(new SlideParticle(this.player.view, this.player.x - 0.5, this.player.y - 0.5, 1))
+					if ((levelMeta.settings.platformer) && this.player.view.isPressingLeft) this.player.view.particles.push(new SlideParticle(this.player.view, this.player.x + 0.5, this.player.y - 0.5, -1))
 				}
 				if (this.player.y < this.player.groundHeight) {
 					this.player.y += 0.1
@@ -741,23 +756,18 @@ class Particle extends SceneItem {
 	 * @param {GameView} view
 	 * @param {number} x
 	 * @param {number} y
+	 * @param {number} dw
+	 * @param {number} dh
 	 */
-	constructor(view, x, y) {
-		super(view, x, y)
+	constructor(view, x, y, dw, dh) {
+		super(view, x, y, dw, dh)
 		/** @type {GameView} */
 		this.gameview = view
-		this.elm.classList.remove("regularPos")
-		this.elm.classList.add("particle")
+		// this.elm.classList.remove("regularPos")
+		// this.elm.classList.add("particle")
 		this.extraStyles[0] = `background: radial-gradient(circle, #0F53 0%, #0F5F 100%);`
 		this.extraStyles[1] = `border-radius: 50%;`
-		this.extraStyles[2] = `--size: 0.2;`
-	}
-	/**
-	 * @param {number} amount
-	 */
-	tick(amount) {
-		this.needsRedraw = true
-		super.tick(amount)
+		// this.extraStyles[2] = `--size: 0.2;`
 	}
 	destroy() {
 		super.destroy()
@@ -772,14 +782,13 @@ class SlideParticle extends Particle {
 	 * @param {number} direction
 	 */
 	constructor(view, x, y, direction) {
-		super(view, x, y)
+		super(view, x, y, 0.1, 0.1)
 		this.oy = y
 		this.gravity = 1
 		if (this.view.player != null) this.gravity = this.view.player.gravity
 		this.vx = (Math.random() / -20) * direction
 		this.vy = (Math.random() / 10) * this.gravity
 		this.time = 0
-		this.extraStyles[2] = `--size: 0.1;`
 	}
 	/**
 	 * @param {number} amount
@@ -814,9 +823,8 @@ class WaveParticle extends Particle {
 	 * @param {number} y
 	 */
 	constructor(view, x, y) {
-		super(view, x, y)
+		super(view, x, y, 0.3, 0.3)
 		this.time = 0
-		this.extraStyles[2] = `--size: 0.3; border-radius: 50%;`
 	}
 	/**
 	 * @param {number} amount
@@ -835,7 +843,7 @@ class DeathParticleMain extends Particle {
 	 * @param {number} y
 	 */
 	constructor(view, x, y) {
-		super(view, x, y)
+		super(view, x, y, 1, 1)
 		this.size = 1
 	}
 	/**
@@ -843,7 +851,8 @@ class DeathParticleMain extends Particle {
 	 */
 	tick(amount) {
 		this.size += 0.2 * amount
-		this.extraStyles[2] = `--size: ${this.size};`
+		this.dw = this.size
+		this.dh = this.size
 		this.extraStyles[3] = `opacity: ${map(this.size, 1, 5, 1, 0)};`
 		super.tick(amount)
 		if (this.size >= 5) this.destroy()
@@ -856,7 +865,7 @@ class DeathParticleExtra extends Particle {
 	 * @param {number} y
 	 */
 	constructor(view, x, y) {
-		super(view, x, y)
+		super(view, x, y, 1, 1)
 		this.vx = (Math.random() - 0.5) / 3
 		this.vy = (Math.random() - 0.5) / 3
 		this.size = 1
@@ -865,6 +874,8 @@ class DeathParticleExtra extends Particle {
 	 * @param {number} amount
 	 */
 	tick(amount) {
+		// TODO: turn `size` into `time` or something like that
+		// this is copypasted
 		this.size += 0.2 * amount
 		this.x += this.vx * amount
 		this.y += this.vy * amount
@@ -881,7 +892,7 @@ class OrbParticle extends Particle {
 	 * @param {string} color
 	 */
 	constructor(view, x, y, color) {
-		super(view, x, y)
+		super(view, x, y, 0.1, 0.1)
 		this.center = { x, y }
 		this.deg = Math.random() * 360
 		this.r = 0.6
@@ -889,7 +900,6 @@ class OrbParticle extends Particle {
 		this.vr = 0
 		this.extraStyles[0] = `background: ${color};`
 		this.extraStyles[1] = `border-radius: 0%;`
-		this.extraStyles[2] = `--size: 0.1;`
 	}
 	/**
 	 * @param {number} amount
@@ -918,12 +928,12 @@ class OrbActivateParticle extends Particle {
 	 * @param {string} color
 	 */
 	constructor(view, x, y, color) {
-		super(view, x, y)
+		super(view, x, y, 0.75*2, 0.75*2)
 		this.center = { x, y }
 		this.r = 0.75
 		this.v = 0
 		this.extraStyles[0] = `background: ${color};`
-		this.extraStyles[2] = `--size: ${this.r * 2}; opacity: 0.5;`
+		this.extraStyles[2] = `opacity: 0.5;`
 	}
 	/**
 	 * @param {number} amount
@@ -931,7 +941,9 @@ class OrbActivateParticle extends Particle {
 	tick(amount) {
 		this.v -= 0.001
 		this.r += this.v
-		this.extraStyles[2] = `--size: ${this.r * 2}; opacity: ${map(this.r, 0.75, 0, 0.75, 0)};`
+		this.dw = this.r * 2
+		this.dh = this.r * 2
+		this.extraStyles[2] = `opacity: ${map(this.r, 0.75, 0, 0.75, 0)};`
 		super.tick(amount)
 		if (this.r <= 0) this.destroy()
 	}
@@ -941,7 +953,7 @@ class LevelCompleteSign extends Particle {
 	 * @param {GameView} view
 	 */
 	constructor(view) {
-		super(view, 0, 0)
+		super(view, 0, 0, 0, 0)
 		this.imgSize = [676, 66]
 		this.time = 0
 		this.elm.innerHTML = `<img src="../assets/game/LevelComplete.png" style="width: 100%; height: 100%;">`
@@ -962,7 +974,9 @@ class LevelCompleteSign extends Particle {
 		]
 		this.elm.setAttribute("style", `left: ${(window.innerWidth  / 2) - (this.realSize[0] / 2)}px; top: ${(window.innerHeight / 2) - (this.realSize[1] / 2)}px; width: ${this.realSize[0]}px; height: ${this.realSize[1]}px;`)
 	}
+	update() {}
 	addButtons() {
+		// TODO: Fix view.restart
 		this.hasButtons = true
 		var e = document.createElement("div")
 		e.innerHTML = `<div onclick='view.restart()'><img src="../assets/ui/Restart.svg" class="finish-button"></div><div><a href="../home/index.html"><img src="../assets/ui/Home.svg" class="finish-button"></a></div>`
@@ -982,14 +996,11 @@ class ProgressBar extends Particle {
 	 * @param {GameView} view
 	 */
 	constructor(view) {
-		super(view, 0, 0)
+		super(view, 0, 0, 0, 0)
 		this.elm.classList.add("progress-bar")
 		document.querySelector("#scene")?.insertAdjacentElement("afterend", this.elm)
 	}
-	/**
-	 * @param {number} amount
-	 */
-	tick(amount) {
+	update() {
 		var c = this.gameview.getCompletion()
 		this.elm.innerHTML = `<div>Attempt ${this.gameview.attempt}</div><div style="background: linear-gradient(90deg, #AFA ${c}%, #AAF ${c}%, #AAF ${levelMeta.completion.percentage}%, white ${levelMeta.completion.percentage}%);">${c}% complete</div>`
 	}
@@ -1005,14 +1016,10 @@ class RectDisplay extends Particle {
 	 * @param {string} color
 	 */
 	constructor(view, rect, color) {
-		super(view, rect.x, rect.y)
+		super(view, rect.x + ((rect.w - 1) / 2), rect.y + ((rect.h - 1) / 2), rect.w, rect.h);
 		this.rect = rect
-		this.extraStyles[1] = undefined
-		this.extraStyles[2] = `--dw: ${rect.w}; --dh: ${rect.h};`
-		this.elm.classList.remove("particle")
-		this.elm.classList.add("regularPos")
-		// this.elm.classList.add(`rect-${rect.x}-${rect.y}-${rect.w}-${rect.h}`)
 		this.extraStyles[0] = `background: ${color};`
+		this.extraStyles[1] = undefined
 		this.time = 0
 	}
 	/**
@@ -1023,9 +1030,6 @@ class RectDisplay extends Particle {
 		this.extraStyles[1] = `opacity: ${map(this.time, 0, 5, 1, 0)};`
 		super.tick(amount)
 		if (this.time >= 5) this.destroy()
-	}
-	update() {
-		this.elm.setAttribute("style", `--display-top-left: calc(var(--tile-size) * ${this.rect.x}); --display-height-off-ground: calc(var(--tile-size) * ${this.rect.y}); ${this.extraStyles.map((v) => v==undefined ? "" : ` ${v}`).join("")}`)
 	}
 	/**
 	 * @param {View} view
@@ -1139,12 +1143,10 @@ class Tile extends SceneItem {
 	 * @param {string[]} groups
 	 */
 	constructor(view, x, y, dw, dh, rotation, groups) {
-		super(view, x, y)
+		super(view, x, y, dw, dh)
 		/** @type {{ type: "x" | "y", animation: VariableAnimation }[]} */
 		this.animations = []
-		this.display_size = [dw, dh]
 		this.updateImage()
-		this.extraStyles[1] = `--dw: ${dw}; --dh: ${dh};`
 		this.rotation = rotation
 		this.groups = groups
 		// this.enabled = false
@@ -1225,7 +1227,6 @@ class Tile extends SceneItem {
 				this.animations.splice(i, 1)
 				i -= 1;
 			}
-			this.needsRedraw = true
 		}
 		if (this.view.player && Math.abs(this.x - this.view.player.x) < 40) {
 			if (viewType == "game") {
@@ -1458,7 +1459,7 @@ class Orb extends Tile {
 		super.tick(amount)
 		// Spawn particles
 		if (this.hasParticles && this.view instanceof GameView && Math.random() < amount) {
-			this.view.particles.push(new OrbParticle(this.view, this.x + 0.5, this.y + 0.5, this.particleColor))
+			this.view.particles.push(new OrbParticle(this.view, this.x, this.y, this.particleColor))
 		}
 	}
 	/**
@@ -1474,7 +1475,7 @@ class Orb extends Tile {
 			var target = this
 			player.specialJump = () => {
 				target.timeout = 10
-				if (this.view instanceof GameView) this.view.particles.push(new OrbActivateParticle(this.view, target.x + 0.5, target.y + 0.5, target.particleColor))
+				if (this.view instanceof GameView) this.view.particles.push(new OrbActivateParticle(this.view, target.x, target.y, target.particleColor))
 				target.activate(player)
 			}
 		}
@@ -1666,7 +1667,6 @@ class Coin extends Tile {
 		this.extraStyles[1] = `--dw: var(--tsize); --dh: var(--tsize);`
 		this.extraStyles[2] = `--tsize: ${Math.sqrt(Math.sqrt(this.activated + 1))};`
 		this.extraStyles[3] = `opacity: ${map(this.activated, 0, 100, 1, 0)};`
-		this.needsRedraw = true
 		if (this.activated > 0) {
 			if (this.activated < 100) {
 				this.activated += amount
@@ -1949,7 +1949,6 @@ class MoveTrigger extends Trigger {
 				if (duration == 0) {
 					t.x += xAmount
 					t.y += yAmount
-					t.needsRedraw = true
 					return
 				}
 				if (xAmount != 0) {
@@ -2418,7 +2417,6 @@ class Key extends Tile {
 	 */
 	tick(amount) {
 		this.extraStyles[3] = `opacity: ${map(this.activation, 0, 30, 1, 0)};`
-		this.needsRedraw = true
 		if (this.activation > 0) {
 			if (this.activation < 30) {
 				this.x += this.vx * amount
@@ -2488,6 +2486,10 @@ class View {
 		this.player = null
 		/** @type {{ type: string, data: object }[]} */
 		this.originalObjects = []
+		/** @type {number} */
+		this.cameraX = 0
+		/** @type {number} */
+		this.cameraY = 0
 	}
 	importObjects() {
 		var coin_no = 0

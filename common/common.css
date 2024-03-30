@@ -29,32 +29,32 @@ body {
 	/* background */
 	background: url(../assets/game/Background.png), var(--bg-color);
 	background-size: cover;
-	background-position-x: calc(-0.1 * calc(var(--move-amount) * var(--tile-size)));
+	background-position-x: calc(-0.1 * var(--move-amount) * var(--tile-size));
 	filter: url(#main-key-filter);
 }
 #scene > div {
 	position: absolute;
 }
-#scene > div.regularPos {
+/* #scene > div.regularPos {
 	--x: 0;
 	--y: 0;
-	--dw: 1; /* Display width/height */
+	--dw: 1; /* Display width/height * /
 	--dh: 1;
-	/* Y calculation */
+	/* Y calculation * /
 	--world-y: calc(var(--y) * var(--tile-size));
-	--offset-from-tile-height: calc(calc(calc(var(--dh) - 1) / 2) * var(--tile-size));
+	--offset-from-tile-height: calc(calc(var(--dh) - 1) / 2 * var(--tile-size));
 	--display-height-off-ground: calc(var(--world-y) - var(--offset-from-tile-height));
 	--world-height: calc(var(--floor-height) + var(--display-height-off-ground));
-	bottom: calc(var(--world-height) + calc(-1 * var(--camera-y)));
-	/* X calculation */
+	bottom: calc(var(--world-height) + -1 * var(--camera-y));
+	/* X calculation * /
 	--world-x: calc(var(--x) * var(--tile-size));
-	--offset-from-tile-width: calc(calc(calc(var(--dw) - 1) / 2) * var(--tile-size));
+	--offset-from-tile-width: calc(calc(var(--dw) - 1) / 2 * var(--tile-size));
 	--display-top-left: calc(var(--world-x) - var(--offset-from-tile-width));
-	left: calc(var(--display-top-left) + calc(-1 * var(--camera-x)));
-	/* Size */
+	left: calc(var(--display-top-left) + -1 * var(--camera-x));
+	/* Size * /
 	width: calc(var(--dw) * var(--tile-size));
 	height: calc(var(--dh) * var(--tile-size));
-}
+} */
 .stage {
 	/* positioning */
 	width: 100%;
@@ -63,7 +63,7 @@ body {
 	bottom: calc(-1 * var(--camera-y));
 	/* img */
 	background: url(../assets/game/Ground_Main.svg), var(--stage-color);
-	background-position-x: calc(-1 * calc(var(--move-amount-x) * var(--tile-size)));
+	background-position-x: calc(-1 * var(--move-amount-x) * var(--tile-size));
 	/* contents */
 	display: flex;
 	flex-direction: row;

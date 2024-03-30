@@ -39,7 +39,6 @@ function on_click(evt) {
 			var tile = view.tiles[i]
 			if (tile.x == pos[0] && tile.y == pos[1]) {
 				tile.rotation = (tile.rotation + 90) % 360
-				tile.needsRedraw = true
 				tile.update()
 			}
 		}
@@ -76,7 +75,6 @@ function editTile(tile) {
 	var parent = document.querySelector(".editing")
 	parent.removeAttribute("style")
 	parent.innerHTML = tile.getEdit().join("")
-	tile.needsRedraw = true
 	tile.update()
 }
 /** @param {Tile[]} tiles */
