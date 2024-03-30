@@ -73,7 +73,7 @@ class SceneItem {
 		const worldX = this.x * tileSize;
 		const offsetFromTileHeight = ((this.dh - 1) / 2) * tileSize;
 		const displayHeightOffGround = worldY - offsetFromTileHeight;
-		const worldHeight = floorHeight + displayHeightOffGround;
+		const worldHeight = (floorHeight * window.innerHeight) + displayHeightOffGround;
 		const offsetFromTileWidth = ((this.dw - 1) / 2) * tileSize;
 		const displayTopLeft = worldX - offsetFromTileWidth;
 		this.elm.setAttribute("style",
@@ -279,7 +279,7 @@ class Stage extends SceneItem {
 		/** @type {HTMLDivElement} */
 		// @ts-ignore
 		var viewport = this.elm.parentNode
-		viewport.setAttribute("style", `--tile-size: ${tileSize}px; --floor-height: ${floorHeight}vh; --move-amount-x: ${this.view.cameraX}; --move-amount-y: ${this.view.cameraY}; --bg-color: ${this.bgColor.getHex()}; --stage-color: ${this.groundColor.getHex()};`)
+		viewport.setAttribute("style", `--tile-size: ${tileSize}px; --floor-height: ${100*floorHeight}vh; --move-amount-x: ${this.view.cameraX}; --move-amount-y: ${this.view.cameraY}; --bg-color: ${this.bgColor.getHex()}; --stage-color: ${this.groundColor.getHex()};`)
 		super.tick(amount)
 	}
 	reset() {

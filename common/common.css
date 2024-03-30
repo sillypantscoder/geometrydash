@@ -57,10 +57,11 @@ body {
 } */
 .stage {
 	/* positioning */
-	width: 100%;
-	height: var(--floor-height);
+	left: 0px !important;
+	width: 100% !important;
+	height: var(--floor-height) !important;
 	top: unset !important;
-	bottom: calc(-1 * var(--camera-y));
+	bottom: calc(-1 * var(--camera-y)) !important;
 	/* img */
 	background: url(../assets/game/Ground_Main.svg), var(--stage-color);
 	background-position-x: calc(-1 * var(--move-amount-x) * var(--tile-size));
