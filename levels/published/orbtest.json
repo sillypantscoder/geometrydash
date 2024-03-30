@@ -180,7 +180,7 @@
 		{"type": "death.basic-spike", "data": {"x": 46, "y": 5, "rotation": 270, "groups": []}}
 	],
 	"completion": {
-		"percentage": 0,
+		"percentage": 87,
 		"coins": []
 	},
 	"deleted": false

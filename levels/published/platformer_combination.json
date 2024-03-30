@@ -290,7 +290,7 @@
 		{"type": "portal.gravity-down", "data": {"x": 38, "y": 21, "rotation": 270, "groups": []}}
 	],
 	"completion": {
-		"percentage": 0,
+		"percentage": 68,
 		"coins": [false, false, false]
 	},
 	"deleted": false

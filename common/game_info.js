@@ -865,7 +865,7 @@ class DeathParticleExtra extends Particle {
 	 * @param {number} y
 	 */
 	constructor(view, x, y) {
-		super(view, x, y, 1, 1)
+		super(view, x, y, 0.3, 0.3)
 		this.vx = (Math.random() - 0.5) / 3
 		this.vy = (Math.random() - 0.5) / 3
 		this.size = 1
@@ -875,7 +875,8 @@ class DeathParticleExtra extends Particle {
 	 */
 	tick(amount) {
 		// TODO: turn `size` into `time` or something like that
-		// this is copypasted
+		// this is copypasted from DeathParticleMain I think
+		// this is not related to the size
 		this.size += 0.2 * amount
 		this.x += this.vx * amount
 		this.y += this.vy * amount
@@ -920,17 +921,23 @@ class OrbParticle extends Particle {
 		if (this.r <= 0) this.destroy()
 	}
 }
-class OrbActivateParticle extends Particle {
+class SpecialActivateParticle extends Particle {
 	/**
 	 * @param {GameView} view
 	 * @param {number} x
 	 * @param {number} y
 	 * @param {string} color
+	 * @param {number} r_start
+	 * @param {number} r_end
+	 * @param {number} r_acc
 	 */
-	constructor(view, x, y, color) {
+	constructor(view, x, y, color, r_start, r_end, r_acc) {
 		super(view, x, y, 0.75*2, 0.75*2)
 		this.center = { x, y }
-		this.r = 0.75
+		this.r = r_start
+		this.r_start = r_start
+		this.r_end = r_end
+		this.r_acc = r_acc * 0.001
 		this.v = 0
 		this.extraStyles[0] = `background: ${color};`
 		this.extraStyles[2] = `opacity: 0.5;`
@@ -939,13 +946,46 @@ class OrbActivateParticle extends Particle {
 	 * @param {number} amount
 	 */
 	tick(amount) {
-		this.v -= 0.001
+		this.v += this.r_acc
 		this.r += this.v
 		this.dw = this.r * 2
 		this.dh = this.r * 2
-		this.extraStyles[2] = `opacity: ${map(this.r, 0.75, 0, 0.75, 0)};`
+		this.extraStyles[2] = `opacity: ${map(this.r, this.r_start, this.r_end, 0.75, 0)};`
 		super.tick(amount)
-		if (this.r <= 0) this.destroy()
+		if (this.r * this.r_acc >= this.r_end * this.r_acc) this.destroy()
+	}
+}
+class PadParticle extends Particle {
+	/**
+	 * @param {GameView} view
+	 * @param {Rect} rect
+	 * @param {{ x: number, y: number }} acc
+	 * @param {string} color
+	 */
+	constructor(view, rect, acc, color) {
+		super(view, rect.x + (Math.random() * rect.w) - 0.5, rect.y + (Math.random() * rect.h) - 0.5, 0.1, 0.1)
+		this.vy = 0
+		this.vx = 0
+		this.original = { x: this.x, y: this.y }
+		this.acc = acc
+		this.extraStyles[0] = `background: ${color};`
+		this.extraStyles[1] = `border-radius: 0%;`
+	}
+	/**
+	 * @param {number} amount
+	 */
+	tick(amount) {
+		this.y += this.vy * amount
+		this.x += this.vx * amount
+		// Accelerate
+		this.vy += 0.01 * this.acc.y * amount
+		this.vx += 0.01 * this.acc.x * amount
+		// Opacity
+		var dist = Math.abs(this.y - this.original.y) + Math.abs(this.x - this.original.x)
+		this.extraStyles[3] = `opacity: ${map(dist, 0, 0.8, 1, 0)};`
+		// Finish
+		super.tick(amount)
+		if (dist >= 0.8) this.destroy()
 	}
 }
 class LevelCompleteSign extends Particle {
@@ -1228,10 +1268,8 @@ class Tile extends SceneItem {
 				i -= 1;
 			}
 		}
-		if (this.view.player && Math.abs(this.x - this.view.player.x) < 40) {
-			if (viewType == "game") {
-				this.collide(this.view.player)
-			}
+		if (this.view.player) {
+			this.collide(this.view.player)
 			super.tick(amount)
 		}
 	}
@@ -1475,7 +1513,7 @@ class Orb extends Tile {
 			var target = this
 			player.specialJump = () => {
 				target.timeout = 10
-				if (this.view instanceof GameView) this.view.particles.push(new OrbActivateParticle(this.view, target.x, target.y, target.particleColor))
+				if (this.view instanceof GameView) this.view.particles.push(new SpecialActivateParticle(this.view, target.x, target.y, target.particleColor, 0.75, 0, -1))
 				target.activate(player)
 			}
 		}
@@ -1664,8 +1702,7 @@ class Coin extends Tile {
 	<path d="M 0.5 10 A 1 1 0 0 0 19.5 10 A 1 1 0 0 0 0.5 10 Z" fill="none" stroke="black" stroke-width="1" stroke-dasharray="1" />
 	<path d="M 12 8 L 14 7 A 5 5 0 1 0 14 13 L 12 12 A 3 3 0 1 1 12 8 Z" fill="white" stroke="black" stroke-width="0.3" />
 </svg>`) /* I hate Python for the fact that you can't do this with f-strings */}) no-repeat;`
-		this.extraStyles[1] = `--dw: var(--tsize); --dh: var(--tsize);`
-		this.extraStyles[2] = `--tsize: ${Math.sqrt(Math.sqrt(this.activated + 1))};`
+		this.dw = this.dh = Math.sqrt(Math.sqrt(this.activated + 1))
 		this.extraStyles[3] = `opacity: ${map(this.activated, 0, 100, 1, 0)};`
 		if (this.activated > 0) {
 			if (this.activated < 100) {
@@ -1978,6 +2015,7 @@ class Pad extends Tile {
 	constructor(view, x, y, rotation, groups) {
 		super(view, x, y, 1, 1, rotation, groups)
 		this.timeout = 0
+		this.particleColor = "yellow"
 	}
 	getRect() {
 		return super.getRect().relative(0, 0, 1, 0.2)
@@ -1986,7 +2024,18 @@ class Pad extends Tile {
 	 * @param {number} amount
 	 */
 	tick(amount) {
+		// Spawn particles
+		if (this.view instanceof GameView && Math.random() < amount) {
+			this.view.particles.push(new PadParticle(this.view, this.getRect().rotate(this.rotation, this.x + 0.5, this.y + 0.5), [
+				{ x: 0, y: 1 },
+				{ x: 1, y: 0 },
+				{ x: 0, y: -1 },
+				{ x: -1, y: 1 }
+			][this.rotation / 90], this.particleColor))
+		}
+		// Timeout
 		if (this.timeout > 0) this.timeout -= amount
+		// Tick
 		super.tick(amount)
 	}
 	/**
@@ -2001,6 +2050,7 @@ class Pad extends Tile {
 			// Jumpy jumpy
 			this.activate(player)
 			this.timeout = 10
+			if (this.view instanceof GameView) this.view.particles.push(new SpecialActivateParticle(this.view, thisRect.centerX() - 0.5, thisRect.centerY() - 0.5, this.particleColor, 0.1, 1.1, 1))
 		}
 	}
 	/**
@@ -2043,6 +2093,7 @@ class SmallJumpPad extends Pad {
 	 */
 	constructor(view, x, y, rotation, groups) {
 		super(view, x, y, rotation, groups)
+		this.particleColor = "#F0F"
 	}
 	static getImage() {
 		return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">
@@ -2067,6 +2118,7 @@ class GravityPad extends Pad {
 	 */
 	constructor(view, x, y, rotation, groups) {
 		super(view, x, y, rotation, groups)
+		this.particleColor = "#0FF"
 	}
 	static getImage() {
 		return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">
