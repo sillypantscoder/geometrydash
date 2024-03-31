@@ -932,6 +932,40 @@ class OrbParticle extends Particle {
 		if (this.r <= 0) this.destroy()
 	}
 }
+class PortalParticle extends Particle {
+	/**
+	 * @param {GameView} view
+	 * @param {number} x
+	 * @param {number} y
+	 * @param {string} color
+	 * @param {number} deg
+	 */
+	constructor(view, x, y, color, deg) {
+		super(view, x, y, 0.1, 0.1)
+		this.center = { x, y }
+		this.deg = deg + (Math.random() * 180)
+		this.rstart = 0.8 + (Math.random() * 0.4)
+		this.r = this.rstart
+		this.extraStyles[0] = `background: ${color};`
+		this.extraStyles[1] = `border-radius: 0%;`
+	}
+	/**
+	 * @param {number} amount
+	 */
+	tick(amount) {
+		// Update position based on velocity
+		this.r += -0.06 * amount
+		// Calculate position
+		var pos = rotatePoint(this.center.x, this.center.y, this.center.x - this.r, this.center.y, this.deg)
+		this.x = pos[0]
+		this.y = pos[1]
+		// Opacity
+		this.extraStyles[2] = `opacity: ${map(this.r, this.rstart, 0, 1, 0)};`
+		// Finish
+		super.tick(amount)
+		if (this.r <= 0) this.destroy()
+	}
+}
 class SpecialActivateParticle extends Particle {
 	/**
 	 * @param {GameView} view
@@ -2162,10 +2196,20 @@ class Portal extends Tile {
 	constructor(view, x, y, dw, dh, realheight, rotation, groups) {
 		super(view, x, y, dw, dh, rotation, groups)
 		this.realheight = realheight
+		this.particleColor = "blue"
 		if (debugMode) RectDisplay.create(this.view, this)
 	}
 	getRect() {
 		return super.getRect().relative(0, (this.realheight * -0.5) + 0.5, 1, this.realheight);
+	}
+	/** @param {number} amount */
+	tick(amount) {
+		// Spawn particles
+		if (this.view instanceof GameView && Math.random() < amount) {
+			this.view.particles.push(new PortalParticle(this.view, this.x, this.y, this.particleColor, this.rotation - 90))
+		}
+		// Super
+		super.tick(amount)
 	}
 	/**
 	 * @param {Player} player
@@ -2226,6 +2270,11 @@ class GravityPortal extends Portal {
 	 * @param {Player} player
 	 */
 	activate(player) {
+		if (player.view instanceof GameView && player.gravity != this.gravity) {
+			var p = new SpecialActivateParticle(player.view, this.x, this.y, this.particleColor, 1, 0, -0.4)
+			p.r_start += 0.5
+			player.view.particles.push(p)
+		}
 		player.gravity = this.gravity;
 	}
 }
@@ -2239,6 +2288,7 @@ class GravityPortalDown extends GravityPortal {
 	 */
 	constructor(view, x, y, rotation, groups) {
 		super(view, x, y, rotation, 1, groups)
+		this.particleColor = "#94ffff"
 	}
 	static getImage() {
 		return this.getImageTemplate("#94ffff", "#00b4ff")
@@ -2254,6 +2304,7 @@ class GravityPortalUp extends GravityPortal {
 	 */
 	constructor(view, x, y, rotation, groups) {
 		super(view, x, y, rotation, -1, groups)
+		this.particleColor = "#fff9bd"
 	}
 	static getImage() {
 		return this.getImageTemplate("#fff9bd", "#ffe954")
@@ -2342,6 +2393,11 @@ class GamemodePortal extends Portal {
 	 * @param {Player} player
 	 */
 	activate(player) {
+		if (player.view instanceof GameView && ! (player.mode instanceof this.mode)) {
+			var p = new SpecialActivateParticle(player.view, this.x, this.y, this.particleColor, 1, 0, -0.4)
+			p.r_start += 0.5
+			player.view.particles.push(p)
+		}
 		var newMode = new this.mode(player);
 		player.mode = newMode;
 	}
@@ -2356,6 +2412,7 @@ class CubePortal extends GamemodePortal {
 	 */
 	constructor(view, x, y, rotation, groups) {
 		super(view, x, y, rotation, CubeMode, groups)
+		this.particleColor = "#80ff9d"
 	}
 	static getImage() {
 		return this.getImageTemplate("#80ff9d", "#38ff63")
@@ -2371,6 +2428,7 @@ class ShipPortal extends GamemodePortal {
 	 */
 	constructor(view, x, y, rotation, groups) {
 		super(view, x, y, rotation, ShipMode, groups)
+		this.particleColor = "#ff94bd"
 	}
 	static getImage() {
 		return this.getImageTemplate("#ff94bd", "#ff429d")
@@ -2386,6 +2444,7 @@ class BallPortal extends GamemodePortal {
 	 */
 	constructor(view, x, y, rotation, groups) {
 		super(view, x, y, rotation, BallMode, groups)
+		this.particleColor = "#ff692b"
 	}
 	static getImage() {
 		return this.getImageTemplate("#ff692b", "#ff4a00")
@@ -2401,6 +2460,7 @@ class WavePortal extends GamemodePortal {
 	 */
 	constructor(view, x, y, rotation, groups) {
 		super(view, x, y, rotation, WaveMode, groups)
+		this.particleColor = "#00bcff"
 	}
 	static getImage() {
 		return this.getImageTemplate("#00bcff", "#00aae8")
