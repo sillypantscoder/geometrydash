@@ -732,23 +732,33 @@ class WaveMode extends GameMode {
 	/**
 	 * @param {number} _amount
 	 */
-	gravity(_amount) {}
-	/**
-	 * @param {number} _amount
-	 */
-	checkJump(_amount) {
-		this.player.rotation = this.player.vy * -450
+	gravity(_amount) {
 		if (this.player.view instanceof GameView) {
-			this.player.view.particles.push(new WaveParticle(this.player.view, this.player.x, this.player.y + 0.5 + (-1 * this.player.vy)))
 			if (this.player.view.isPressing) {
 				this.player.vy = 0.1 * this.player.gravity
 			} else {
 				this.player.vy = -0.1 * this.player.gravity
 			}
 		}
+		if (this.player.groundHeight != null) {
+			this.vy = 0
+			this.player.y = this.player.groundHeight - (this.player.gravity >= 0 ? 0.1 : 0.9)
+		}
+	}
+	/**
+	 * @param {number} _amount
+	 */
+	checkJump(_amount) {
+		this.player.rotation = this.player.vy * -450
+		if (this.player.view instanceof GameView) {
+			this.player.view.particles.push(new WaveParticle(this.player.view, this.player.x, this.player.y + (-1 * this.player.vy)))
+		}
 	}
 	getRect() {
 		return super.getRect().relative(0, 0.1, 1, 0.8)
+	}
+	canDieFromCeiling() {
+		return true
 	}
 }
 class Particle extends SceneItem {
@@ -825,13 +835,14 @@ class WaveParticle extends Particle {
 	constructor(view, x, y) {
 		super(view, x, y, 0.3, 0.3)
 		this.time = 0
+		this.elm.parentElement?.insertAdjacentElement("afterbegin", this.elm)
 	}
 	/**
 	 * @param {number} amount
 	 */
 	tick(amount) {
 		this.time += amount
-		this.extraStyles[1] = `opacity: ${map(this.time, 0, 100, 1, 0)};`
+		this.extraStyles[2] = `opacity: ${map(this.time, 0, 100, 1, 0)};`
 		super.tick(amount)
 		if (this.time >= 100) this.destroy()
 	}
@@ -1321,7 +1332,8 @@ class TileBlock extends Tile {
 					player.y = thisRect.y - player.getGeneralRect().h
 				} else {
 					// Move the bottom of the player up to the top of this block.
-					player.y = thisRect.y + thisRect.h
+					player.y = thisRect.y + thisRect.h - (player.mode instanceof WaveMode ? 0.1 : 0)
+					// why does there need to be an exception for wave
 				}
 				player.vy = 0
 			}
@@ -2566,7 +2578,7 @@ class View {
 	loadLevel() {
 		var t = this
 		if (levelName == undefined) {
-			levelName = "new_level.json"
+			levelName = `new_level${Math.round(Math.random() * 10000000000000)}.json`
 			return
 		}
 		var x = new XMLHttpRequest()
