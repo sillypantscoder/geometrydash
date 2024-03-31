@@ -303,6 +303,9 @@ class Stage extends SceneItem {
 		this.keys.green[0] = 0
 		this.keys.blue[0] = 0
 		this.updateMatrixValues()
+		if (this.view instanceof GameView) {
+			for (; this.view.particles.length > 0; this.view.particles[0].destroy());
+		}
 	}
 }
 class Player extends SceneItem {
@@ -527,10 +530,12 @@ class CubeMode extends GameMode {
 			this.player.rotation += 5 * amount * this.player.gravity
 		}
 		if (this.player.view instanceof GameView && this.player.view.isPressing) {
-			if (this.player.specialJump != null) {
+			if (this.player.specialJump != null && this.player.view.hasStartedPressing) {
 				this.player.specialJump()
+				this.player.view.hasStartedPressing = false
 			} else if (this.player.groundHeight != null) {
 				this.player.vy = 0.33 * this.player.gravity
+				this.player.view.hasStartedPressing = false
 			}
 		}
 	}
@@ -591,11 +596,12 @@ class ShipMode extends GameMode {
 		this.player.rotation = this.player.vy * -100
 		// Handle jump
 		if (this.player.view instanceof GameView && this.player.view.isPressing) {
-			if (this.player.specialJump != null) {
+			if (this.player.specialJump != null && this.player.view.hasStartedPressing) {
 				this.player.specialJump()
 			} else {
 				this.player.vy += 0.005 * this.player.gravity
 			}
+			this.player.view.hasStartedPressing = false
 		} else {
 			this.player.vy -= 0.005 * this.player.gravity
 		}
@@ -697,13 +703,13 @@ class BallMode extends GameMode {
 				}
 			}
 		}
-		if (this.player.view instanceof GameView && this.player.view.isPressing) {
+		if (this.player.view instanceof GameView && this.player.view.hasStartedPressing) {
 			if (this.player.specialJump != null) {
 				this.player.specialJump()
 			} else if (this.player.groundHeight != null) {
 				this.player.gravity *= -1
-				this.player.view.isPressing = false
 			}
+			this.player.view.hasStartedPressing = false
 		}
 	}
 }
@@ -1563,6 +1569,10 @@ class Orb extends Tile {
 				target.activate(player)
 			}
 		}
+	}
+	getRect() {
+		var padding = 0.3
+		return new Rect(this.x - padding, this.y - padding, 1 + padding + padding, 1 + padding + padding)
 	}
 	/**
 	 * @param {Player} player
@@ -2668,6 +2678,7 @@ class GameView extends View {
 		/** @type {Particle[]} */
 		this.particles = []
 		this.isPressing = false
+		this.hasStartedPressing = false
 		this.isPressingLeft = false
 		this.isPressingRight = false
 		this.stageWidth = 0
@@ -2678,22 +2689,28 @@ class GameView extends View {
 		// Add event listeners
 		var _v = this
 		document.addEventListener("keydown", (e) => {
+			if (e.key == " ") _v.hasStartedPressing = !_v.isPressing
 			if (e.key == " ") _v.isPressing = true
 			if (e.key == "ArrowLeft") _v.isPressingLeft = true
 			if (e.key == "ArrowRight") _v.isPressingRight = true
 			if (e.key == "ArrowUp") _v.isPressing = true
+			if (e.key == "ArrowUp") _v.hasStartedPressing = true
 		})
 		document.addEventListener("keyup", (e) => {
+			if (e.key == " ") _v.hasStartedPressing = !_v.isPressing
 			if (e.key == " ") _v.isPressing = false
 			if (e.key == "ArrowLeft") _v.isPressingLeft = false
 			if (e.key == "ArrowRight") _v.isPressingRight = false
 			if (e.key == "ArrowUp") _v.isPressing = false
+			if (e.key == "ArrowUp") _v.hasStartedPressing = false
 		})
 		document.addEventListener("mousedown", (e) => {
 			_v.isPressing = true
+			_v.hasStartedPressing = true
 		})
 		document.addEventListener("mouseup", (e) => {
 			_v.isPressing = false
+			_v.hasStartedPressing = false
 		})
 		document.addEventListener("touchstart", (e) => {
 			_v.handleTouches(e)
@@ -2717,8 +2734,12 @@ class GameView extends View {
 			var a = Math.floor(t.clientX / (window.innerWidth / 4))
 			if (a == 0) this.isPressingLeft = true
 			else if (a == 1) this.isPressingRight = true
-			else this.isPressing = true
+			else {
+				this.isPressing = true
+				this.hasStartedPressing = true
+			}
 		}
+		if (this.isPressing == false) this.hasStartedPressing = false
 	}
 	win() {
 		this.lastPlayerX = this.stageWidth
