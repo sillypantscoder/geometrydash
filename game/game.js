@@ -21,12 +21,14 @@ function aFrames() {
 	if ((! view.hasWon) && view.deathTime > 0) {
 		view.deathTime -= 1
 		if (view.deathTime <= 0) {
+			view.stage.reset()
 			view.player = new Player(view)
 			for (; view.tiles.length > 0; ) {
 				view.tiles[0].destroy()
 				view.tiles.splice(0, 1)
 			}
 			view.importObjects()
+			view.attempt += 1
 		}
 	}
 	var n_frames = 1

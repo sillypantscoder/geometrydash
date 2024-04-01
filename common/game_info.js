@@ -287,24 +287,13 @@ class Stage extends SceneItem {
 		this.view.cameraX = 0
 		this.bgColor = InterpolatedColor.fromRGB(levelMeta.settings.colorbg)
 		this.groundColor = InterpolatedColor.fromRGB(levelMeta.settings.colorground)
-		for (var i = 0; i < this.view.tiles.length; i++) {
-			var t = this.view.tiles[i]
-			if (t instanceof Trigger) {
-				t.activated = false
-			}
-			if (t instanceof Coin) {
-				t.activated = 0
-			}
-			if (t instanceof Key) {
-				t.activation = 0
-			}
-		}
 		this.keys.red[0] = 0
 		this.keys.green[0] = 0
 		this.keys.blue[0] = 0
 		this.updateMatrixValues()
 		if (this.view instanceof GameView) {
 			for (; this.view.particles.length > 0; this.view.particles[0].destroy());
+			this.view.particles.push(new ProgressBar(this.view))
 		}
 	}
 }
@@ -1093,11 +1082,7 @@ class ProgressBar extends Particle {
 	}
 	update() {
 		var c = this.gameview.getCompletion()
-		this.elm.innerHTML = `<div>Attempt ${this.gameview.attempt}</div><div style="background: linear-gradient(90deg, #AFA ${c}%, #AAF ${c}%, #AAF ${levelMeta.completion.percentage}%, white ${levelMeta.completion.percentage}%);">${c}% complete</div>`
-	}
-	destroy() {
-		this.gameview.particles.splice(this.gameview.particles.indexOf(this), 1)
-		super.destroy()
+		this.elm.innerHTML = `<div>Attempt ${this.gameview.attempt}</div><div>Particles: ${this.gameview.particles.length}</div><div>Elements: ${document.querySelector("#scene")?.children.length}</div><div style="background: linear-gradient(90deg, #AFA ${c}%, #AAF ${c}%, #AAF ${levelMeta.completion.percentage}%, white ${levelMeta.completion.percentage}%);">${c}% complete</div>`
 	}
 }
 class RectDisplay extends Particle {
@@ -2684,7 +2669,7 @@ class GameView extends View {
 		this.stageWidth = 0
 		this.stageHeight = 0
 		this.hasWon = false
-		this.attempt = 0
+		this.attempt = 1
 		this.lastPlayerX = 0
 		// Add event listeners
 		var _v = this

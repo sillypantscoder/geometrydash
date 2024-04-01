@@ -16,9 +16,7 @@
 		"**/node_modules/*"
 	],
 	"include": [
-		"common/*",
-		"editor/*",
-		"game/*",
-		"home/*"
+		"../common/*",
+		"./*"
 	]
 }
